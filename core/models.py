@@ -169,7 +169,7 @@ class ProductAvail(models.Model):
 # or it is so hard to deliver that you want to reduce the amount in that it is taken, e.g. make it exclusive for core participants.
     name = models.CharField(max_length=30)
     description = models.TextField()
-    color = models.CharField() # Color Field???
+    color = models.CharField(max_length=6)
 
 class QualityFunction(models.Model):
     name = models.CharField(max_length=100)
@@ -265,16 +265,16 @@ class Product(Consumable):
 class Durable(Item):
     pass
 
-class DeviceStatus():
+class DeviceStatus(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
 
-class DeviceCat():
+class DeviceCat(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
 
 class Device(Durable):
-    category = models.ForeignKey('DeviceCategory')
+    category = models.ForeignKey('DeviceCat')
     status = models.ForeignKey('DeviceStatus')
     active = models.BooleanField()
 
@@ -464,12 +464,12 @@ class Container(Consumable):
 
 class GeneralOffer(models.Model):
     # Describes a consumable offered by a supplier, but not in a specific package and with a specific price.
-    consumable = models.ForeignKey('Consumable')
-    distributor = models.ForeignKey('Supplier') # the supplier from whom the product is bought by the food coop
-    processor = models.ForeignKey('Supplier') # the supplier from whom the product has been processed (optional; in many cases the distributor itself)
-    grower = models.ForeignKey('Supplier') # the supplier from whom the product has been grown (optional; in many cases the distributor itself)
+    consumable = models.ForeignKey('Consumable', related_name="consumable")
+    distributor = models.ForeignKey('Supplier', related_name="distributor") # the supplier from whom the product is bought by the food coop
+    processor = models.ForeignKey('Supplier', related_name="processor") # the supplier from whom the product has been processed (optional; in many cases the distributor itself)
+    grower = models.ForeignKey('Supplier', related_name="grower") # the supplier from whom the product has been grown (optional; in many cases the distributor itself)
     variety = models.CharField(max_length=50)
-    vat = models.ForeignKey('VAT')
+    vat = models.ForeignKey('VAT', related_name="VAT")
     distance_total = models.FloatField() # replaces the distance of the supplier
     distance_add = models.FloatField() # will be added to the distance of the supplier
     orderpos = models.IntegerField()
@@ -510,14 +510,14 @@ class TransactionStatus(models.Model): # predefined statuses, i. a. planning, on
 class Insertion(models.Model):
     by_user = models.ForeignKey('User')
     by_user_comment = models.TextField()
-    payer_account = models.ForeignKey('Account')
+    payer_account = models.ForeignKey('Account', related_name="payer_account")
     supplier = models.ForeignKey('Supplier')
     total_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
     total_price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
     discount = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
     basic_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
     delivery_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    deliverer_account = models.ForeignKey('Account') # who paid for the delivery or transport. If the delivery cost has to be paid to the supplier, this has to be null.
+    deliverer_account = models.ForeignKey('Account', related_name="deliverer_account") # who paid for the delivery or transport. If the delivery cost has to be paid to the supplier, this has to be null.
     sum_of_lot_prices = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
     balance = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
     compensation_account = models.ForeignKey('Account') # who pays or gets the balance

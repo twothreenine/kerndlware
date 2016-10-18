@@ -6,7 +6,7 @@ from .fields import PercentField
 class Role(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField()
-    comment = models.TextField()
+    comment = models.TextField() # test
 
 class User(models.Model):
     active = models.BooleanField()

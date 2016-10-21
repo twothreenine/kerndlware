@@ -30,7 +30,8 @@ class VirtualUser(User):
     description = models.TextField()
 
 class Account(models.Model):
-    users = models.ManyToManyField('User')
+    name = models.CharField(max_length=50, default="")
+    users = models.ManyToManyField('User', blank=True)
     deposit = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
     credit = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
     taken = models.FloatField()
@@ -43,6 +44,9 @@ class Account(models.Model):
 
     def add_taken(self, amount):
         self.taken += amount
+
+    def __str__(self):
+        return "{} - {}".format(str(self.id), self.name)
 
 class AccPayPhases(models.Model):
     account = models.ForeignKey('Account')
@@ -293,21 +297,21 @@ class Instalment(models.Model):
 
 class Batch(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
-    comment = models.TextField()
-    consumable = models.ForeignKey('Consumable')
-    supplier = models.ForeignKey('Supplier')
+    description = models.TextField(blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
+    consumable = models.ForeignKey('Consumable', blank=True, null=True)
+    supplier = models.ForeignKey('Supplier', blank=True, null=True)
     owner_account = models.ForeignKey('Account')
-    unit = models.ForeignKey('Unit')
+    unit = models.ForeignKey('Unit', blank=True, null=True)
     price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    production_date = models.DateField() # date of production, harvest, or purchase (for devices: start of warranty)
-    purchase_date = models.DateField() # date of production, harvest, or purchase (for devices: start of warranty)
-    date_of_expiry = models.DateField() # durability date; resp. for devices: end of service life, e.g. end of warranty
-    stock = models.FloatField() # the exact amount in stock (desired value according to transitions)
-    average_consumption = models.FloatField()
-    taken = models.FloatField()
-    parcel_approx = models.FloatField()
-    special_density = models.FloatField()
+    production_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
+    purchase_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
+    date_of_expiry = models.DateField(blank=True, null=True) # durability date; resp. for devices: end of service life, e.g. end of warranty
+    stock = models.FloatField(default=0) # the exact amount in stock (desired value according to transitions)
+    average_consumption = models.FloatField(default=0)
+    taken = models.FloatField(default=0)
+    parcel_approx = models.FloatField(default=0)
+    special_density = models.FloatField(default=0)
 
     def add_stock(self, amount):
         self.stock += amount
@@ -532,7 +536,7 @@ class Transaction(models.Model):
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
     batch = models.ForeignKey('Batch')
     amount = models.FloatField()
-    status = models.ForeignKey('TransactionStatus')
+    status = models.ForeignKey('TransactionStatus', blank=True, null=True)
     comment = models.TextField()
 
 class TakingGood(Transaction): # taking of goods from credit

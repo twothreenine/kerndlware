@@ -1,15 +1,14 @@
 from django import forms
-
-form .models import Transaction
+from .models import Transaction
 
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
         fields = [
-            "charged_user",
-            "typing_user",
+            "charged_account",
+            "by_user",
             "date",
-            "good",
+            "batch",
             "amount",
             "comment"
         ]

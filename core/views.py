@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import TransactionForm
+from .models import Batch
 
 def index(request):
     template = loader.get_template('core/index.html')
@@ -16,6 +17,7 @@ def index(request):
             # ...
             # redirect to a new URL:
             form.save()
+            #batch.add_stock(amount)
             return HttpResponseRedirect('/')
 
     # if a GET (or any other method) we'll create a blank form

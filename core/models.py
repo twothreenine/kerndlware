@@ -5,36 +5,39 @@ from .fields import PercentField
 
 class Role(models.Model):
     name = models.CharField(max_length=50)
-    description = models.TextField()
-    comment = models.TextField() # test
+    description = models.TextField(blank=True)
+    comment = models.TextField(blank=True)
 
 class User(models.Model):
-    active = models.BooleanField()
-    comment = models.TextField()
-    accounts = models.ManyToManyField('Account')
+    name = models.CharField(max_length=50)
+    active = models.BooleanField(default=True)
+    comment = models.TextField(blank=True)
+    accounts = models.ManyToManyField('Account', blank=True)
+
+    def __str__(self):
+        return "{} - {}".format(str(self.id), self.name)
 
 class Person(User):
     last_name = models.CharField(max_length=50)
     first_name = models.CharField(max_length=50)
-    streetname = models.CharField(max_length=100)
-    streetnumber = models.SmallIntegerField()
-    zipcode = models.IntegerField()
-    town = models.CharField(max_length=100)
-    address_notice = models.TextField()
-    email = models.EmailField(max_length=254)
-    website = models.TextField()
-    telephone = models.BigIntegerField()
+    streetname = models.CharField(max_length=100, blank=True)
+    streetnumber = models.SmallIntegerField(blank=True, null=True)
+    zipcode = models.IntegerField(blank=True, null=True)
+    town = models.CharField(max_length=100, blank=True)
+    address_notice = models.TextField(blank=True)
+    email = models.EmailField(max_length=254, blank=True)
+    website = models.TextField(blank=True)
+    telephone = models.BigIntegerField(blank=True, null=True)
     
 class VirtualUser(User):
-    name = models.CharField(max_length=50)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
 class Account(models.Model):
     name = models.CharField(max_length=50, default="")
     users = models.ManyToManyField('User', blank=True)
     deposit = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
     credit = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
-    taken = models.FloatField()
+    taken = models.FloatField(default=0)
 
     def add_credit(self, amount):
         self.credit += Money(amount, EUR)
@@ -53,176 +56,185 @@ class AccPayPhases(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     rate = models.FloatField(default=1)
-    comment = models.TextField()
+    comment = models.TextField(blank=True)
 
 class Engagement(models.Model):
     person = models.ForeignKey('Person')
     role = models.ForeignKey('Role')
-    comment = models.TextField()
+    comment = models.TextField(blank=True)
 
 class StorageCondition(models.Model):
     name = models.CharField(max_length=30)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
 class StorageLocation(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
-    streetname = models.CharField(max_length=100)
-    streetnumber = models.SmallIntegerField()
-    zipcode = models.IntegerField()
-    town = models.CharField(max_length=100)
-    address_notice = models.TextField()
+    description = models.TextField(blank=True)
+    streetname = models.CharField(max_length=100, blank=True)
+    streetnumber = models.SmallIntegerField(blank=True, null=True)
+    zipcode = models.IntegerField(blank=True, null=True)
+    town = models.CharField(max_length=100, blank=True)
+    address_notice = models.TextField(blank=True)
 
 class StorageSpace(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     location = models.ForeignKey('StorageLocation')
-    active_winter = models.BooleanField()
-    active_summer = models.BooleanField()
-    temperature_winter_min = models.FloatField()
-    temperature_winter_max = models.FloatField()
-    temperature_summer_min = models.FloatField()
-    temperature_summer_max = models.FloatField()
-    humidity_winter_min = PercentField()
-    humidity_winter_max = PercentField()
-    humidity_summer_min = PercentField()
-    humidity_summer_max = PercentField()
-    brightness_winter = PercentField()
-    brightness_summer = PercentField()
-    reachability_winter = PercentField()
-    reachability_summer = PercentField()
-    smelliness_winter = PercentField()
-    smelliness_summer = PercentField()
-    ventilation_winter = PercentField()
-    ventilation_summer = PercentField()
-    rodentfree = models.NullBooleanField() # safe from mice without further packaging
-    mothfree = models.NullBooleanField() # safe from moths without further packaging
-    conditions = models.ManyToManyField('StorageCondition') # list of storage conditions this position complies
-    height_level = models.FloatField() # height above room floor
-    width = models.FloatField() # width of the pace in cm
-    depth = models.FloatField() # width of the pace in cm
-    height = models.FloatField() # height of the space from height_level on in cm
-    loadability = models.FloatField() # in kg
+    active_winter = models.BooleanField(default=True)
+    active_summer = models.BooleanField(default=True)
+    temperature_winter_min = models.FloatField(blank=True, null=True)
+    temperature_winter_max = models.FloatField(blank=True, null=True)
+    temperature_summer_min = models.FloatField(blank=True, null=True)
+    temperature_summer_max = models.FloatField(blank=True, null=True)
+    humidity_winter_min = PercentField(blank=True, null=True)
+    humidity_winter_max = PercentField(blank=True, null=True)
+    humidity_summer_min = PercentField(blank=True, null=True)
+    humidity_summer_max = PercentField(blank=True, null=True)
+    brightness_winter = PercentField(blank=True, null=True)
+    brightness_summer = PercentField(blank=True, null=True)
+    reachability_winter = PercentField(blank=True, null=True)
+    reachability_summer = PercentField(blank=True, null=True)
+    smelliness_winter = PercentField(blank=True, null=True)
+    smelliness_summer = PercentField(blank=True, null=True)
+    ventilation_winter = PercentField(blank=True, null=True)
+    ventilation_summer = PercentField(blank=True, null=True)
+    rodentfree = models.NullBooleanField(blank=True) # safe from mice without further packaging
+    mothfree = models.NullBooleanField(blank=True) # safe from moths without further packaging
+    conditions = models.ManyToManyField('StorageCondition', blank=True, null=True) # list of storage conditions this position complies
+    height_level = models.FloatField(blank=True, null=True) # height above room floor
+    width = models.FloatField(blank=True, null=True) # width of the pace in cm
+    depth = models.FloatField(blank=True, null=True) # width of the pace in cm
+    height = models.FloatField(blank=True, null=True) # height of the space from height_level on in cm
+    loadability = models.FloatField(blank=True, null=True) # in kg
 
 class Material(models.Model):
 # predefines materials for storage containers and packaging materials
 # paper, foodsave plastic, non-foodsave plastic, unknown plastic, wood, stainless steel, aluminium, zellophane, white glass, green glass, brown glass, other glass
 # übersetzen: Stoff, Pappe, Weißblech
     name = models.CharField(max_length=100)
-    description = models.TextField()
-    comment = models.TextField()
-    foodsave = PercentField()
-    cleanness = PercentField()
-    smelliness = PercentField()
-    reachability = PercentField() # how easy it is to open and to close
-    resistance_smell = PercentField()
-    resistance_light = PercentField()
-    resistance_humidity = PercentField()
-    capability_oil = PercentField() # how well it is suitable for oily goods like oily seeds (min 60%) or oil itself
-    ventilation = PercentField()
-    rodentfree = models.NullBooleanField() # whether it keeps the product safe from mice without further packaging
-    mothfree = models.NullBooleanField() # whether it keeps the product safe from moths without further packaging
+    description = models.TextField(blank=True)
+    comment = models.TextField(blank=True)
+    foodsave = PercentField(blank=True, null=True)
+    cleanness = PercentField(blank=True, null=True)
+    smelliness = PercentField(blank=True, null=True)
+    reachability = PercentField(blank=True, null=True) # how easy it is to open and to close
+    resistance_smell = PercentField(blank=True, null=True)
+    resistance_light = PercentField(blank=True, null=True)
+    resistance_humidity = PercentField(blank=True, null=True)
+    capability_oil = PercentField(blank=True, null=True) # how well it is suitable for oily goods like oily seeds (min 60%) or oil itself
+    ventilation = PercentField(blank=True, null=True)
+    rodentfree = models.NullBooleanField(blank=True) # whether it keeps the product safe from mice without further packaging
+    mothfree = models.NullBooleanField(blank=True) # whether it keeps the product safe from moths without further packaging
 
 class Supplier(models.Model):
     name = models.CharField(max_length=100)
-    full_names = models.TextField()
-    is_wholesale = models.BooleanField()
-    is_retailer = models.BooleanField()
-    is_processor = models.BooleanField()
-    is_grower = models.BooleanField()
-    is_devicer = models.BooleanField() # besser übersetzen, sb who offers devices
-    is_containerer = models.BooleanField() # besser übersetzen, sb who offers containers
-    is_packager = models.BooleanField() # besser übersetzen, sb who offers packaging material
-    contact_person = models.ForeignKey('Person')
-    min_order_value = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    min_order_weight = models.DecimalField(max_digits=7, decimal_places=2)
-    max_order_weight = models.DecimalField(max_digits=7, decimal_places=2) # maximum order weight per order in kg
-    basic_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    delivery_cost_gen = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    delivery_cost_per_unit = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    unit_for_delivery_cost = models.FloatField() # in kg
-    min_interval = models.FloatField() # minimum interval between orders from this supplier in months
-    description = models.TextField()
-    streetname = models.CharField(max_length=100)
-    streetnumber = models.SmallIntegerField()
-    zipcode = models.IntegerField()
-    town = models.CharField(max_length=100)
-    address_notice = models.TextField()
-    distance = models.FloatField() # the length of the delivery route (one-way) to the food coop storage place
-    email = models.EmailField(max_length=254)
-    website = models.TextField()
-    telephone = models.BigIntegerField()
-    structure = models.TextField() # the corporate structure, e.g. family-run
-    focus = models.TextField() # the business focus, e.g. a specific group of products
-    processing = models.TextField() # what the supplier can process with own machines
-    distribution = models.TextField() # how the supplier usually distributes his products
-    animals = models.TextField() # information about animal farming by the supplier or products sold by him
-    official = models.PositiveSmallIntegerField() # whether the supplier shall be uploaded in the online portal. 0 = not at all; 1 = without cost information; 2 = completely
+    full_names = models.TextField(blank=True)
+    is_wholesale = models.BooleanField(default=False)
+    is_retailer = models.BooleanField(default=False)
+    is_processor = models.BooleanField(default=False)
+    is_grower = models.BooleanField(default=False)
+    is_device_provider = models.BooleanField(default=False)
+    is_container_provider = models.BooleanField(default=False)
+    is_packaging_provider = models.BooleanField(default=False)
+    contact_person = models.ForeignKey('Person', blank=True, null=True)
+    min_order_value = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
+    min_order_weight = models.FloatField(blank=True, null=True)
+    max_order_weight = models.FloatField(blank=True, null=True) # maximum order weight per order in kg
+    basic_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
+    delivery_cost_gen = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
+    delivery_cost_per_unit = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
+    unit_for_delivery_cost = models.FloatField(null=True, blank=True) # in kg
+    min_interval = models.FloatField(null=True, blank=True) # minimum interval between orders from this supplier in months
+    description = models.TextField(blank=True)
+    streetname = models.CharField(max_length=100, blank=True)
+    streetnumber = models.SmallIntegerField(null=True, blank=True)
+    zipcode = models.IntegerField(null=True, blank=True)
+    town = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    address_notice = models.TextField(blank=True)
+    broad_location = models.TextField(blank=True) # describes the location roughly, e.g. 
+    distance = models.FloatField(null=True, blank=True) # the length of the delivery route (one-way) to the food coop storage place
+    email = models.EmailField(max_length=254, blank=True)
+    website = models.TextField(blank=True)
+    telephone = models.BigIntegerField(null=True, blank=True)
+    structure = models.TextField(blank=True) # the corporate structure, e.g. family-run
+    focus = models.TextField(blank=True) # the business focus, e.g. a specific group of products
+    processing = models.TextField(blank=True) # what the supplier can process with own machines
+    distribution = models.TextField(blank=True) # how the supplier usually distributes his products
+    animals = models.TextField(blank=True) # information about animal farming by the supplier or products sold by him
+    official = models.PositiveSmallIntegerField(null=True, blank=True) # whether the supplier shall be uploaded in the online portal. 0 = not at all; 1 = without cost information; 2 = completely
+
+    def __str__(self):
+        return "{} in {} (area)".format(self.name, self.broad_location)
 
 class ProductCat(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
 class VAT(models.Model):
     percentage = models.DecimalField(max_digits=4, decimal_places=2)
-    description = models.CharField(max_length=30)
+    name = models.CharField(max_length=50, blank=True)
 
 class ProductAvail(models.Model):
 # Levels of availability, from none to surplus, in the storage and in general. Shows to all users vaguely in which amounts they can take the products from the storage.
 # If a product has an almost empty stock but is easy to re-order, don't change ffthe availability to "scarce". Only do this if, for example, the suppliers don't have it until the next harvest, 
 # or it is so hard to deliver that you want to reduce the amount in that it is taken, e.g. make it exclusive for core participants.
     name = models.CharField(max_length=30)
-    description = models.TextField()
-    color = models.CharField(max_length=6)
+    description = models.TextField(blank=True)
+    color = models.CharField(max_length=6, blank=True)
 
 class QualityFunction(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    description = models.TextField(blank=True)
     feature = models.CharField(max_length=100) # enter the name(s) of the feature(s) for which this function is meant to be used
-    a = models.FloatField()
-    b = models.FloatField()
-    c = models.FloatField()
+    a = models.FloatField(default=0)
+    b = models.FloatField(default=0)
+    c = models.FloatField(default=0)
 
 class QualityFeature(models.Model): # TODO: options for automatically calculating conditions to be implemented
     name = models.CharField(max_length=100)
-    description = models.TextField()
-    conditions_0 = models.TextField()
-    conditions_100 = models.TextField()
-    comment = models.TextField()
-    importance = PercentField()
-    function= models.ForeignKey('QualityFunction')
+    description = models.TextField(blank=True)
+    conditions_0 = models.TextField(blank=True)
+    conditions_100 = models.TextField(blank=True)
+    comment = models.TextField(blank=True)
+    importance = PercentField(default=100)
+    function= models.ForeignKey('QualityFunction', null=True, blank=True)
 
 class SupplierRating(models.Model): # General rating of the supplier. Every offer can still be rated specifically.
     supplier = models.ForeignKey('Supplier')
     feature = models.ForeignKey('QualityFeature')
     rating = PercentField()
-    importance = PercentField()
-    reason = models.TextField()
-    comment = models.TextField()
-    official = models.PositiveSmallIntegerField() # whether the rating shall be uploaded in the online portal. 0 = not at all; 1 = without importance; 2 = completely
+    importance = PercentField(default=100)
+    reason = models.TextField(blank=True)
+    comment = models.TextField(blank=True)
+    official = models.PositiveSmallIntegerField(null=True, blank=True) # whether the rating shall be uploaded in the online portal. 0 = not at all; 1 = without importance; 2 = completely
 
 class Unit(models.Model):
     name = models.CharField(max_length=100)
-    weight = models.FloatField() # in grams
+    weight = models.FloatField(null=True, blank=True) # in grams
     continuous = models.BooleanField()
+
+    def __str__(self):
+        return "{} - {}g".format(self.name, self.weight)
 
 class Item(models.Model):
     name = models.CharField(max_length=100)
 
 class Consumable(Item):
-    description = models.TextField()
-    active = models.BooleanField()
-    orderpos = models.IntegerField()
-    unit = models.ForeignKey('Unit')
+    description = models.TextField(blank=True)
+    active = models.BooleanField(default=True)
+    orderpos = models.IntegerField(blank=True, null=True)
+    unit = models.ForeignKey('Unit', blank=True, null=True)
     presumed_price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    vat = models.ForeignKey('VAT')
-    estimated_consumption = models.FloatField() # presumed amount taken per month altogether (sum of all the participant's consumption guesses for this product)
-    average_consumption = models.FloatField() # the actual average amount taken per month altogether
-    taken = models.FloatField() # the whole amount ever taken from this product by the participants
-    stock = models.FloatField() # amount of this product in stock
-    on_order = models.FloatField() # amount of this product on order
-    planning = models.FloatField() # amount of this product in orders in planning stage
-    availability = models.ForeignKey('ProductAvail') # TODO: Make enum
+    presumed_vat = models.ForeignKey('VAT', blank=True, null=True)
+    estimated_consumption = models.FloatField(default=0) # presumed amount taken per month altogether (sum of all the participant's consumption guesses for this product)
+    average_consumption = models.FloatField(default=0) # the actual average amount taken per month altogether
+    taken = models.FloatField(default=0) # the whole amount ever taken from this product by the participants
+    stock = models.FloatField(default=0) # amount of this product in stock
+    on_order = models.FloatField(default=0) # amount of this product on order
+    planning = models.FloatField(default=0) # amount of this product in orders in planning stage
+    #availability = models.ForeignKey('ProductAvail') # TODO: Make enum
 
     def add_stock(self, amount):
         self.stock += amount
@@ -237,68 +249,68 @@ class Consumable(Item):
         self.planning += amount
 
 class Product(Consumable):
-    category = models.ForeignKey('ProductCat')
-    density = models.FloatField() # kg/l
-    storability = models.DurationField()
-    usual_taking_min = models.FloatField() # in which amounts the product is usually taken at once
-    usual_taking_max = models.FloatField() # in which amounts the product is usually taken at once
-    storage_temperature_min = models.FloatField()
-    storage_temperature_optimal = models.FloatField()
-    storage_temperature_max = models.FloatField()
-    storage_humidity_min = PercentField()
-    storage_humidity_optimal = PercentField()
-    storage_humidity_max = PercentField()
-    storage_reachability_min = PercentField()
-    storage_smelliness_max = PercentField()
-    storage_height_min = models.FloatField()
-    storage_height_optimal = models.FloatField()
-    storage_height_max = models.FloatField()
-    storage_brightness_min = PercentField()
-    storage_brightness_max = PercentField()
-    storage_ventilation_min = PercentField()
-    storage_ventilation_max = PercentField()
-    storage_mothfree_needed = models.NullBooleanField()
-    storage_micefree_needed = models.NullBooleanField()
-    sc_essential = models.CommaSeparatedIntegerField(max_length=50) # list of essential storage conditions
-    sc_favorable = models.CommaSeparatedIntegerField(max_length=50) # list of favorable storage conditions
-    sc_unfavorable = models.CommaSeparatedIntegerField(max_length=50) # list of unfavorable storage conditions
-    sc_intolerable = models.CommaSeparatedIntegerField(max_length=50) # list of intolerable storage conditions
-    lossfactor = models.FloatField() # presumed lossfactor per month in % for this product (e.g. 3 => it is presumed to lose 3% of the stock every month of storage)
-    official = models.PositiveSmallIntegerField() # whether the product shall be uploaded in the online portal. 0 = not at all; 1 = without strage conditions; 2 = completely
+    category = models.ForeignKey('ProductCat', blank=True, null=True)
+    density = models.FloatField(blank=True, null=True) # kg/l
+    storability = models.DurationField(blank=True, null=True)
+    usual_taking_min = models.FloatField(blank=True, null=True) # in which amounts the product is usually taken at once
+    usual_taking_max = models.FloatField(blank=True, null=True) # in which amounts the product is usually taken at once
+    storage_temperature_min = models.FloatField(blank=True, null=True)
+    storage_temperature_optimal = models.FloatField(blank=True, null=True)
+    storage_temperature_max = models.FloatField(blank=True, null=True)
+    storage_humidity_min = PercentField(blank=True, null=True)
+    storage_humidity_optimal = PercentField(blank=True, null=True)
+    storage_humidity_max = PercentField(blank=True, null=True)
+    storage_reachability_min = PercentField(blank=True, null=True)
+    storage_smelliness_max = PercentField(blank=True, null=True)
+    storage_height_min = models.FloatField(blank=True, null=True)
+    storage_height_optimal = models.FloatField(blank=True, null=True)
+    storage_height_max = models.FloatField(blank=True, null=True)
+    storage_brightness_min = PercentField(blank=True, null=True)
+    storage_brightness_max = PercentField(blank=True, null=True)
+    storage_ventilation_min = PercentField(blank=True, null=True)
+    storage_ventilation_max = PercentField(blank=True, null=True)
+    storage_mothfree_needed = models.NullBooleanField(blank=True)
+    storage_micefree_needed = models.NullBooleanField(blank=True)
+    sc_essential = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of essential storage conditions
+    sc_favorable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of favorable storage conditions
+    sc_unfavorable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of unfavorable storage conditions
+    sc_intolerable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of intolerable storage conditions
+    lossfactor = PercentField(default=0) # presumed lossfactor per month in % for this product (e.g. 3 => it is presumed to lose 3% of the stock every month of storage)
+    official = models.PositiveSmallIntegerField(blank=True, null=True) # whether the product shall be uploaded in the online portal. 0 = not at all; 1 = without strage conditions; 2 = completely
 
 class Durable(Item):
     pass
 
 class DeviceStatus(models.Model):
     name = models.CharField(max_length=50)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
 class DeviceCat(models.Model):
     name = models.CharField(max_length=50)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
 class Device(Durable):
     category = models.ForeignKey('DeviceCat')
     status = models.ForeignKey('DeviceStatus')
-    active = models.BooleanField()
+    active = models.BooleanField(default=True)
 
 class DeviceByInstalments(Device):
-    interval_months = models.FloatField() # months and days will be added
-    interval_days = models.FloatField() # months and days will be added
-    number_of_instalments = models.IntegerField()
-    deducted = models.FloatField() # amount that already has been deducted
+    interval_months = models.FloatField(default=1) # months and days will be added
+    interval_days = models.FloatField(default=0) # months and days will be added
+    number_of_instalments = models.IntegerField(blank=True, null=True)
+    deducted = models.FloatField(default=0) # amount that already has been deducted
 
 class Instalment(models.Model):
     account = models.ForeignKey('Account')
     device = models.ForeignKey('DeviceByInstalments')
     instalment_number = models.IntegerField()
-    rate = models.FloatField()
+    rate = models.FloatField(default=1)
     amount = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
 
 class Batch(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField(blank=True, null=True)
-    comment = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True)
+    comment = models.TextField(blank=True)
     consumable = models.ForeignKey('Consumable', blank=True, null=True)
     supplier = models.ForeignKey('Supplier', blank=True, null=True)
     owner_account = models.ForeignKey('Account')
@@ -319,12 +331,15 @@ class Batch(models.Model):
     def add_taken(self, amount):
         self.taken += amount
 
+    def __str__(self):
+        return "B{} - {} by {} from {}".format(str(self.id), self.name, self.supplier, self.purchase_date)
+
 class BatchStorage(models.Model):
     batch = models.ForeignKey('Batch')
     position = models.ForeignKey('StorageSpace')
-    is_reserve = models.BooleanField() # set True if this storage space is not meant to be used for direct taking by participants (resp. for money: direct insertion)
-    amount_approx = models.FloatField() # e.g. 25 for a bag with 24.697 kg
-    comment = models.TextField()
+    is_reserve = models.BooleanField(default=False) # set True if this storage space is not meant to be used for direct taking by participants (resp. for money: direct insertion)
+    amount_approx = models.FloatField(blank=True, null=True) # e.g. 25 for a bag with 24.697 kg
+    comment = models.TextField(blank=True)
 
 class ContainerCategory(ProductCat):
     pass
@@ -537,7 +552,10 @@ class Transaction(models.Model):
     batch = models.ForeignKey('Batch')
     amount = models.FloatField()
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
-    comment = models.TextField()
+    comment = models.TextField(blank=True)
+
+    def __str__(self):
+        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.charged_account.name, self.date, self.batch, self.amount, self.batch.unit.name, self.by_user.name)
 
 class TakingGood(Transaction): # taking of goods from credit
     pass

@@ -331,8 +331,15 @@ class Batch(models.Model):
     def add_taken(self, amount):
         self.taken += amount
 
-    def __str__(self):
+    def subtract_stock(self, amount):
+        self.stock -= amount
+
+    @property
+    def text(self):
         return "B{} - {} by {} from {}".format(str(self.id), self.name, self.supplier, self.purchase_date)
+
+    def __str__(self):
+        return self.text
 
 class BatchStorage(models.Model):
     batch = models.ForeignKey('Batch')

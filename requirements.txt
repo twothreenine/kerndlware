@@ -1,3 +1,4 @@
 django==1.10.1
-django-money==0.9.1
 django-extras==0.3
+django-money==0.9.1
+djangorestframework==3.5.1

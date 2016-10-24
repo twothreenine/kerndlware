@@ -3,6 +3,10 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import TransactionForm
 from .models import Batch
+from .serializers import BatchSerializer
+from rest_framework import viewsets
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 def index(request):
     template = loader.get_template('core/index.html')
@@ -13,11 +17,10 @@ def index(request):
         form = TransactionForm(request.POST)
         # check whether it's valid:
         if form.is_valid():
-            # process the data in form.cleaned_data as required
-            # ...
-            # redirect to a new URL:
-            form.save()
-            #batch.add_stock(amount)
+            transaction = form.save()
+            batch = Batch.objects.get(pk=transaction.batch.id) # type(transaction.batch) == Batch
+            batch.subtract_stock(transaction.amount)
+            batch.save()
             return HttpResponseRedirect('/')
 
     # if a GET (or any other method) we'll create a blank form
@@ -26,3 +29,21 @@ def index(request):
         
     context = {"form" : form}
     return HttpResponse(template.render(context, request))
+
+@api_view(['GET', 'POST'])
+def batches(request):
+    if request.method == 'GET':
+        request_id=request.GET.get('id', 1)
+        batch = Batch.objects.get(pk=int(request_id))
+        serializer = BatchSerializer(batch, many=False)
+        return Response(serializer.data)
+    #elif request.method == 'POST':
+    #    serializer = SnippetSerializer(data=request.data)
+    #    if serializer.is_valid():
+    #        serializer.save()
+    #        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class BatchViewSet(viewsets.ModelViewSet):
+    queryset = Batch.objects.all()
+    serializer_class = BatchSerializer

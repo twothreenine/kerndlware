@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import TransactionForm
-from .models import Batch
+from .models import Batch, Transaction
 from .serializers import BatchSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
@@ -18,9 +18,7 @@ def index(request):
         # check whether it's valid:
         if form.is_valid():
             transaction = form.save()
-            batch = Batch.objects.get(pk=transaction.batch.id) # type(transaction.batch) == Batch
-            batch.subtract_stock(transaction.amount)
-            batch.save()
+            transaction.apply()
             return HttpResponseRedirect('/')
 
     # if a GET (or any other method) we'll create a blank form

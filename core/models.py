@@ -1,6 +1,6 @@
 from django.db import models
-from djmoney.models.fields import MoneyField
-from moneyed import Money, EUR
+#from djmoney.models.fields import MoneyField
+#from moneyed import Money, EUR
 from .fields import PercentField
 
 class Role(models.Model):
@@ -35,15 +35,21 @@ class VirtualUser(User):
 class Account(models.Model):
     name = models.CharField(max_length=50, default="")
     users = models.ManyToManyField('User', blank=True)
-    deposit = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
-    credit = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
+    deposit = models.FloatField(default=0) #MoneyField; 
+    credit = models.FloatField(default=0) #MoneyField; 
     taken = models.FloatField(default=0)
 
     def add_credit(self, amount):
-        self.credit += Money(amount, EUR)
+        self.credit += amount
+
+    def subtract_credit(self, amount):
+        self.credit -= amount
 
     def add_deposit(self, amount):
-        self.deposit += Money(amount, EUR)
+        self.deposit += amount
+
+    def subtract_deposit(self, amount):
+        self.deposit -= amount
 
     def add_taken(self, amount):
         self.taken += amount
@@ -137,12 +143,12 @@ class Supplier(models.Model):
     is_container_provider = models.BooleanField(default=False)
     is_packaging_provider = models.BooleanField(default=False)
     contact_person = models.ForeignKey('Person', blank=True, null=True)
-    min_order_value = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
+    min_order_value = models.FloatField(null=True, blank=True) #MoneyField; 
     min_order_weight = models.FloatField(blank=True, null=True)
     max_order_weight = models.FloatField(blank=True, null=True) # maximum order weight per order in kg
-    basic_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
-    delivery_cost_gen = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
-    delivery_cost_per_unit = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR', null=True, blank=True)
+    basic_cost = models.FloatField(null=True, blank=True) #MoneyField; 
+    delivery_cost_gen = models.FloatField(null=True, blank=True) #MoneyField; 
+    delivery_cost_per_unit = models.FloatField(null=True, blank=True) #MoneyField; 
     unit_for_delivery_cost = models.FloatField(null=True, blank=True) # in kg
     min_interval = models.FloatField(null=True, blank=True) # minimum interval between orders from this supplier in months
     description = models.TextField(blank=True)
@@ -216,7 +222,7 @@ class Unit(models.Model):
     continuous = models.BooleanField()
 
     def __str__(self):
-        return "{} - {}g".format(self.name, self.weight)
+        return self.name
 
 class Item(models.Model):
     name = models.CharField(max_length=100)
@@ -226,7 +232,7 @@ class Consumable(Item):
     active = models.BooleanField(default=True)
     orderpos = models.IntegerField(blank=True, null=True)
     unit = models.ForeignKey('Unit', blank=True, null=True)
-    presumed_price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
+    presumed_price = models.FloatField(null=True, blank=True) #MoneyField; 
     presumed_vat = models.ForeignKey('VAT', blank=True, null=True)
     estimated_consumption = models.FloatField(default=0) # presumed amount taken per month altogether (sum of all the participant's consumption guesses for this product)
     average_consumption = models.FloatField(default=0) # the actual average amount taken per month altogether
@@ -305,7 +311,7 @@ class Instalment(models.Model):
     device = models.ForeignKey('DeviceByInstalments')
     instalment_number = models.IntegerField()
     rate = models.FloatField(default=1)
-    amount = MoneyField(max_digits=10, decimal_places=4, default_currency='EUR')
+    amount = models.FloatField(default=0) #MoneyField; 
 
 class Batch(models.Model):
     name = models.CharField(max_length=100)
@@ -315,7 +321,7 @@ class Batch(models.Model):
     supplier = models.ForeignKey('Supplier', blank=True, null=True)
     owner_account = models.ForeignKey('Account')
     unit = models.ForeignKey('Unit', blank=True, null=True)
-    price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
+    price = models.FloatField(null=True, blank=True) #MoneyField; 
     production_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
     purchase_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
     date_of_expiry = models.DateField(blank=True, null=True) # durability date; resp. for devices: end of service life, e.g. end of warranty
@@ -509,9 +515,9 @@ class Offer(models.Model):
     quantity = models.IntegerField() # how many parcels have to be taken at once
     favorite = models.BooleanField()
     official = models.PositiveSmallIntegerField() # whether the offer shall be uploaded in the online portal. 0 = not at all; 1 = without price information; 2 = completely
-    basic_price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    total_price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    discount = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
+    basic_price = models.FloatField(null=True, blank=True) #MoneyField; 
+    total_price = models.FloatField(null=True, blank=True) #MoneyField; 
+    discount = models.FloatField(null=True, blank=True) #MoneyField; 
     available = models.BooleanField()
     available_from = models.DateField()
     available_until = models.DateField()
@@ -538,14 +544,14 @@ class Insertion(models.Model):
     by_user_comment = models.TextField()
     payer_account = models.ForeignKey('Account', related_name="payer_account")
     supplier = models.ForeignKey('Supplier')
-    total_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    total_price = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    discount = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    basic_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    delivery_cost = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
+    total_cost = models.FloatField(null=True, blank=True) #MoneyField; 
+    total_price = models.FloatField(null=True, blank=True) #MoneyField; 
+    discount = models.FloatField(null=True, blank=True) #MoneyField; 
+    basic_cost = models.FloatField(null=True, blank=True) #MoneyField; 
+    delivery_cost = models.FloatField(null=True, blank=True) #MoneyField; 
     deliverer_account = models.ForeignKey('Account', related_name="deliverer_account") # who paid for the delivery or transport. If the delivery cost has to be paid to the supplier, this has to be null.
-    sum_of_lot_prices = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
-    balance = MoneyField(max_digits=8, decimal_places=3, default_currency='EUR')
+    sum_of_lot_prices = models.FloatField(null=True, blank=True) #MoneyField; 
+    balance = models.FloatField(null=True, blank=True) #MoneyField; 
     compensation_account = models.ForeignKey('Account') # who pays or gets the balance
     status = models.ForeignKey('TransactionStatus')
     date_creation = models.DateField(auto_now_add=True)
@@ -558,11 +564,24 @@ class Transaction(models.Model):
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
     batch = models.ForeignKey('Batch')
     amount = models.FloatField()
+    value = models.FloatField(default=0)
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
     comment = models.TextField(blank=True)
 
     def __str__(self):
-        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.charged_account.name, self.date, self.batch, self.amount, self.batch.unit.name, self.by_user.name)
+        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.charged_account.name, self.date, self.batch, self.amount, self.batch.unit, self.by_user.name)
+
+    def apply(self):
+        self.value = amount
+        batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+        batch.subtract_stock(self.amount)
+        batch.add_taken(self.amount)
+        batch.save()
+        account = Account.objects.get(pk=self.charged_account.id)
+        account.subtract_credit(self.value)
+        account.add_taken(self.amount)
+        account.save()
+        self.save()
 
 class TakingGood(Transaction): # taking of goods from credit
     pass

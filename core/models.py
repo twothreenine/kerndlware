@@ -571,12 +571,12 @@ class Transaction(models.Model):
     def __str__(self):
         return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.charged_account.name, self.date, self.batch, self.amount, self.batch.unit, self.by_user.name)
 
-    def apply(self):
-        self.value = amount
+    def perform(self):
         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
         batch.subtract_stock(self.amount)
         batch.add_taken(self.amount)
         batch.save()
+        self.value = self.amount * batch.price
         account = Account.objects.get(pk=self.charged_account.id)
         account.subtract_credit(self.value)
         account.add_taken(self.amount)

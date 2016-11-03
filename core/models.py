@@ -3,6 +3,13 @@ from django.db import models
 #from moneyed import Money, EUR
 from .fields import PercentField
 
+class Currency(models.Model):
+    name = models.CharField(max_length=10)
+    conversion_rate = models.FloatField(default=1) # into anchor currency
+    full_name = models.CharField(max_length=50, blank=True)
+    description = models.TextField(blank=True)
+    comment = models.TextField(blank=True)
+
 class Role(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
@@ -36,14 +43,14 @@ class Account(models.Model):
     name = models.CharField(max_length=50, default="")
     users = models.ManyToManyField('User', blank=True)
     deposit = models.FloatField(default=0) #MoneyField; 
-    credit = models.FloatField(default=0) #MoneyField; 
+    balance = models.FloatField(default=0) #MoneyField; 
     taken = models.FloatField(default=0)
 
-    def add_credit(self, amount):
-        self.credit += amount
+    def add_balance(self, amount):
+        self.balance += amount
 
-    def subtract_credit(self, amount):
-        self.credit -= amount
+    def subtract_balance(self, amount):
+        self.balance -= amount
 
     def add_deposit(self, amount):
         self.deposit += amount
@@ -68,6 +75,31 @@ class Engagement(models.Model):
     person = models.ForeignKey('Person')
     role = models.ForeignKey('Role')
     comment = models.TextField(blank=True)
+
+class MoneyBox(models.Model):
+    name = models.CharField(max_length=50)
+    stock_value = models.FloatField(default=0)
+    #inpayment_fee = models.FloatField(default=0)
+    #inpayment_percentage_fee = models.FloatField(default=0)
+    #payout_fee = models.FloatField(default=0)
+    #payout_percentage_fee = models.FloatField(default=0)
+
+    # TODO: Methode zum Berechnen des stock_value
+
+class MoneyBoxStock(models.Model):
+    moneybox = models.ForeignKey('MoneyBox')
+    currency = models.ForeignKey('Currency')
+    stock = models.FloatField()
+
+    def inpayment(self, amount):
+        self.stock_value += amount
+
+    def payout(self, amount):
+        self.stock_value -= amount
+
+    def transfer(self, amount, recipient):
+        self.payout(amount)
+        recipient.inpayment(amount)
 
 class StorageCondition(models.Model):
     name = models.CharField(max_length=30)
@@ -551,8 +583,8 @@ class Insertion(models.Model):
     delivery_cost = models.FloatField(null=True, blank=True) #MoneyField; 
     deliverer_account = models.ForeignKey('Account', related_name="deliverer_account") # who paid for the delivery or transport. If the delivery cost has to be paid to the supplier, this has to be null.
     sum_of_lot_prices = models.FloatField(null=True, blank=True) #MoneyField; 
-    balance = models.FloatField(null=True, blank=True) #MoneyField; 
-    compensation_account = models.ForeignKey('Account') # who pays or gets the balance
+    difference = models.FloatField(null=True, blank=True) #MoneyField; 
+    compensation_account = models.ForeignKey('Account') # who pays or gets the difference
     status = models.ForeignKey('TransactionStatus')
     date_creation = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now=True)
@@ -562,7 +594,7 @@ class Transaction(models.Model):
     by_user = models.ForeignKey('User') # Person who types in the transaction
     date = models.DateField()
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
-    batch = models.ForeignKey('Batch')
+    batch = models.ForeignKey('Batch') # TODO: verschieben in Unterklasse Taking
     amount = models.FloatField()
     value = models.FloatField(default=0)
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
@@ -578,34 +610,119 @@ class Transaction(models.Model):
         batch.save()
         self.value = self.amount * batch.price
         account = Account.objects.get(pk=self.charged_account.id)
-        account.subtract_credit(self.value)
+        account.subtract_balance(self.value)
         account.add_taken(self.amount)
         account.save()
         self.save()
 
-class TakingGood(Transaction): # taking of goods from credit
+class Taking(Transaction): # taking of goods from balance
     pass
+    # Batch aus bisheriger Transaction-Hauptklasse
 
-class TrCredit_in_Money(Transaction): # insertion of money to credit
-    pass
+class Restitution(Transaction): # return goods to the storage
+    #batch = models.ForeignKey('Batch')
+    original_taking = models.ForeignKey('Taking')
+    approved_by = models.ForeignKey('User', blank=True, null=True)
+    approval_comment = models.TextField()
 
-class TrCredit_in_Good(Transaction): # insertion of goods to credit
-    insertion = models.ForeignKey('Insertion')
+    def perform(self):
+        batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+        batch.add_stock(self.amount)
+        batch.subtract_taken(self.amount)
+        batch.save()
+        self.value = self.amount * batch.price
+        account = Account.objects.get(pk=self.charged_account.id)
+        account.add_balance(self.value)
+        account.subtract_taken(self.amount)
+        account.save()
+        self.save()
 
-class TrCredit_out_Money(Transaction): # taking of money from credit
-    pass
+class Inpayment(Transaction): # insertion of money to balance
+    currency = models.ForeignKey('Currency')
+    moneybox = models.ForeignKey('MoneyBox')
+    confirmed_by = models.ForeignKey('User', blank=True, null=True)
+    confirmation_comment = models.TextField()
 
-class TrDeposit_in(Transaction): # insertion of money or goods to deposit
-    pass
+    def perform(self):
+        currency = Currency.objects.get(pk=self.currency.id)
+        self.value = self.amount * currency.concersion_rate
+        moneybox = MoneyBox.objects.get(pk=self.moneybox.id)
+        moneyboxstock = MoneyBoxStock.objects.get(moneybox=moneybox, currency=currency) # foreign key?
+        moneyboxstock.inpayment(self.amount)
+        moneyboxstock.save()
+        account = Account.objects.get(pk=self.charged_account.id)
+        account.add_balance(self.value)
+        account.save()
+        self.save()
 
-class TrDeposit_out(Transaction): # taking of money or goods from deposit
-    pass
+class Depositation(Transaction): # insertion of money to deposit
+    currency = models.ForeignKey('Currency')
+    moneybox = models.ForeignKey('MoneyBox')
+    confirmed_by = models.ForeignKey('User', blank=True, null=True)
+    confirmation_comment = models.TextField()
 
-class TrCommon(Transaction):
-    excepted_accounts = models.ManyToManyField('Account')
+    # perform
 
-class TrDistribution(Transaction):
-    excepted_accounts = models.ManyToManyField('Account')
-    
-class TrTransfer(Transaction):
+class PayOutBalance(Transaction):
+    currency = models.ForeignKey('Currency')
+    moneybox = models.ForeignKey('MoneyBox')
+
+    # perform
+
+class PayOutDeposit(Transaction):
+    currency = models.ForeignKey('Currency')
+    moneybox = models.ForeignKey('MoneyBox')
+
+    # perform
+
+#class TrBalance_in_Good(Transaction): # insertion of goods to balance
+#    insertion = models.ForeignKey('Insertion')
+
+#class TrBalance_out_Money(Transaction): # taking of money from balance
+#    pass
+
+#class TrDeposit_in(Transaction): # insertion of money or goods to deposit
+#    pass
+
+#class TrDeposit_out(Transaction): # taking of money or goods from deposit
+#    pass
+
+class Transfer(Transaction): # IDEE: Im Frontend Feld Value, das durch Eingaben in Felder Amount und entweder Currency oder Batch berechnet wird
     recipient_account = models.ForeignKey('Account')
+
+    def perform(self):
+        sender_account = Account.objects.get(pk=self.charged_account.id)
+        sender_account.subtract_balance(self.value)
+        sender_account.save()
+        recipient_account = Account.objects.get(pk=self.recipient_account.id)
+        recipient_account.add_balance(self.value)
+        recipient_account.save()
+        self.save()
+
+class CostSharing(Transaction):
+    excepted_accounts = models.ManyToManyField('Account')
+    approved_by = models.ForeignKey('User', blank=True, null=True)
+    approval_comment = models.TextField()
+
+    # TODO: perform
+
+class ProceedsSharing(Transaction):
+    excepted_accounts = models.ManyToManyField('Account')
+    approved_by = models.ForeignKey('User', blank=True, null=True)
+    approval_comment = models.TextField()
+
+    # TODO: perform
+
+class Donation(Transaction):
+    excepted_accounts = models.ManyToManyField('Account')
+    approved_by = models.ForeignKey('User', blank=True, null=True)
+    approval_comment = models.TextField()
+
+    # TODO: perform
+
+class Recovery(Transaction): # donation backwards
+    excepted_accounts = models.ManyToManyField('Account')
+    approved_by = models.ForeignKey('User', blank=True, null=True)
+    approval_comment = models.TextField()
+
+    # TODO: perform

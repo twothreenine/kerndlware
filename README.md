@@ -12,3 +12,4 @@ You can support us by:
 
 The code is in English, yet we speak German and can use German comments as well.
 German translation will be included in the first final version, as we plan to use the program in our own foodcoop.
+More translations could be contributed by users from around the world, as soon as the program is ready to use.

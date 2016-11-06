@@ -1,4 +1,4 @@
-The project is about creating an accounting software for storage-based non-profit foodcoops.
+The project is about creating an accounting software for stock-based non-profit foodcoops.
 
 It is web based and written in Python/Django.
 An internet connection will not be required to run the programm, but we imagine to add some online features.

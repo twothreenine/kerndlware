@@ -368,7 +368,7 @@ class Batch(models.Model):
     stock = models.FloatField(default=0) # the exact amount in stock (desired value according to transitions)
     monthly_consumption = models.FloatField(default=0) # per month
     monthly_consumption_calcdate = models.DateField(blank=True, null=True) # date when monthly consumption was last calculated
-    consumption_evaluation = models.TextField() # enum ?
+    consumption_evaluation = models.TextField(blank=True) # enum ?
     taken = models.FloatField(default=0)
     parcel_approx = models.FloatField(default=0)
     special_density = models.FloatField(default=0)

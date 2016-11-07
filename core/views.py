@@ -18,7 +18,7 @@ def index(request):
         # check whether it's valid:
         if form.is_valid():
             transaction = form.save()
-            transaction.apply()
+            transaction.perform()
             return HttpResponseRedirect('/')
 
     # if a GET (or any other method) we'll create a blank form

@@ -43,17 +43,17 @@ class Account(models.Model):
     name = models.CharField(max_length=50, default="")
     users = models.ManyToManyField('User', blank=True)
     deposit = models.FloatField(default=0) #MoneyField; 
-    credit = models.FloatField(default=0) #MoneyField; 
+    balance = models.FloatField(default=0) #MoneyField; 
     taken = models.FloatField(default=0)
 
     def __str__(self):
         return "{} - {}".format(str(self.id), self.name)
 
-    def add_credit(self, amount):
-        self.credit += amount
+    def add_balance(self, amount):
+        self.balance += amount
 
-    def subtract_credit(self, amount):
-        self.credit -= amount
+    def subtract_balance(self, amount):
+        self.balance -= amount
 
     def add_deposit(self, amount):
         self.deposit += amount
@@ -67,9 +67,14 @@ class Account(models.Model):
     def subtract_taken(self, amount):
         self.taken -= amount
 
-    def recalc_credit(self):
-    	# to be implemented
-    	pass
+    def recalc_balance(self):
+        self.balance = 0
+        positive = Inpayment.objects.filter(charged_account=self).aggregate(sum('value')) + Restitution.objects.filter(charged_account=self).aggregate(sum('value')) + CostSharing.objects.filter(charged_account=self).aggregate(sum('value')) + Recovery.objects.filter(charged_account=self).aggregate(sum('value')) + Transfer.objects.filter(recipient_account=self).aggregate(sum('value'))
+        negative = Taking.objects.filter(charged_account=self).aggregate(sum('value')) + ProceedsSharing.objects.filter(charged_account=self).aggregate(sum('value')) + Donation.objects.filter(charged_account=self).aggregate(sum('value')) + Transfer.objects.filter(charged_account=self).aggregate(sum('value')) + PayOutBalance.objects.filter(charged_account=self).aggregate(sum('value'))
+        # missing: Shared costs, proceeds, donations, and recoveries where self is involved as a recipient
+        self.add_balance(positive)
+        self.subtract_balance(negative)
+        self.save()
 
 class AccPayPhases(models.Model):
     account = models.ForeignKey('Account')
@@ -393,48 +398,48 @@ class Batch(models.Model):
         return self.text
 
     def calc_monthly_consumption(self):
-    	# not tried out yet
-    	if self.taken > 0:
-    		start_date = Taking.objects.filter(batch=self).aggregate(Min('date'))
-    		end_date = Taking.objects.filter(batch=self).aggregate(Max('date'))
-    		days = (end_date - start_date)
-    		months = days.days / 30.4375
-    		self.monthly_consumption = self.taken / months
-    		self.monthly_consumption_calcdate = date.today()
-    		self.save()
-    	else:
-    		self.monthly_consumption = 0
-    		self.save()
+        # not tried out yet
+        if self.taken > 0:
+            start_date = Taking.objects.filter(batch=self).aggregate(Min('date'))
+            end_date = Taking.objects.filter(batch=self).aggregate(Max('date'))
+            days = (end_date - start_date)
+            months = days.days / 30.4375
+            self.monthly_consumption = self.taken / months
+            self.monthly_consumption_calcdate = date.today()
+            self.save()
+        else:
+            self.monthly_consumption = 0
+            self.save()
     
     def calc_exhaustion_date(self):
-    	# not tried out yet
-    	if self.stock <= 0 or (self.stock < self.consumable.usual_taking_min and self.consumable.usual_taking_min > 0):
-    		self.exhaustion_date = 0
-    		self.save()
-    	elif self.monthly_consumption > 0:
-    		self.exhaustion_date = date.today() + self.stock / self.monthly_consumption * 30.4375
-    		self.save()
-    	else:
-    		self.exhaustion_date = null
-    		self.save()
+        # not tried out yet
+        if self.stock <= 0 or (self.stock < self.consumable.usual_taking_min and self.consumable.usual_taking_min > 0):
+            self.exhaustion_date = 0
+            self.save()
+        elif self.monthly_consumption > 0:
+            self.exhaustion_date = date.today() + self.stock / self.monthly_consumption * 30.4375
+            self.save()
+        else:
+            self.exhaustion_date = null
+            self.save()
 
     def evaluate_consumption(self):
-    	# not tried out yet
-    	if self.stock <= 0 or (self.stock < self.consumable.usual_taking_min and self.consumable.usual_taking_min > 0):
-    		self.consumption_evaluation = "empty or almost empty"
-    		self.save()
-    	elif self.exhaustion_date <= self.date_of_expiry:
-    		self.consumption_evaluation = "fine"
-    		self.save()
-    	elif self.date_of_expiry <= date.today():
-    		self.consumption_evaluation = "already expired"
-    		self.save()
-    	elif self.exhaustion_date > self.date_of_expiry:
-    		self.consumption_evaluation = "will exceed date of expiry"
-    		self.save()
-    	else:
-    		self.consumption_evaluation = "evaluation failed"
-    		self.save()
+        # not tried out yet
+        if self.stock <= 0 or (self.stock < self.consumable.usual_taking_min and self.consumable.usual_taking_min > 0):
+            self.consumption_evaluation = "empty or almost empty"
+            self.save()
+        elif self.exhaustion_date <= self.date_of_expiry:
+            self.consumption_evaluation = "fine"
+            self.save()
+        elif self.date_of_expiry <= date.today():
+            self.consumption_evaluation = "already expired"
+            self.save()
+        elif self.exhaustion_date > self.date_of_expiry:
+            self.consumption_evaluation = "will exceed date of expiry"
+            self.save()
+        else:
+            self.consumption_evaluation = "evaluation failed"
+            self.save()
 
 class BatchStorage(models.Model):
     batch = models.ForeignKey('Batch')
@@ -667,12 +672,12 @@ class Transaction(models.Model):
         batch.save()
         self.value = self.amount * batch.price
         account = Account.objects.get(pk=self.charged_account.id)
-        account.subtract_credit(self.value)
+        account.subtract_balance(self.value)
         account.add_taken(self.amount)
         account.save()
         self.save()
 
-class Taking(Transaction): # taking of goods from credit
+class Taking(Transaction): # taking of goods from balance
     pass
     # Batch aus bisheriger Transaction-Hauptklasse
 
@@ -689,12 +694,12 @@ class Restitution(Transaction): # return goods to the storage
         batch.save()
         self.value = self.amount * batch.price
         account = Account.objects.get(pk=self.charged_account.id)
-        account.add_credit(self.value)
+        account.add_balance(self.value)
         account.subtract_taken(self.amount)
         account.save()
         self.save()
 
-class Inpayment(Transaction): # insertion of money to credit
+class Inpayment(Transaction): # insertion of money to balance
     currency = models.ForeignKey('Currency')
     moneybox = models.ForeignKey('MoneyBox')
     confirmed_by = models.ForeignKey('User', blank=True, null=True)
@@ -708,7 +713,7 @@ class Inpayment(Transaction): # insertion of money to credit
         moneyboxstock.inpayment(self.amount)
         moneyboxstock.save()
         account = Account.objects.get(pk=self.charged_account.id)
-        account.add_credit(self.value)
+        account.add_balance(self.value)
         account.save()
         self.save()
 
@@ -720,7 +725,7 @@ class Depositation(Transaction): # insertion of money to deposit
 
     # perform
 
-class PayOutcredit(Transaction):
+class PayOutbalance(Transaction):
     currency = models.ForeignKey('Currency')
     moneybox = models.ForeignKey('MoneyBox')
 
@@ -732,10 +737,10 @@ class PayOutDeposit(Transaction):
 
     # perform
 
-#class Trcredit_in_Good(Transaction): # insertion of goods to credit
+#class Trbalance_in_Good(Transaction): # insertion of goods to balance
 #    insertion = models.ForeignKey('Insertion')
 
-#class Trcredit_out_Money(Transaction): # taking of money from credit
+#class Trbalance_out_Money(Transaction): # taking of money from balance
 #    pass
 
 #class TrDeposit_in(Transaction): # insertion of money or goods to deposit
@@ -749,10 +754,10 @@ class Transfer(Transaction): # IDEE: Im Frontend Feld Value, das durch Eingaben 
 
     def perform(self):
         sender_account = Account.objects.get(pk=self.charged_account.id)
-        sender_account.subtract_credit(self.value)
+        sender_account.subtract_balance(self.value)
         sender_account.save()
         recipient_account = Account.objects.get(pk=self.recipient_account.id)
-        recipient_account.add_credit(self.value)
+        recipient_account.add_balance(self.value)
         recipient_account.save()
         self.save()
 

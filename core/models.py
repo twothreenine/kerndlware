@@ -656,7 +656,6 @@ class Transaction(models.Model):
     by_user = models.ForeignKey('User') # Person who types in the transaction
     date = models.DateField()
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
-    batch = models.ForeignKey('Batch') # TODO: verschieben in Unterklasse Taking
     amount = models.FloatField()
     value = models.FloatField(default=0)
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
@@ -677,9 +676,16 @@ class Transaction(models.Model):
         account.save()
         self.save()
 
+    @property
+    def type(self):
+        return str(type(self))
+
 class Taking(Transaction): # taking of goods from balance
-    pass
-    # Batch aus bisheriger Transaction-Hauptklasse
+    class Meta:
+        def __str__(self):
+            return "Kauftransaktion"
+
+    batch = models.ForeignKey('Batch') # TODO: verschieben in Unterklasse Taking
 
 class Restitution(Transaction): # return goods to the storage
     #batch = models.ForeignKey('Batch')

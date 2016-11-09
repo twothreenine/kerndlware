@@ -11,16 +11,16 @@ class TransactionForm(forms.ModelForm):
             "by_user",
             "date",
             #"batch_no",
-            "batch",
+            #"batch",
             "batch_name",
             "amount",
             "comment"
         ]
         widgets = {
-            'batch': forms.TextInput(attrs={'size': 6, }),
+            #'batch': forms.TextInput(attrs={'size': 6, }),
             #'batch': forms.TextInput(attrs={'size': 6, }),
         }
 
     def __init__(self, *args, **kwargs):
         super(TransactionForm, self).__init__(*args, **kwargs)
-        self.fields['batch'].label = "Batch no"
+        #self.fields['batch'].label = "Batch no"

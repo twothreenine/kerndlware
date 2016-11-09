@@ -28,6 +28,13 @@ def index(request):
     context = {"form" : form}
     return HttpResponse(template.render(context, request))
 
+def account(request):
+    account_id = 1
+    template = loader.get_template('core/account.html')
+    transactions = Transaction.objects.filter(charged_account=account_id)
+    context = {"transactions" : transactions}
+    return HttpResponse(template.render(context, request))
+
 @api_view(['GET', 'POST'])
 def batches(request):
     if request.method == 'GET':

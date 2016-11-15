@@ -701,16 +701,12 @@ class Transaction(models.Model):
         account.save()
         self.save()
 
-    @property
-    def type(self):
-        return str(type(self))
-
 class Taking(Transaction): # taking of goods from balance
-    class Meta:
-        def __str__(self):
-            return "Kauftransaktion"
-
     batch = models.ForeignKey('Batch')
+
+    @property
+    def type_name(self):
+        return "Taking"
 
 class Restitution(Transaction): # return goods to the storage
     batch = models.ForeignKey('Batch')
@@ -729,6 +725,10 @@ class Restitution(Transaction): # return goods to the storage
         account.subtract_taken(self.amount)
         account.save()
         self.save()
+
+    @property
+    def type_name(self):
+        return "Restitution"
 
 class Inpayment(Transaction): # insertion of money to balance
     currency = models.ForeignKey('Currency')

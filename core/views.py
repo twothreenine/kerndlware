@@ -2,11 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import TransactionForm
-from .models import Batch, Transaction
+from .models import Batch, Taking, Restitution
 from .serializers import BatchSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+import itertools
 
 def index(request):
     template = loader.get_template('core/index.html')
@@ -29,9 +31,11 @@ def index(request):
     return HttpResponse(template.render(context, request))
 
 def account(request):
-    account_id = 1
+    account_id = 4
     template = loader.get_template('core/account.html')
-    transactions = Transaction.objects.filter(charged_account=account_id)
+    takings = Taking.objects.filter(charged_account=account_id)
+    restitutions = Restitution.objects.filter(charged_account=account_id)
+    transactions = sorted(list(itertools.chain(takings, restitutions)), key=lambda t: t.id)
     context = {"transactions" : transactions}
     return HttpResponse(template.render(context, request))
 

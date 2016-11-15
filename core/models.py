@@ -2,6 +2,7 @@ from django.db import models
 #from djmoney.models.fields import MoneyField
 #from moneyed import Money, EUR
 from .fields import PercentField
+import datetime
 
 class Currency(models.Model):
     name = models.CharField(max_length=10)
@@ -271,6 +272,9 @@ class Unit(models.Model):
 class Item(models.Model):
     name = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.name
+
 class Consumable(Item):
     description = models.TextField(blank=True)
     active = models.BooleanField(default=True)
@@ -297,6 +301,16 @@ class Consumable(Item):
 
     def add_planning(self, amount):
         self.planning += amount
+
+    def __str__(self):
+        return self.name
+
+    def calc_stock(self):
+        # funktioniert nicht
+        batches = Batch.objects.filter(consumable = self)
+        for batch in batches:
+        	self.stock += batch.stock
+        self.save()
 
 class Product(Consumable):
     category = models.ForeignKey('ProductCat', blank=True, null=True)
@@ -328,8 +342,19 @@ class Product(Consumable):
     lossfactor = PercentField(default=0) # presumed lossfactor per month in % for this product (e.g. 3 => it is presumed to lose 3% of the stock every month of storage)
     official = models.PositiveSmallIntegerField(blank=True, null=True) # whether the product shall be uploaded in the online portal. 0 = not at all; 1 = without strage conditions; 2 = completely
 
+    def __str__(self):
+        return self.name
+
 class Durable(Item):
     pass
+
+class ConsumptionEstimation(models.Model):
+    account = models.ForeignKey('Account')
+    consumable = models.ForeignKey('Consumable')
+    amount = models.FloatField()
+    comment = models.TextField()
+    relevant = models.BooleanField(default=True)
+    entry_date = models.DateField(default=datetime.date.today)
 
 class DeviceStatus(models.Model):
     name = models.CharField(max_length=50)
@@ -365,7 +390,7 @@ class Batch(models.Model):
     supplier = models.ForeignKey('Supplier', blank=True, null=True)
     owner_account = models.ForeignKey('Account')
     unit = models.ForeignKey('Unit', blank=True, null=True)
-    price = models.FloatField(null=True, blank=True) #MoneyField; 
+    price = models.FloatField() #MoneyField; 
     production_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
     purchase_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
     date_of_expiry = models.DateField(blank=True, null=True) # durability date; resp. for devices: end of service life, e.g. end of warranty
@@ -405,7 +430,7 @@ class Batch(models.Model):
             days = (end_date - start_date)
             months = days.days / 30.4375
             self.monthly_consumption = self.taken / months
-            self.monthly_consumption_calcdate = date.today()
+            self.monthly_consumption_calcdate = datetime.date.today
             self.save()
         else:
             self.monthly_consumption = 0
@@ -417,7 +442,7 @@ class Batch(models.Model):
             self.exhaustion_date = 0
             self.save()
         elif self.monthly_consumption > 0:
-            self.exhaustion_date = date.today() + self.stock / self.monthly_consumption * 30.4375
+            self.exhaustion_date = datetime.date.today + self.stock / self.monthly_consumption * 30.4375
             self.save()
         else:
             self.exhaustion_date = null
@@ -431,7 +456,7 @@ class Batch(models.Model):
         elif self.exhaustion_date <= self.date_of_expiry:
             self.consumption_evaluation = "fine"
             self.save()
-        elif self.date_of_expiry <= date.today():
+        elif self.date_of_expiry <= datetime.date.today:
             self.consumption_evaluation = "already expired"
             self.save()
         elif self.exhaustion_date > self.date_of_expiry:
@@ -685,11 +710,11 @@ class Taking(Transaction): # taking of goods from balance
         def __str__(self):
             return "Kauftransaktion"
 
-    batch = models.ForeignKey('Batch') # TODO: verschieben in Unterklasse Taking
+    batch = models.ForeignKey('Batch')
 
 class Restitution(Transaction): # return goods to the storage
-    #batch = models.ForeignKey('Batch')
-    original_taking = models.ForeignKey('Taking')
+    batch = models.ForeignKey('Batch')
+    original_taking = models.ForeignKey('Taking', blank=True, null=True)
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField()
 

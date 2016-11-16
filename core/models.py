@@ -682,12 +682,61 @@ class Transaction(models.Model):
     date = models.DateField()
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
     amount = models.FloatField()
-    value = models.FloatField(default=0)
-    status = models.ForeignKey('TransactionStatus', blank=True, null=True)
     comment = models.TextField(blank=True)
+    value = models.FloatField(default=0)
+    sign = models.IntegerField(default=0)
+    status = models.ForeignKey('TransactionStatus', blank=True, null=True)
+
+    def comment_str(self):
+        if self.comment == "":
+            return ""
+        else:
+            return "'{}'".format(self.comment)
+
+    @property
+    def entry_details_str(self):
+        return "{} ({} {})".format(self.comment_str(), self.by_user.name, self.entry_date)
+    
+    @property
+    def value_str(self):
+        if self.sign == -1:
+            return "- {} €".format(format(self.value,'.2f'))
+        elif self.sign == 1:
+            return "+ {} €".format(format(self.value,'.2f'))
+        else:
+            return ""
+
+    def balance(self):
+        balance = 0
+        transactions = Transaction.objects.filter(charged_account=self.charged_account) #
+        for transaction in transactions:
+            if transaction.id <= self.id:
+                balance += transaction.value * transaction.sign
+            else:
+                pass
+        return balance
+
+    @property
+    def balance_str(self):
+        return "{} €".format(format(self.balance(),'.2f'))
+
+class Taking(Transaction): # taking of goods from balance
+    batch = models.ForeignKey('Batch')
 
     def __str__(self):
         return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.charged_account.name, self.date, self.batch, self.amount, self.batch.unit, self.by_user.name)
+
+    @property
+    def type_name(self):
+        return "Taking of"
+
+    @property
+    def amount_str(self):
+        return "{} {} from".format(self.amount, self.batch.unit)
+
+    @property
+    def matter_str(self):
+        return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
 
     def perform(self):
         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
@@ -699,20 +748,14 @@ class Transaction(models.Model):
         account.subtract_balance(self.value)
         account.add_taken(self.amount)
         account.save()
+        self.sign = -1
         self.save()
-
-class Taking(Transaction): # taking of goods from balance
-    batch = models.ForeignKey('Batch')
-
-    @property
-    def type_name(self):
-        return "Taking"
 
 class Restitution(Transaction): # return goods to the storage
     batch = models.ForeignKey('Batch')
     original_taking = models.ForeignKey('Taking', blank=True, null=True)
     approved_by = models.ForeignKey('User', blank=True, null=True)
-    approval_comment = models.TextField()
+    approval_comment = models.TextField(blank=True)
 
     def perform(self):
         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
@@ -724,11 +767,21 @@ class Restitution(Transaction): # return goods to the storage
         account.add_balance(self.value)
         account.subtract_taken(self.amount)
         account.save()
+        self.sign = 1
         self.save()
 
     @property
     def type_name(self):
-        return "Restitution"
+        return "Restitution of"
+
+    @property
+    def amount_str(self):
+        return "{} {} from".format(self.amount, self.batch.unit)
+
+    @property
+    def matter_str(self):
+        return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
+
 
 class Inpayment(Transaction): # insertion of money to balance
     currency = models.ForeignKey('Currency')

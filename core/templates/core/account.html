@@ -37,14 +37,22 @@
             <th>Date</th>
             <th>Type</th>
             <th>Amount</th>
+            <th>Matter</th>
+            <th>Entry details</th>
+            <th>Value</th>
+            <th>Balance</th>
           </thead>
           <tbody>
           {% for transaction in transactions %}
             <tr>
               <td>Tr{{ transaction.id }}</td>
               <td>{{ transaction.date }}</td>
-              <td>{{ transaction.type_name }} of</td>
-              <td>{{ transaction.amount }}</td>
+              <td>{{ transaction.type_name }}</td>
+              <td>{{ transaction.amount_str }}</td>
+              <td>{{ transaction.matter_str }}</td>
+              <td>{{ transaction.entry_details_str }}</td>
+              <td>{{ transaction.value_str }} </td>
+              <td>{{ transaction.balance_str }} </td>
             </tr>
           {% endfor %}
           </tbody>

@@ -41,6 +41,7 @@
             <th>Entry details</th>
             <th>Value</th>
             <th>Balance</th>
+            <!-- <th>Comment</th> -->
           </thead>
           <tbody>
           {% for transaction in transactions %}
@@ -53,6 +54,7 @@
               <td>{{ transaction.entry_details_str }}</td>
               <td>{{ transaction.value_str }} </td>
               <td>{{ transaction.balance_str }} </td>
+              <!-- <td>{{ transaction.comment_str }}</td> -->
             </tr>
           {% endfor %}
           </tbody>

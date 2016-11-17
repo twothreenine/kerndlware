@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
-from .forms import TransactionForm
+from .forms import TakingForm
 from .models import Batch, Taking, Restitution, Inpayment, Depositation
 from .serializers import BatchSerializer
 from rest_framework import viewsets
@@ -16,16 +16,16 @@ def index(request):
     # if this is a POST request we need to process the form data
     if request.method == 'POST':
         # create a form instance and populate it with data from the request:
-        form = TransactionForm(request.POST)
+        form = TakingForm(request.POST)
         # check whether it's valid:
         if form.is_valid():
-            transaction = form.save()
-            transaction.perform()
+            taking = form.save()
+            taking.perform()
             return HttpResponseRedirect('/')
 
     # if a GET (or any other method) we'll create a blank form
     else:
-        form = TransactionForm()
+        form = TakingForm()
         
     context = {"form" : form}
     return HttpResponse(template.render(context, request))

@@ -712,8 +712,8 @@ class Transaction(models.Model):
     amount = models.FloatField()
     comment = models.TextField(blank=True)
     value = models.FloatField(default=0)
-    positive = models.BooleanField()
-    to_balance = models.BooleanField()
+    positive = models.NullBooleanField()
+    to_balance = models.NullBooleanField()
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
 
     @property
@@ -745,13 +745,7 @@ class Transaction(models.Model):
                             balance += transaction.value
                         else:
                             balance -= transaction.value
-                    else:
-                        pass
-                else:
-                    pass
             return balance
-        else:
-            pass
 
     @property
     def balance_str(self):

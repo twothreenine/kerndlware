@@ -30,7 +30,7 @@
   <body>
     <div class="container">
       <div class="row">
-        <h1>Entry a transaction</h1>
+        <h1>Entry a taking</h1>
         <form action="/" method="post">
           {% csrf_token %}
           {{ form.as_p }}
@@ -42,8 +42,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script>
-      $('#id_batch').keyup(function(e) {
-        id = $('#id_batch').val()
+      $('#id_batch_no').keyup(function(e) {
+        id = $('#id_batch_no').val()
         api_url = "http://127.0.0.1:8000/batches/?format=json&id=" + id;
         $.ajax({
           url: api_url

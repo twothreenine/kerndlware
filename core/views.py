@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import TransactionForm
-from .models import Batch, Taking, Restitution, Inpayment
+from .models import Batch, Taking, Restitution, Inpayment, Depositation
 from .serializers import BatchSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
@@ -36,7 +36,8 @@ def account(request):
     takings = Taking.objects.filter(charged_account=account_id)
     restitutions = Restitution.objects.filter(charged_account=account_id)
     inpayments = Inpayment.objects.filter(charged_account=account_id)
-    transactions = sorted(list(itertools.chain(takings, restitutions, inpayments)), key=lambda t: t.date)
+    depositations = Depositation.objects.filter(charged_account=account_id)
+    transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations)), key=lambda t: (t.date, t.id))
     context = {"transactions" : transactions}
     return HttpResponse(template.render(context, request))
 

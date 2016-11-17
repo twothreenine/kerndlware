@@ -12,7 +12,7 @@ class Currency(models.Model):
     comment = models.TextField(blank=True)
 
     def __str__(self):
-        return "{}".format(self.name)
+        return "{} ({})".format(self.name, self.full_name)
 
 class Role(models.Model):
     name = models.CharField(max_length=50)
@@ -71,14 +71,25 @@ class Account(models.Model):
     def subtract_taken(self, amount):
         self.taken -= amount
 
-    def recalc_balance(self):
-        self.balance = 0
-        positive = Inpayment.objects.filter(charged_account=self).aggregate(sum('value')) + Restitution.objects.filter(charged_account=self).aggregate(sum('value')) + CostSharing.objects.filter(charged_account=self).aggregate(sum('value')) + Recovery.objects.filter(charged_account=self).aggregate(sum('value')) + Transfer.objects.filter(recipient_account=self).aggregate(sum('value'))
-        negative = Taking.objects.filter(charged_account=self).aggregate(sum('value')) + ProceedsSharing.objects.filter(charged_account=self).aggregate(sum('value')) + Donation.objects.filter(charged_account=self).aggregate(sum('value')) + Transfer.objects.filter(charged_account=self).aggregate(sum('value')) + PayOutBalance.objects.filter(charged_account=self).aggregate(sum('value'))
-        # missing: Shared costs, proceeds, donations, and recoveries where self is involved as a recipient
-        self.add_balance(positive)
-        self.subtract_balance(negative)
+    def calc_balance(self):
+        balance = 0
+        transactions = Transaction.objects.filter(charged_account=self)
+        for transaction in transactions:
+            if transaction.to_balance == True:
+                if transaction.positive == True:
+                    balance += transaction.value
+                else:
+                    balance -= transaction.value
+            else:
+                pass
+        self.balance = balance
         self.save()
+        #positive = Inpayment.objects.filter(charged_account=self).aggregate(sum('value')) + Restitution.objects.filter(charged_account=self).aggregate(sum('value')) + CostSharing.objects.filter(charged_account=self).aggregate(sum('value')) + Recovery.objects.filter(charged_account=self).aggregate(sum('value')) + Transfer.objects.filter(recipient_account=self).aggregate(sum('value'))
+        #negative = Taking.objects.filter(charged_account=self).aggregate(sum('value')) + ProceedsSharing.objects.filter(charged_account=self).aggregate(sum('value')) + Donation.objects.filter(charged_account=self).aggregate(sum('value')) + Transfer.objects.filter(charged_account=self).aggregate(sum('value')) + PayOutBalance.objects.filter(charged_account=self).aggregate(sum('value'))
+        # missing: Shared costs, proceeds, donations, and recoveries where self is involved as a recipient
+        #self.add_balance(positive)
+        #self.subtract_balance(negative)
+        #self.save()
 
 class AccPayPhases(models.Model):
     account = models.ForeignKey('Account')
@@ -105,20 +116,31 @@ class MoneyBox(models.Model):
     def __str__(self):
         return "{}".format(self.name)
 
+    def calc_stock_value(self):
+        stocks = MoneyBoxStock.objects.filter(moneybox=self)
+        value = 0
+        for moneyboxstock in stocks:
+            value += moneyboxstock.stock * moneyboxstock.currency.conversion_rate
+        self.stock_value = value
+        self.save()
+
 class MoneyBoxStock(models.Model):
     moneybox = models.ForeignKey('MoneyBox')
     currency = models.ForeignKey('Currency')
-    stock = models.FloatField()
+    stock = models.FloatField(default=0)
 
     def inpayment(self, amount):
-        self.stock_value += amount
+        self.stock += amount
 
     def payout(self, amount):
-        self.stock_value -= amount
+        self.stock -= amount
 
     def transfer(self, amount, recipient):
         self.payout(amount)
         recipient.inpayment(amount)
+
+    def __str__(self):
+        return "{}: {}".format(self.moneybox, self.currency)
 
 class StorageCondition(models.Model):
     name = models.CharField(max_length=30)
@@ -691,6 +713,7 @@ class Transaction(models.Model):
     comment = models.TextField(blank=True)
     value = models.FloatField(default=0)
     positive = models.BooleanField()
+    to_balance = models.BooleanField()
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
 
     @property
@@ -712,17 +735,23 @@ class Transaction(models.Model):
             return "- {} €".format(format(self.value,'.2f'))
 
     def balance(self):
-        balance = 0
-        transactions = Transaction.objects.filter(charged_account=self.charged_account) #
-        for transaction in transactions:
-            if transaction.date <= self.date:
-                if transaction.positive == True:
-                    balance += transaction.value
+        if self.to_balance == True:
+            balance = 0
+            transactions = Transaction.objects.filter(charged_account=self.charged_account) #
+            for transaction in transactions:
+                if transaction.date < self.date or (transaction.date == self.date and transaction.id <= self.id):
+                    if transaction.to_balance == True:
+                        if transaction.positive == True:
+                            balance += transaction.value
+                        else:
+                            balance -= transaction.value
+                    else:
+                        pass
                 else:
-                    balance -= transaction.value
-            else:
-                pass
-        return balance
+                    pass
+            return balance
+        else:
+            pass
 
     @property
     def balance_str(self):
@@ -757,6 +786,7 @@ class Taking(Transaction): # taking of goods from balance
         account.add_taken(self.amount)
         account.save()
         self.positive = False
+        self.to_balance = True
         self.save()
 
 class Restitution(Transaction): # return goods to the storage
@@ -779,6 +809,7 @@ class Restitution(Transaction): # return goods to the storage
         account.subtract_taken(self.amount)
         account.save()
         self.positive = True
+        self.to_balance = True
         self.save()
 
     @property
@@ -800,9 +831,12 @@ class Inpayment(Transaction): # insertion of money to balance
     confirmed_by = models.ForeignKey('User', blank=True, null=True)
     confirmation_comment = models.TextField(blank=True)
 
+    def __str__(self):
+        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.charged_account.name, self.date, self.amount, self.currency, self.by_user.name)
+
     def perform(self):
         currency = Currency.objects.get(pk=self.currency.id)
-        self.value = self.amount * currency.concersion_rate
+        self.value = self.amount * currency.conversion_rate
         moneybox = MoneyBox.objects.get(pk=self.moneybox.id)
         moneyboxstock = MoneyBoxStock.objects.get(moneybox=moneybox, currency=currency) # foreign key?
         moneyboxstock.inpayment(self.amount)
@@ -810,6 +844,8 @@ class Inpayment(Transaction): # insertion of money to balance
         account = Account.objects.get(pk=self.charged_account.id)
         account.add_balance(self.value)
         account.save()
+        self.positive = True
+        self.to_balance = True
         self.save()
 
     @property
@@ -819,9 +855,9 @@ class Inpayment(Transaction): # insertion of money to balance
     @property
     def amount_str(self):
         if self.currency.name == "€":
-            return "{} {} ->".format(format(self.amount,'.2f'), self.currency)
+            return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
         else:
-            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency, format(self.value,'.2f'))
+            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
 
     @property
     def matter_str(self):
@@ -834,11 +870,44 @@ class Depositation(Transaction): # insertion of money to deposit
     currency = models.ForeignKey('Currency')
     moneybox = models.ForeignKey('MoneyBox')
     confirmed_by = models.ForeignKey('User', blank=True, null=True)
-    confirmation_comment = models.TextField()
+    confirmation_comment = models.TextField(blank=True)
 
-    # perform
+    def __str__(self):
+        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.charged_account.name, self.date, self.amount, self.currency, self.by_user.name)
 
-class PayOutbalance(Transaction):
+    def perform(self):
+        currency = Currency.objects.get(pk=self.currency.id)
+        self.value = self.amount * currency.conversion_rate
+        moneybox = MoneyBox.objects.get(pk=self.moneybox.id)
+        moneyboxstock = MoneyBoxStock.objects.get(moneybox=moneybox, currency=currency) # foreign key?
+        moneyboxstock.inpayment(self.amount)
+        moneyboxstock.save()
+        account = Account.objects.get(pk=self.charged_account.id)
+        account.add_deposit(self.value)
+        account.save()
+        self.positive = True
+        self.to_balance = False
+        self.save()
+
+    @property
+    def type_name(self):
+        return "Depositation of"
+
+    @property
+    def amount_str(self):
+        if self.currency.name == "€":
+            return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+        else:
+            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+
+    @property
+    def matter_str(self):
+        if self.confirmed_by == None:
+            return "{}, not confirmed yet".format(self.moneybox.name)
+        else:
+            return "{}, confirmed by {} '{}'".format(self.moneybox.name, self.confirmed_by.name, self.confirmation_comment)
+
+class PayOutBalance(Transaction):
     currency = models.ForeignKey('Currency')
     moneybox = models.ForeignKey('MoneyBox')
 

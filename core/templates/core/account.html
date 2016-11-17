@@ -21,6 +21,7 @@
       }
       .container {
         background-color: #ddd;
+        width: 1300px;
       }
       .row {
         background-color: #ccc;
@@ -41,7 +42,7 @@
             <th>Entry details</th>
             <th>Value</th>
             <th>Balance</th>
-            <!-- <th>Comment</th> -->
+            <th>Comment</th>
           </thead>
           <tbody>
           {% for transaction in transactions %}
@@ -54,7 +55,7 @@
               <td>{{ transaction.entry_details_str }}</td>
               <td>{{ transaction.value_str }} </td>
               <td>{{ transaction.balance_str }} </td>
-              <!-- <td>{{ transaction.comment_str }}</td> -->
+              <td>{{ transaction.comment_str }}</td>
             </tr>
           {% endfor %}
           </tbody>

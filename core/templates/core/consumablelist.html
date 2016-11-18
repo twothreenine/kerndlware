@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Account</title>
+    <title>List of consumables</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
@@ -30,31 +30,27 @@
   <body>
     <div class="container-fluid">
       <div class="row">
-        <h1>Account</h1>
+        <h1>List of consumables</h1>
         <table class="table">
           <thead>
-            <th>Tr No</th>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Matter</th>
-            <th>Entry details</th>
-            <th>Value</th>
-            <th>Balance</th>
-            <th>Comment</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Stock</th>
+            <th>Monthly consumption</th>
+            <th>Taken</th>
+            <th>On order</th>
+            <th>Planning</th>
           </thead>
           <tbody>
-          {% for transaction in transactions %}
+          {% for consumable in consumablelist %}
             <tr>
-              <td>Tr{{ transaction.id }}</td>
-              <td>{{ transaction.date }}</td>
-              <td>{{ transaction.type_name }}</td>
-              <td>{{ transaction.amount_str }}</td>
-              <td>{{ transaction.matter_str }}</td>
-              <td>{{ transaction.entry_details_str }}</td>
-              <td>{{ transaction.value_str }} </td>
-              <td>{{ transaction.balance_str }} </td>
-              <td>{{ transaction.comment_str }}</td>
+              <td>{{ consumable.id }}</td>
+              <td>{{ consumable.name }}</td>
+              <td>{{ consumable.stock }} {{ consumable.unit }}</td>
+              <td>{{ consumable.monthly_consumption }} {{ consumable.unit }}</td>
+              <td>{{ consumable.taken }} {{ consumable.unit }}</td>
+              <td>{{ consumable.on_order }} {{ consumable.unit }}</td>
+              <td>{{ consumable.planning }} {{ consumable.unit }}</td>
             </tr>
           {% endfor %}
           </tbody>

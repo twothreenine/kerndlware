@@ -53,6 +53,18 @@ class Account(models.Model):
     def __str__(self):
         return "{} - {}".format(str(self.id), self.name)
 
+    def users_str(self):
+    	return "{}".format(self.users.all())
+
+    def deposit_str(self):
+    	return "{} €".format(format(self.deposit,'.2f'))
+
+    def balance_str(self):
+    	return "{} €".format(format(self.balance,'.2f'))
+
+    def taken_str(self):
+    	return "{} kg".format(format(self.taken,'.1f'))
+
     def add_balance(self, amount):
         self.balance += amount
 
@@ -449,6 +461,10 @@ class Batch(models.Model):
 
     def __str__(self):
         return self.text
+
+    @property
+    def price_str(self):
+    	return "{} €/{}".format(format(self.price,'.2f'), self.unit)
 
     def calc_monthly_consumption(self):
         # not tried out yet

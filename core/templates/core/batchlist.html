@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Account</title>
+    <title>List of batches</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
@@ -30,31 +30,43 @@
   <body>
     <div class="container-fluid">
       <div class="row">
-        <h1>Account</h1>
+        <h1>List of batches</h1>
         <table class="table">
           <thead>
-            <th>Tr No</th>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Matter</th>
-            <th>Entry details</th>
-            <th>Value</th>
-            <th>Balance</th>
-            <th>Comment</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Consumable</th>
+            <th>Supplier</th>
+            <th>Origin</th>
+            <th>Owner</th>
+            <th>Price</th>
+            <th>Production date</th>
+            <th>Purchase date</th>
+            <th>Date of expiry</th>
+            <th>Exhaustion date</th>
+            <th>Stock</th>
+            <th>Monthly consumption</th>
+            <th>Evaluation</th>
+            <th>Taken</th>
           </thead>
           <tbody>
-          {% for transaction in transactions %}
+          {% for batch in batchlist %}
             <tr>
-              <td>Tr{{ transaction.id }}</td>
-              <td>{{ transaction.date }}</td>
-              <td>{{ transaction.type_name }}</td>
-              <td>{{ transaction.amount_str }}</td>
-              <td>{{ transaction.matter_str }}</td>
-              <td>{{ transaction.entry_details_str }}</td>
-              <td>{{ transaction.value_str }} </td>
-              <td>{{ transaction.balance_str }} </td>
-              <td>{{ transaction.comment_str }}</td>
+              <td>{{ batch.id }}</td>
+              <td>{{ batch.name }}</td>
+              <td>{{ batch.consumable }}</td>
+              <td>{{ batch.supplier.name }}</td>
+              <td>{{ batch.supplier.broad_location }}</td>
+              <td>{{ batch.owner_account }}</td>
+              <td>{{ batch.price_str }}</td>
+              <td>{{ batch.production_date }}</td>
+              <td>{{ batch.purchase_date }}</td>
+              <td>{{ batch.date_of_expiry }}</td>
+              <td>{{ batch.exhaustion_date }}</td>
+              <td>{{ batch.stock }} {{ batch.unit }}</td>
+              <td>{{ batch.monthly_consumption }} {{ batch.unit }}</td>
+              <td>{{ batch.consumption_evaluation }}</td>
+              <td>{{ batch.taken }} {{ batch.unit }}</td>
             </tr>
           {% endfor %}
           </tbody>

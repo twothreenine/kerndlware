@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import TakingForm
-from .models import Batch, Taking, Restitution, Inpayment, Depositation
+from .models import Batch, Taking, Restitution, Inpayment, Depositation, Account, Item, Consumable, Product
 from .serializers import BatchSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
@@ -39,6 +39,34 @@ def account(request):
     depositations = Depositation.objects.filter(charged_account=account_id)
     transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations)), key=lambda t: (t.date, t.id))
     context = {"transactions" : transactions}
+    return HttpResponse(template.render(context, request))
+
+def accountlist(request):
+    template = loader.get_template('core/accountlist.html')
+    accounts = Account.objects.all()
+    accountlist = sorted(list(accounts), key=lambda t: t.id)
+    context = {"accountlist" : accountlist}
+    return HttpResponse(template.render(context, request))
+
+def batchlist(request):
+    template = loader.get_template('core/batchlist.html')
+    batches = Batch.objects.all()
+    batchlist = sorted(list(batches), key=lambda t: t.id)
+    context = {"batchlist" : batchlist}
+    return HttpResponse(template.render(context, request))
+
+def itemlist(request):
+    template = loader.get_template('core/itemlist.html')
+    items = Item.objects.all()
+    itemlist = sorted(list(items), key=lambda t: t.id)
+    context = {"itemlist" : itemlist}
+    return HttpResponse(template.render(context, request))
+
+def consumablelist(request):
+    template = loader.get_template('core/consumablelist.html')
+    consumables = Consumable.objects.all()
+    consumablelist = sorted(list(consumables), key=lambda t: t.id)
+    context = {"consumablelist" : consumablelist}
     return HttpResponse(template.render(context, request))
 
 @api_view(['GET', 'POST'])

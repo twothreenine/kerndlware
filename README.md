@@ -14,4 +14,4 @@ The code is in English, yet we speak German and can use German comments as well.
 German translation will be included in the first final version, as we plan to use the program in our own foodcoop.
 More translations could be contributed by users from around the world, as soon as the program is ready to use.
 
-For more details, take a look into the wiki, there is a [url=https://github.com/twothreenine/kerndlware/wiki/Introduction-&-feature-overwiew] detailed introduction and overview of the planned features.
+For more details, take a look into the wiki, there is a [url=https://github.com/twothreenine/kerndlware/wiki/Introduction-&-feature-overwiew] detailed introduction and overview of the planned features[/url].

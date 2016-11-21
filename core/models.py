@@ -54,16 +54,16 @@ class Account(models.Model):
         return "{} - {}".format(str(self.id), self.name)
 
     def users_str(self):
-    	return "{}".format(self.users.all())
+        return "{}".format(self.users.all())
 
     def deposit_str(self):
-    	return "{} €".format(format(self.deposit,'.2f'))
+        return "{} €".format(format(self.deposit,'.2f'))
 
     def balance_str(self):
-    	return "{} €".format(format(self.balance,'.2f'))
+        return "{} €".format(format(self.balance,'.2f'))
 
     def taken_str(self):
-    	return "{} kg".format(format(self.taken,'.1f'))
+        return "{} kg".format(format(self.taken,'.1f'))
 
     def add_balance(self, amount):
         self.balance += amount
@@ -349,7 +349,7 @@ class Consumable(Item):
         # funktioniert nicht
         batches = Batch.objects.filter(consumable = self)
         for batch in batches:
-        	self.stock += batch.stock
+            self.stock += batch.stock
         self.save()
 
 class Product(Consumable):
@@ -464,7 +464,7 @@ class Batch(models.Model):
 
     @property
     def price_str(self):
-    	return "{} €/{}".format(format(self.price,'.2f'), self.unit)
+        return "{} €/{}".format(format(self.price,'.2f'), self.unit)
 
     def calc_monthly_consumption(self):
         # not tried out yet
@@ -745,15 +745,22 @@ class Transaction(models.Model):
     
     @property
     def value_str(self):
-        if self.positive == True:
-            return "+ {} €".format(format(self.value,'.2f'))
+        if self.type_name == "Transfer":
+        	return "+ {} €".format(format(self.value,'.2f'))
+        elif self.type_name == "CostSharing":
+        	# to be implemented
+        	pass
         else:
-            return "- {} €".format(format(self.value,'.2f'))
+        	if self.positive == True:
+        		return "+ {} €".format(format(self.value,'.2f'))
+        	else:
+        		return "- {} €".format(format(self.value,'.2f'))
 
     def balance(self):
+        # calculates the balance of the charged account after this transaction
         if self.to_balance == True:
             balance = 0
-            transactions = Transaction.objects.filter(charged_account=self.charged_account) #
+            transactions = Transaction.objects.filter(charged_account=self.charged_account) # PROBLEM: should get filtered for recipient_account=account_id (as in views.py def account) because self.charged_account is a different account in cases of transfers, costsharing etc.
             for transaction in transactions:
                 if transaction.date < self.date or (transaction.date == self.date and transaction.id <= self.id):
                     if transaction.to_balance == True:
@@ -761,6 +768,10 @@ class Transaction(models.Model):
                             balance += transaction.value
                         else:
                             balance -= transaction.value
+            transfers = Transfer.objects.filter(recipient_account=self.charged_account) # same problem as above
+            for transaction in transfers:
+                if transaction.date < self.date or (transaction.date == self.date and transaction.id <= self.id):
+                    balance += transaction.value
             return balance
 
     @property
@@ -775,7 +786,7 @@ class Taking(Transaction): # taking of goods from balance
 
     @property
     def type_name(self):
-        return "Taking of"
+        return "Taking"
 
     @property
     def amount_str(self):
@@ -797,6 +808,18 @@ class Taking(Transaction): # taking of goods from balance
         account.save()
         self.positive = False
         self.to_balance = True
+        self.save()
+
+    def unperform(self):
+        batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+        batch.add_stock(self.amount)
+        batch.subtract_taken(self.amount)
+        batch.save()
+        self.value = self.amount * batch.price
+        account = Account.objects.get(pk=self.charged_account.id)
+        account.add_balance(self.value)
+        account.subtract_taken(self.amount)
+        account.save()
         self.save()
 
 class Restitution(Transaction): # return goods to the storage
@@ -824,7 +847,7 @@ class Restitution(Transaction): # return goods to the storage
 
     @property
     def type_name(self):
-        return "Restitution of"
+        return "Restitution"
 
     @property
     def amount_str(self):
@@ -860,7 +883,7 @@ class Inpayment(Transaction): # insertion of money to balance
 
     @property
     def type_name(self):
-        return "Inpayment of"
+        return "Inpayment"
 
     @property
     def amount_str(self):
@@ -901,7 +924,7 @@ class Depositation(Transaction): # insertion of money to deposit
 
     @property
     def type_name(self):
-        return "Depositation of"
+        return "Depositation"
 
     @property
     def amount_str(self):
@@ -941,16 +964,29 @@ class PayOutDeposit(Transaction):
 #class TrDeposit_out(Transaction): # taking of money or goods from deposit
 #    pass
 
-class Transfer(Transaction): # IDEE: Im Frontend Feld Value, das durch Eingaben in Felder Amount und entweder Currency oder Batch berechnet wird
+class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Angaben in Felder Amount und entweder Currency oder Batch berechnet
     recipient_account = models.ForeignKey('Account')
+    currency = models.ForeignKey('Currency', blank=True, null=True)
+    batch = models.ForeignKey('Batch', blank=True, null=True)
+
+    @property
+    def type_name(self):
+        return "Transfer"
 
     def perform(self):
+        if not self.currency == None:
+            self.value = self.amount * self.currency.conversion_rate
+        else:
+            batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+            self.value = self.amount * batch.price
         sender_account = Account.objects.get(pk=self.charged_account.id)
         sender_account.subtract_balance(self.value)
         sender_account.save()
         recipient_account = Account.objects.get(pk=self.recipient_account.id)
         recipient_account.add_balance(self.value)
         recipient_account.save()
+        self.positive = False
+        self.to_balance = True
         self.save()
 
 class CostSharing(Transaction):

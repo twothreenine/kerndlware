@@ -1,8 +1,9 @@
+from django.db.models import Q
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from .forms import TakingForm
-from .models import Batch, Taking, Restitution, Inpayment, Depositation, Account, Item, Consumable, Product
+from .models import Batch, Taking, Restitution, Inpayment, Depositation, Transfer, Account, Item, Consumable, Product
 from .serializers import BatchSerializer
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
@@ -37,7 +38,8 @@ def account(request):
     restitutions = Restitution.objects.filter(charged_account=account_id)
     inpayments = Inpayment.objects.filter(charged_account=account_id)
     depositations = Depositation.objects.filter(charged_account=account_id)
-    transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations)), key=lambda t: (t.date, t.id))
+    transfers = Transfer.objects.filter(Q(charged_account=account_id) | Q(recipient_account=account_id))
+    transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers)), key=lambda t: (t.date, t.id))
     context = {"transactions" : transactions}
     return HttpResponse(template.render(context, request))
 

@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import Account, Item, Consumable, Product, Batch, User, Person, VirtualUser, Supplier, Unit, Transaction, Taking, Restitution, Inpayment, Depositation, Transfer, MoneyBox, Currency, MoneyBoxStock
+from .models import Account, AccPayPhase, Item, Consumable, Product, Batch, User, Person, VirtualUser, Supplier, Unit, Transaction, Taking, Restitution, Inpayment, Depositation, Transfer, MoneyBox, Currency, MoneyBoxStock
 
 admin.site.register(Account)
+admin.site.register(AccPayPhase)
 admin.site.register(Item)
 admin.site.register(Consumable)
 admin.site.register(Product)

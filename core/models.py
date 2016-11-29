@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Q
+import datetime
 #from djmoney.models.fields import MoneyField
 #from moneyed import Money, EUR
 from .fields import PercentField
@@ -51,7 +53,20 @@ class Account(models.Model):
     taken = models.FloatField(default=0)
 
     def __str__(self):
-        return "{} - {}".format(str(self.id), self.name)
+        rate = self.calc_rate(datetime=datetime.datetime.now())
+        return "{} - {} ({}x)".format(str(self.id), self.name, rate)
+
+    def calc_rate(self, datetime):
+    # Calculates the payment rate of an account on a specific date. If more than one pay phase applies to the date, their rates get multiplied. If none applies, the rate is set to 0.
+    # The date must be given in this format: date=datetime.date(year,month,day)  or for today's date: date=datetime.date.today()
+        current_phases = AccPayPhase.objects.filter(account = self.id).filter(Q(start=None)|Q(start__lte=datetime)).filter(Q(end=None)|Q(end__gte=datetime))
+        if not current_phases:
+            rate = 0
+        else:
+            rate = 1
+            for payphase in current_phases:
+                rate = rate * payphase.rate
+        return rate
 
     def users_str(self):
         return "{}".format(self.users.all())
@@ -103,12 +118,29 @@ class Account(models.Model):
         #self.subtract_balance(negative)
         #self.save()
 
-class AccPayPhases(models.Model):
-    account = models.ForeignKey('Account')
-    start_date = models.DateField()
-    end_date = models.DateField()
+class AccPayPhase(models.Model):
+    account = models.ManyToManyField('Account')
+    start = models.DateTimeField(blank=True, null=True) # null means the phase has no minimum date
+    end = models.DateTimeField(blank=True, null=True) # null means the phase has no maximum date (use null here for a current phase without any end given yet)
     rate = models.FloatField(default=1)
     comment = models.TextField(blank=True)
+
+    def __str__(self):
+        if self.start == None:
+            start = 'from the beginning'
+        else:
+            start = 'from ' + str(self.start) + ' on'
+        if self.end == None:
+            end = 'forever'
+        else:
+            end = 'to ' + str(self.end)
+        if self.start == None and self.end == None:
+            start = 'always'
+            end = ''
+        account_names = ''
+        for account in self.account.all():
+        	account_names += str(account.name) + ', ' # TODO: don't put comma after last name
+        return "{}: {}x {} {}".format(account_names, self.rate, start, end)
 
 class Engagement(models.Model):
     person = models.ForeignKey('Person')
@@ -746,15 +778,15 @@ class Transaction(models.Model):
     @property
     def value_str(self):
         if self.type_name == "Transfer":
-        	return "+ {} €".format(format(self.value,'.2f'))
+            return "+ {} €".format(format(self.value,'.2f'))
         elif self.type_name == "CostSharing":
-        	# to be implemented
-        	pass
+            # to be implemented
+            pass
         else:
-        	if self.positive == True:
-        		return "+ {} €".format(format(self.value,'.2f'))
-        	else:
-        		return "- {} €".format(format(self.value,'.2f'))
+            if self.positive == True:
+                return "+ {} €".format(format(self.value,'.2f'))
+            else:
+                return "- {} €".format(format(self.value,'.2f'))
 
     def balance(self):
         # calculates the balance of the charged account after this transaction

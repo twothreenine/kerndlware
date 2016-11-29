@@ -20,7 +20,8 @@ def index(request):
         form = TakingForm(request.POST)
         # check whether it's valid:
         if form.is_valid():
-            taking = form.save()
+            taking = form.save(commit=False)
+            taking.batch = Batch.objects.get(pk=int(form.cleaned_data["batch_no"]))
             taking.perform()
             return HttpResponseRedirect('/')
 

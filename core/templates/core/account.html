@@ -1,76 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Account</title>
-
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
-    <style>
-      body {
-        background-color: #eee;
-      }
-      .container {
-        background-color: #ddd;
-      }
-      .row {
-        background-color: #ccc;
-      }
-      tr.depositation {
-        background-color: #3e95ef;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container-fluid">
-      <div class="row">
-        <h1>Account</h1>
-        <table class="table">
-          <thead>
-            <th>Tr No</th>
-            <th>Date</th>
-            <th>Type</th>
-            <th>Amount</th>
-            <th>Matter</th>
-            <th>Entry details</th>
-            <th>Value</th>
-            <th>Balance</th>
-            <th>Comment</th>
-          </thead>
-          <tbody>
-          {% for row in account_table.rows %}
-            <tr class="{{ row.2|lower }}">
-              {% for column in row %}
-                <td> {{ column }} </td>
-                <!-- <tr>
-                  <td>Tr{{ transaction.id }}</td>
-                  <td>{{ transaction.date }}</td>
-                  <td>{{ transaction.type_name }} of</td>
-                  <td>{{ transaction.amount_str }}</td>
-                  <td>{{ transaction.matter_str }}</td>
-                  <td>{{ transaction.entry_details_str }}</td>
-                  <td>{{ transaction.value_str }} </td>
-                  <td>{{ transaction.balance_str }} </td>
-                  <td>{{ transaction.comment_str }}</td>
-                </tr> -->
-              {% endfor %}
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-  </body>
-</html>
+{% extends "core/base.html" %}
+{% block title %}Account{% endblock %}
+{% block heading %}Account{% endblock %}
+{% block style %}
+  tr.depositation {
+    background-color: #3e95ef;
+  }
+{% endblock %}
+{% block content %}
+<table class="table">
+  <thead>
+    <th>Tr No</th>
+    <th>Date</th>
+    <th>Type</th>
+    <th>Amount</th>
+    <th>Matter</th>
+    <th>Entry details</th>
+    <th>Value</th>
+    <th>Balance</th>
+    <th>Comment</th>
+  </thead>
+  <tbody>
+  {% for row in account_table.rows %}
+    <tr class="{{ row.2|lower }}">
+      {% for column in row %}
+        <td> {{ column }} </td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

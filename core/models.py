@@ -5,6 +5,7 @@ import datetime
 #from moneyed import Money, EUR
 from .fields import PercentField
 import datetime
+import itertools
 
 class Currency(models.Model):
     name = models.CharField(max_length=10)
@@ -57,8 +58,10 @@ class Account(models.Model):
         return "{} - {} ({}x)".format(str(self.id), self.name, rate)
 
     def calc_rate(self, datetime):
-    # Calculates the payment rate of an account on a specific date. If more than one pay phase applies to the date, their rates get multiplied. If none applies, the rate is set to 0.
-    # The date must be given in this format: date=datetime.date(year,month,day)  or for today's date: date=datetime.date.today()
+        """
+        Calculates the payment rate of an account on a specific date. If more than one pay phase applies to the date, their rates get multiplied. If none applies, the rate is set to 0.
+        The date must be given in this format: date=datetime.date(year,month,day)  or for today's date: date=datetime.date.today()
+        """
         current_phases = AccPayPhase.objects.filter(account = self.id).filter(Q(start=None)|Q(start__lte=datetime)).filter(Q(end=None)|Q(end__gte=datetime))
         if not current_phases:
             rate = 0
@@ -139,7 +142,7 @@ class AccPayPhase(models.Model):
             end = ''
         account_names = ''
         for account in self.account.all():
-        	account_names += str(account.name) + ', ' # TODO: don't put comma after last name
+            account_names += str(account.name) + ', ' # TODO: don't put comma after last name
         return "{}: {}x {} {}".format(account_names, self.rate, start, end)
 
 class Engagement(models.Model):
@@ -808,7 +811,7 @@ class Transaction(models.Model):
 
     @property
     def balance_str(self):
-        return "{} €".format(format(self.balance(),'.2f'))
+        return "{} €".format(self.balance()) #format(self.balance(),'.2f')
 
 class Taking(Transaction): # taking of goods from balance
     batch = models.ForeignKey('Batch')
@@ -826,7 +829,8 @@ class Taking(Transaction): # taking of goods from balance
 
     @property
     def matter_str(self):
-        return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
+
+        return "batch no. {} ({} from {} in {} for {}eur/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
 
     def perform(self):
         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
@@ -887,7 +891,7 @@ class Restitution(Transaction): # return goods to the storage
 
     @property
     def matter_str(self):
-        return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
+        return "batch no. {} ({} from {} in {} for {}eur/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
 
 
 class Inpayment(Transaction): # insertion of money to balance
@@ -922,7 +926,7 @@ class Inpayment(Transaction): # insertion of money to balance
         if self.currency.name == "€":
             return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
         else:
-            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+            return "{} {} ({} eur) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
 
     @property
     def matter_str(self):
@@ -963,7 +967,7 @@ class Depositation(Transaction): # insertion of money to deposit
         if self.currency.name == "€":
             return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
         else:
-            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+            return "{} {} ({} eur) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
 
     @property
     def matter_str(self):
@@ -1021,8 +1025,16 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
         self.to_balance = True
         self.save()
 
+    @property # TODO
+    def amount_str(self):
+        if self.currency.name == "€":
+            return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+        else:
+            return "{} {} ({} eur) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+
 class CostSharing(Transaction):
-    excepted_accounts = models.ManyToManyField('Account')
+    participating_accounts = models.ManyToManyField('Account')
+     # list
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField()
 
@@ -1048,3 +1060,36 @@ class Recovery(Transaction): # donation backwards
     approval_comment = models.TextField()
 
     # TODO: perform
+
+class AccountTable:
+    def __init__(self, account_id):
+        self.account_id = account_id
+        self.rows = list()
+        self.generate()
+
+    def generate(self):
+        takings = Taking.objects.filter(charged_account=self.account_id)
+        restitutions = Restitution.objects.filter(charged_account=self.account_id)
+        inpayments = Inpayment.objects.filter(charged_account=self.account_id)
+        depositations = Depositation.objects.filter(charged_account=self.account_id)
+        # transfers = Transfer.objects.filter(Q(charged_account=self.account_id) | Q(recipient_account=self.account_id))
+        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations)), key=lambda t: (t.date, t.id))
+        for i in range(0, len(transactions)):
+            transaction = transactions[i]
+            row = list()
+            row.append(transaction.id)
+            row.append(transaction.date)
+            row.append(transaction.type_name)
+            row.append(transaction.amount_str)
+            row.append(transaction.matter_str)
+            row.append(transaction.entry_details_str)
+            row.append(transaction.value_str)
+            row.append(transaction.balance_str)
+            row.append(transaction.comment_str)
+            self.rows.append(row)
+
+    # def get(self, row_index, column_index):
+    #    return self.rows[row_index][column_index]
+
+    def get_dimensions(self):
+        return (len(self.rows), 9)

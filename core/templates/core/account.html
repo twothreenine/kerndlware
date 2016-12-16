@@ -25,6 +25,9 @@
       .row {
         background-color: #ccc;
       }
+      tr.depositation {
+        background-color: #3e95ef;
+      }
     </style>
   </head>
   <body>
@@ -44,17 +47,22 @@
             <th>Comment</th>
           </thead>
           <tbody>
-          {% for transaction in transactions %}
-            <tr>
-              <td>Tr{{ transaction.id }}</td>
-              <td>{{ transaction.date }}</td>
-              <td>{{ transaction.type_name }} of</td>
-              <td>{{ transaction.amount_str }}</td>
-              <td>{{ transaction.matter_str }}</td>
-              <td>{{ transaction.entry_details_str }}</td>
-              <td>{{ transaction.value_str }} </td>
-              <td>{{ transaction.balance_str }} </td>
-              <td>{{ transaction.comment_str }}</td>
+          {% for row in account_table.rows %}
+            <tr class="{{ row.2|lower }}">
+              {% for column in row %}
+                <td> {{ column }} </td>
+                <!-- <tr>
+                  <td>Tr{{ transaction.id }}</td>
+                  <td>{{ transaction.date }}</td>
+                  <td>{{ transaction.type_name }} of</td>
+                  <td>{{ transaction.amount_str }}</td>
+                  <td>{{ transaction.matter_str }}</td>
+                  <td>{{ transaction.entry_details_str }}</td>
+                  <td>{{ transaction.value_str }} </td>
+                  <td>{{ transaction.balance_str }} </td>
+                  <td>{{ transaction.comment_str }}</td>
+                </tr> -->
+              {% endfor %}
             </tr>
           {% endfor %}
           </tbody>

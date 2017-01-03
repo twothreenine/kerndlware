@@ -7,8 +7,8 @@ class TakingForm(forms.ModelForm):
     class Meta:
         model = Taking
         fields = [
-            "charged_account",
-            "by_user",
+            "originator_account",
+            "entered_by_user",
             "date",
             "batch_no",
             #"batch",

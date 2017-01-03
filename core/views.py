@@ -10,6 +10,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import itertools
 
+selected_account = None
+
 def index(request):
     template = loader.get_template('core/index.html')
 
@@ -31,47 +33,53 @@ def index(request):
     context = {"form" : form}
     return HttpResponse(template.render(context, request))
 
+def global_context():
+    accounts = Account.objects.all()
+    context = {"accounts": accounts}
+    return context
+
 def account(request):
     account_id = 4
     template = loader.get_template('core/account.html')
-    #takings = Taking.objects.filter(charged_account=account_id)
-    #restitutions = Restitution.objects.filter(charged_account=account_id)
-    #inpayments = Inpayment.objects.filter(charged_account=account_id)
-    #depositations = Depositation.objects.filter(charged_account=account_id)
-    #transfers = Transfer.objects.filter(Q(charged_account=account_id) | Q(recipient_account=account_id))
+    #takings = Taking.objects.filter(originator_account=account_id)
+    #restitutions = Restitution.objects.filter(originator_account=account_id)
+    #inpayments = Inpayment.objects.filter(originator_account=account_id)
+    #depositations = Depositation.objects.filter(originator_account=account_id)
+    #transfers = Transfer.objects.filter(Q(originator_account=account_id) | Q(recipient_account=account_id))
     #transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers)), key=lambda t: (t.date, t.id))
     # account_table = AccountTable(account_id)
     account_table = AccountTable(account_id) # [['2016-10-21', 'Taking of'],['2016-10-23', 'Taking of'],['2016-10-24', 'Taking of']]
     context = {"account_table" : account_table}
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(template.render({**global_context(), **context}, request))
 
 def accountlist(request):
+
     template = loader.get_template('core/accountlist.html')
     accounts = Account.objects.all()
     accountlist = sorted(list(accounts), key=lambda t: t.id)
     context = {"accountlist" : accountlist}
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(template.render({**global_context(), **context}, request))
 
 def batchlist(request):
     template = loader.get_template('core/batchlist.html')
     batches = Batch.objects.all()
     batchlist = sorted(list(batches), key=lambda t: t.id)
     context = {"batchlist" : batchlist}
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(template.render({**global_context(), **context}, request))
 
 def itemlist(request):
     template = loader.get_template('core/itemlist.html')
     items = Item.objects.all()
     itemlist = sorted(list(items), key=lambda t: t.id)
     context = {"itemlist" : itemlist}
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(template.render({**global_context(), **context}, request))
 
 def consumablelist(request):
     template = loader.get_template('core/consumablelist.html')
     consumables = Consumable.objects.all()
     consumablelist = sorted(list(consumables), key=lambda t: t.id)
     context = {"consumablelist" : consumablelist}
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(template.render({**global_context(), **context}, request))
 
 @api_view(['GET', 'POST'])
 def batches(request):

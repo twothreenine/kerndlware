@@ -841,8 +841,9 @@ class Transaction(models.Model):
         # return "{} €".format(self.balance()) #format(self.balance(),'.2f')
         if account == 0:
             account = self.originator_account.id
-        linked_charges = Charge.objects.filter(transaction=self, account=account)
-        if linked_charges[0].to_balance == True:
+        #linked_charges = Charge.objects.filter(transaction=self, account=account)
+        #if linked_charges[0].to_balance == True:
+        if self.__class__ == Depositation:
             balance = 0
             charges = Charge.objects.filter(account=account, to_balance=True).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(transaction__lte = self.id)))
             for charge in charges:

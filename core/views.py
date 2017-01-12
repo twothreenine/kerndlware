@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
-from .forms import AccountSelectionForm, TakingForm
+from .forms import TakingForm
 from .models import *
 from .serializers import BatchSerializer
 from rest_framework import viewsets
@@ -11,7 +11,7 @@ from rest_framework.response import Response
 import itertools
 import logging
 
-selected_account = None
+selected_account = Account.objects.get(pk=1)
 logger = logging.getLogger(__name__)
 
 def index(request):
@@ -35,31 +35,36 @@ def index(request):
     context = {"form" : form}
     return HttpResponse(template.render(context, request))
 
-def account_selection_form(request):
+def select_account(request):
     if request.method == 'POST':
-        form = AccountSelectionForm(request.POST)
-        if form.is_valid():
-            print("Yay " + form.cleaned_data["account"])
-    else:
-        form = AccountSelectionForm()
-    return form
+        account_id = request.POST.get("account_id")
+        if account_id:
+            account_id = int(account_id)
+    if account_id == None:
+        account_id = 1
+
+    global selected_account
+    selected_account = Account.objects.get(pk=account_id)
 
 def global_context(request):
+    select_account(request)
     accounts = Account.objects.all()
     balance = "test €" # "{} €".format(format(Account.objects.get(pk=account_id).balance, '.2f')) # account_id has to be known from drop down menu
     #balance = "{} €".format(format(Account.objects.get(pk=account_id).balance, '.2f'))
-    account_selection_form = account_selection_form(request)
-    context = {"accounts": accounts, "balance" : balance, "account_selection_form" : account_selection_form}
+    #form = account_selection_form(request)
+    global selected_account
+    context = {"accounts": accounts, "balance" : balance, "selected_account" : selected_account}
     return context
 
 def account(request):
-    account_id = 4
     template = loader.get_template('core/account.html')
-    account_table = AccountTable(account_id) # [['2016-10-21', 'Taking of'],['2016-10-23', 'Taking of'],['2016-10-24', 'Taking of']]
-    deposit = "{} €".format(format(Account.objects.get(pk=account_id).deposit, '.2f'))
-    taken = "{} kg".format(format(Account.objects.get(pk=account_id).taken, '.2f'))
+    g_context = global_context(request)
+    global selected_account
+    account_table = AccountTable(selected_account.id) # [['2016-10-21', 'Taking of'],['2016-10-23', 'Taking of'],['2016-10-24', 'Taking of']]
+    deposit = "{} €".format(format(Account.objects.get(pk=selected_account.id).deposit, '.2f'))
+    taken = "{} kg".format(format(Account.objects.get(pk=selected_account.id).taken, '.2f'))
     context = {"account_table" : account_table, "deposit" : deposit, "taken" : taken}
-    return HttpResponse(template.render({**global_context(request), **context}, request))
+    return HttpResponse(template.render({**g_context, **context}, request))
 
 def transactionlist(request):
     template = loader.get_template('core/transactionlist.html')

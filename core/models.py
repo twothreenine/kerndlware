@@ -71,8 +71,13 @@ class Account(models.Model):
                 rate = rate * payphase.rate
         return rate
 
+    @property
     def users_str(self):
-        return "{}".format(self.users.all())
+        users = self.users.all()
+        usernames = []
+        for user in users:
+            usernames.append(user.name)
+        return "{}".format(usernames)
 
     def deposit_str(self):
         return "{} €".format(format(self.deposit,'.2f'))
@@ -511,6 +516,21 @@ class Batch(models.Model):
         return self.text
 
     @property
+    def stock_str(self):
+        return "{} " " {}".format(format(self.stock, '.3f'), self.unit)
+
+    @property
+    def monthly_consumption_str(self):
+        if self.monthly_consumption == 0:
+            return "None"
+        else:
+            return "{} " " {}".format(format(self.monthly_consumption, '.3f'), self.unit)
+
+    @property
+    def taken_str(self):
+        return "{} " " {}".format(format(self.taken, '.3f'), self.unit)
+
+    @property
     def price_str(self):
         return "{} €/{}".format(format(self.price,'.2f'), self.unit)
 
@@ -540,6 +560,7 @@ class Batch(models.Model):
             self.exhaustion_date = null
             self.save()
 
+    @property
     def evaluate_consumption(self):
         # not tried out yet
         if self.stock <= 0 or (self.stock < self.consumable.usual_taking_min and self.consumable.usual_taking_min > 0):
@@ -557,6 +578,7 @@ class Batch(models.Model):
         else:
             self.consumption_evaluation = "evaluation failed"
             self.save()
+        return self.consumption_evaluation
 
 class BatchStorage(models.Model):
     batch = models.ForeignKey('Batch')
@@ -776,7 +798,7 @@ class Transaction(models.Model):
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
     amount = models.FloatField()
     comment = models.TextField(blank=True)
-    #value = models.FloatField(default=0)
+    value = models.FloatField(default=0, blank=True, null=True)
     #positive = models.NullBooleanField()
     #to_balance = models.NullBooleanField()
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
@@ -796,11 +818,14 @@ class Transaction(models.Model):
         return "entered on {} by {}".format(self.entry_date, self.entered_by_user.name)
     
     def value_str(self, account):
-        charges = Charge.objects.filter(transaction=self, account=account)
-        value = 0
-        for charge in charges:
-            value += charge.value
-        return "{} €".format(format(value,'.2f'))
+        if account == 0:
+            return "{} €".format(format(self.value,'.2f'))
+        else:
+            charges = Charge.objects.filter(transaction=self, account=account)
+            value = 0
+            for charge in charges:
+                value += charge.value
+            return "{} €".format(format(value,'.2f'))
         # if self.type_name == "Transfer":
         #     return "+ {} €".format(format(self.value,'.2f'))
         # elif self.type_name == "CostSharing":
@@ -814,14 +839,18 @@ class Transaction(models.Model):
 
     def balance_str(self, account):
         # return "{} €".format(self.balance()) #format(self.balance(),'.2f')
+        if account == 0:
+            account = self.originator_account.id
         linked_charges = Charge.objects.filter(transaction=self, account=account)
         if linked_charges[0].to_balance == True:
             balance = 0
-            charges = Charge.objects.filter(account=account).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(transaction__lte = self.id)))
+            charges = Charge.objects.filter(account=account, to_balance=True).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(transaction__lte = self.id)))
             for charge in charges:
                 #if charge.date < self.date or (charge.date == self.date and charge.id <= self.id):
                 balance += charge.value
             return "{} €".format(format(balance,'.2f'))
+        else:
+            return ""
 
 class Charge(models.Model):
     # Defines a change in balance or deposit of one account. Most transactions will have one associated charge, transfers mostly two, cost sharing etc. will have multiple.
@@ -835,23 +864,32 @@ class Charge(models.Model):
     def __str__(self):
         return "Tr{}: {}".format(self.transaction.id, self.account.name)
 
+# class BatchTransaction(Transaction):
+#     batch = models.ForeignKey('Batch')
+
 class Taking(Transaction): # taking of goods from balance
     batch = models.ForeignKey('Batch')
 
     def __str__(self):
         return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit, self.entered_by_user.name)
 
-    @property
-    def type_name(self):
-        return "Taking"
+    def matter_str(self, account):
+        if account == 0:
+            originator = self.originator_account.name
+        else:
+            originator = "You"
+        return "{} took {} {} from batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.amount, self.batch.unit, self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
 
-    @property
-    def amount_str(self):
-        return "{} {} from".format(self.amount, self.batch.unit)
+    # @property
+    # def type_name(self):
+    #     return "Taking"
 
-    @property
-    def matter_str(self):
-        return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
+    # @property
+    # def amount_str(self):
+    #     return "{} {} from".format(self.amount, self.batch.unit)
+
+    # def matter_str(self, account):
+    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
 
     def perform(self):
         self.save()
@@ -859,13 +897,18 @@ class Taking(Transaction): # taking of goods from balance
         batch.subtract_stock(self.amount)
         batch.add_taken(self.amount)
         batch.save()
-        value = self.amount * batch.price * (-1)
-        charge = Charge(transaction=self, account=self.originator_account, value=value, to_balance=True, date=self.date)
+        self.value = self.amount * batch.price * (-1)
+        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         charge.save()
         # account.subtract_balance(self.value)
         self.originator_account.add_taken(self.amount)
         self.originator_account.save()
-        # self.save()
+        self.save()
+
+    @property
+    def details(self):
+        pass
+
 
     # def unperform(self): # TODO
     #     batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
@@ -893,29 +936,35 @@ class Restitution(Transaction): # return goods to the storage
         batch.add_stock(self.amount)
         batch.subtract_taken(self.amount)
         batch.save()
-        value = self.amount * batch.price
-        charge = Charge(transaction=self.id, account=self.originator_account, value=value, to_balance=True, date=self.date)
+        self.value = self.amount * batch.price
+        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         charge.save()
         #account.add_balance(self.value)
         self.originator_account.subtract_taken(self.amount)
         self.originator_account.save()
-        #self.save()
+        self.save()
 
-    @property
-    def type_name(self):
-        return "Restitution"
+    def matter_str(self, account):
+        if account == 0:
+            originator = self.originator_account.name
+        else:
+            originator = "You"
+        return "{} restituted {} {} to batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.amount, self.batch.unit, self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
 
-    @property
-    def amount_str(self):
-        return "{} {} from".format(self.amount, self.batch.unit)
+    # @property
+    # def type_name(self):
+    #     return "Restitution"
 
-    @property
-    def matter_str(self):
-        return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
+    # @property
+    # def amount_str(self):
+    #     return "{} {} from".format(self.amount, self.batch.unit)
+
+    # def matter_str(self, account):
+    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
 
 
 class Inpayment(Transaction): # insertion of money to balance
-    currency = models.ForeignKey('Currency', blank=True, null=True)
+    currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
     moneybox = models.ForeignKey('MoneyBox')
     confirmed_by = models.ForeignKey('User', blank=True, null=True)
     confirmation_comment = models.TextField(blank=True)
@@ -923,77 +972,92 @@ class Inpayment(Transaction): # insertion of money to balance
     def __str__(self):
         return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
 
-    def perform(self): # TODO: if the new depositation perform method works, change this the same way
+    def perform(self):
         self.save()
-        value = self.amount * self.currency.conversion_rate
-        moneybox = MoneyBox.objects.get(pk=self.moneybox.id)
-        moneyboxstock = MoneyBoxStock.objects.get(moneybox=moneybox, currency=currency) # foreign key?
-        moneyboxstock.inpayment(self.amount)
-        moneyboxstock.save()
-        charge = Charge(transaction=self.id, account=self.originator_account, value=value, to_balance=True, date=self.date)
-        charge.save()
-        #account.add_balance(value)
-        #account.save()
-        #self.positive = True
-        #self.to_balance = True
-        self.save()
-
-    @property
-    def type_name(self):
-        return "Inpayment"
-
-    @property
-    def amount_str(self):
-        if self.currency.name == "€":
-            return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
-        else:
-            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
-
-    @property
-    def matter_str(self):
-        if self.confirmed_by == None:
-            return "{}, not confirmed yet".format(self.moneybox.name)
-        else:
-            return "{}, confirmed by {} '{}'".format(self.moneybox.name, self.confirmed_by.name, self.confirmation_comment)
-
-class Depositation(Transaction): # insertion of money to deposit
-    currency = models.ForeignKey('Currency')
-    moneybox = models.ForeignKey('MoneyBox')
-    confirmed_by = models.ForeignKey('User', blank=True, null=True)
-    confirmation_comment = models.TextField(blank=True)
-
-    def __str__(self):
-        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
-
-    def perform(self): # not tested yet
-        self.save()
-        value = self.amount * self.currency.conversion_rate
+        self.value = self.amount * self.currency.conversion_rate
         moneyboxstock = MoneyBoxStock.objects.get(moneybox=self.moneybox, currency=self.currency) # foreign key?
         moneyboxstock.inpayment(self.amount)
         moneyboxstock.save()
-        charge = Charge(transaction=self, account=self.originator_account, value=value, to_balance=False, date=self.date)
+        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         charge.save()
-        # account.add_deposit(self.value)
-        # account.save()
-        # self.save()
+        #self.originator_account.add_balance(value)
+        #self.originator_account.save()
+        self.save()
 
-    @property
-    def type_name(self):
-        return "Depositation"
-
-    @property
-    def amount_str(self):
+    def matter_str(self, account):
+        if account == 0:
+            originator = self.originator_account.name
+        else:
+            originator = "You"
         if self.currency.name == "€":
-            return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+            return "{} paid in {} € via {}".format(originator, format(self.amount,'.2f'), self.moneybox.name)
         else:
-            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+            return "{} paid in {} {} ({} €) via {}".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'), self.moneybox.name)
 
-    @property
-    def matter_str(self):
-        if self.confirmed_by == None:
-            return "{}, not confirmed yet".format(self.moneybox.name)
+    # @property
+    # def type_name(self):
+    #     return "Inpayment"
+
+    # @property
+    # def amount_str(self):
+    #     if self.currency.name == "€":
+    #         return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+    #     else:
+    #         return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+
+    # def matter_str(self, account):
+    #     if self.confirmed_by == None:
+    #         return "{}, not confirmed yet".format(self.moneybox.name)
+    #     else:
+    #         return "{}, confirmed by {} '{}'".format(self.moneybox.name, self.confirmed_by.name, self.confirmation_comment)
+
+class Depositation(Transaction): # insertion of money to deposit
+    currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
+    moneybox = models.ForeignKey('MoneyBox')
+    confirmed_by = models.ForeignKey('User', blank=True, null=True)
+    confirmation_comment = models.TextField(blank=True)
+
+    def __str__(self):
+        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
+
+    def perform(self):
+        self.save()
+        self.value = self.amount * self.currency.conversion_rate
+        moneyboxstock = MoneyBoxStock.objects.get(moneybox=self.moneybox, currency=self.currency) # foreign key?
+        moneyboxstock.inpayment(self.amount)
+        moneyboxstock.save()
+        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=False, date=self.date)
+        charge.save()
+        # self.originator_account.add_deposit(self.value)
+        # self.originator_account.save()
+        self.save()
+
+    def matter_str(self, account):
+        if account == 0:
+            originator = self.originator_account.name
         else:
-            return "{}, confirmed by {} '{}'".format(self.moneybox.name, self.confirmed_by.name, self.confirmation_comment)
+            originator = "You"
+        if self.currency.name == "€":
+            return "{} deposited {} € via {}".format(originator, format(self.amount,'.2f'), self.moneybox.name)
+        else:
+            return "{} deposited {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.name, self.value, self.moneybox.name)
+
+    # @property
+    # def type_name(self):
+    #     return "Depositation"
+
+    # @property
+    # def amount_str(self):
+    #     if self.currency.name == "€":
+    #         return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+    #     else:
+    #         return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+
+    # def matter_str(self, account):
+    #     if self.confirmed_by == None:
+    #         return "{}, not confirmed yet".format(self.moneybox.name)
+    #     else:
+    #         return "{}, confirmed by {} '{}'".format(self.moneybox.name, self.confirmed_by.name, self.confirmation_comment)
 
 class PayOutBalance(Transaction):
     currency = models.ForeignKey('Currency')
@@ -1007,55 +1071,59 @@ class PayOutDeposit(Transaction):
 
     # perform
 
-#class Trbalance_in_Good(Transaction): # insertion of goods to balance
-#    insertion = models.ForeignKey('Insertion')
-
-#class Trbalance_out_Money(Transaction): # taking of money from balance
-#    pass
-
-#class TrDeposit_in(Transaction): # insertion of money or goods to deposit
-#    pass
-
-#class TrDeposit_out(Transaction): # taking of money or goods from deposit
-#    pass
-
 class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Angaben in Felder Amount und entweder Currency oder Batch berechnet
     recipient_account = models.ForeignKey('Account')
     currency = models.ForeignKey('Currency', blank=True, null=True)
     batch = models.ForeignKey('Batch', blank=True, null=True)
 
-    @property
-    def type_name(self):
-        return "Transfer"
-
     def perform(self):
         if not self.currency == None:
-            value = self.amount * self.currency.conversion_rate
+            self.value = self.amount * self.currency.conversion_rate
         else:
             batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
-            value = self.amount * batch.price
-        cs = Charge(transaction=self, account=self.originator_account, value=value*(-1), to_balance=True, date=self.date)
+            self.value = self.amount * batch.price
+        cs = Charge(transaction=self, account=self.originator_account, value=self.value*(-1), to_balance=True, date=self.date)
         cs.save()
-        # sender_account.subtract_balance(self.value)
-        # sender_account.save()
-        cr = Charge(transaction=self, account=self.recipient_account, value=value, to_balance=True, date=self.date)
+        # self.sender_account.subtract_balance(self.value)
+        # self.sender_account.save()
+        cr = Charge(transaction=self, account=self.recipient_account, value=self.value, to_balance=True, date=self.date)
         cr.save()
-        # recipient_account.add_balance(self.value)
-        # recipient_account.save()
-        # self.positive = False
-        # self.to_balance = True
+        # self.recipient_account.add_balance(self.value)
+        # self.recipient_account.save()
         self.save()
 
-    @property # TODO
-    def amount_str(self):
-        if self.currency.name == "€":
-            return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+    def matter_str(self, account):
+        if account == 0:
+            return "{} transferred {} {} to {}".format(self.originator_account.name, format(self.amount,'.2f'), self.currency.name, self.recipient_account.name)
         else:
-            return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+            acc = Account.objects.get(pk=account)
+            if self.originator_account == acc:
+                return "You transferred {} {} to {}".format(format(self.amount,'.2f'), self.currency.name, self.recipient_account.name)
+            elif self.recipient_account == acc:
+                return "{} transferred {} {} to you".format(self.originator_account.name, format(self.amount,'.2f'), self.currency.name)
+            else:
+                return " "
 
-    @property
-    def matter_str(self):
-        return "Transfer"
+
+    # @property
+    # def type_name(self):
+    #     return "Transfer"
+
+    # @property # TODO
+    # def amount_str(self):
+    #     if self.currency.name == "€":
+    #         return "{} {}".format(format(self.amount,'.2f'), self.currency.name)
+    #     else:
+    #         return "{} {} ({} €)".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+
+    # def matter_str(self, account):
+    #     acc = Account.objects.get(pk=account)
+    #     if acc == self.originator_account:
+    #         return "sent to {}".format(self.recipient_account.name)
+    #     elif acc == self.recipient_account:
+    #         return "sent by {}".format(self.originator_account.name)
+    #     else:
+    #         return " "
 
 class CostSharing(Transaction):
     participating_accounts = models.ManyToManyField('Account')
@@ -1067,11 +1135,11 @@ class CostSharing(Transaction):
         self.save()
         currency = Currency.objects.get(pk=1)
         if not currency == None:
-            value = self.amount * currency.conversion_rate
+            self.value = self.amount * currency.conversion_rate
         else:
             batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
-            value = self.amount * batch.price
-        co = Charge(transaction=self, account=self.originator_account, value=value, to_balance=True, date=self.date)
+            self.value = self.amount * batch.price
+        co = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         co.save()
         sum_of_rates = 0
         for account in self.participating_accounts.all():
@@ -1080,39 +1148,237 @@ class CostSharing(Transaction):
             for account in self.participating_accounts.all():
                 rate = account.calc_rate(datetime=self.date)
                 if rate > 0:
-                    share = value * rate / sum_of_rates * (-1)
+                    share = self.value * rate / sum_of_rates * (-1)
                     cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
                     cp.save()
         else:
             pass
 
-    def amount_str(self):
-        return "amount"
+    def matter_str(self, account):
+        count = self.participating_accounts.count()
+        if account == 0:
+            return "{} shared costs of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+        else:
+            acc = Account.objects.get(pk=account)
+            if self.originator_account == acc:
+                if self.participating_accounts.filter(pk=account).count():
+                    share = Charge.objects.filter(transaction=self, account=acc)[1].value
+                    return "You shared costs of {} {} from {} participants (own share: {} €)".format(format(self.amount,'.2f'), self.currency.name, count, format(share, '.2f'))
+                else:
+                    return "You shared costs of {} {} from {} participants".format(format(self.amount,'.2f'), self.currency.name, count)
+            elif self.participating_accounts.filter(pk=account).count():
+                 return "{} shared costs of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+            else:
+                 return " "
 
-    def matter_str(self):
-        return "matter"
+    # def amount_str(self):
+    #     return "{} €".format(format(self.amount,'.2f'))
 
+    # def matter_str(self, account):
+    #     count = self.participating_accounts.count()
+    #     acc = Account.objects.get(pk=account)
+    #     if acc == self.originator_account:
+    #         return "proportioned on {} participants".format(count)
+    #     elif self.participating_accounts.filter(pk=account).count():
+    #         return "drawn in by {} (proportioned on {} participants)".format(self.originator_account.name, count)
+    #     else:
+    #         return " "
 
 class ProceedsSharing(Transaction):
-    excepted_accounts = models.ManyToManyField('Account')
+    participating_accounts = models.ManyToManyField('Account')
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
-    # TODO: perform
+    def perform(self):
+        self.save()
+        currency = Currency.objects.get(pk=1)
+        if not currency == None:
+            self.value = self.amount * currency.conversion_rate * (-1)
+        else:
+            batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+            self.value = self.amount * batch.price
+        co = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
+        co.save()
+        sum_of_rates = 0
+        for account in self.participating_accounts.all():
+            sum_of_rates += account.calc_rate(datetime=self.date)
+        if sum_of_rates > 0:
+            for account in self.participating_accounts.all():
+                rate = account.calc_rate(datetime=self.date)
+                if rate > 0:
+                    share = self.value * rate / sum_of_rates * (-1)
+                    cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
+                    cp.save()
+        else:
+            pass
+
+    def matter_str(self, account):
+        count = self.participating_accounts.count()
+        if account == 0:
+            return "{} shared proceeds of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+        else:
+            acc = Account.objects.get(pk=account)
+            if self.originator_account == acc:
+                if self.participating_accounts.filter(pk=account).count():
+                    share = Charge.objects.filter(transaction=self, account=acc)[1].value
+                    return "You shared proceeds of {} € with {} participants (own share: {} €)".format(format(self.amount,'.2f'), count, format(share, '.2f'))
+                else:
+                    return "You shared proceeds of {} € with {} participants".format(format(self.amount,'.2f'), count)
+            elif self.participating_accounts.filter(pk=account).count():
+                 return "{} shared proceeds of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+            else:
+                 return ""
+
+    # def amount_str(self):
+    #     return "{} €".format(format(self.amount,'.2f'))
+
+    # def matter_str(self, account):
+    #     count = self.participating_accounts.count()
+    #     acc = Account.objects.get(pk=account)
+    #     if acc == self.originator_account:
+    #         if self.participating_accounts.filter(pk=account).count():
+    #             share = Charge.objects.filter(transaction=self, account=acc)[1].value
+    #             return "proportioned on {} participants (own share: {} €)".format(count, format(share,'.2f'))
+    #         elif not self.participating_accounts.filter(pk=account).count():
+    #             return "proportioned on {} participants".format(count)
+    #         else:
+    #             return " "
+    #     elif self.participating_accounts.filter(pk=account).count():
+    #         return "shared by {} (proportioned on {} recipients)".format(self.originator_account.name, count)
+    #     else:
+    #         return " "
 
 class Donation(Transaction):
-    excepted_accounts = models.ManyToManyField('Account')
+    participating_accounts = models.ManyToManyField('Account')
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
-    # TODO: perform
+    def matter_str(self, account):
+        count = self.participating_accounts.count()
+        if account == 0:
+            return "{} donated {} € to {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+        else:
+            acc = Account.objects.get(pk=account)
+            if self.originator_account == acc:
+                return "You donated {} € to {} participants".format(format(self.amount,'.2f'), count)
+            elif self.participating_accounts.filter(pk=account).count():
+                 return "{} donated {} € to {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+            else:
+                 return " "
+
+    # def matter_str(self, account):
+    #     count = self.participating_accounts.count()
+    #     acc = Account.objects.get(pk=account)
+    #     if account == self.originator_account:
+    #         return "proportioned on {} participants".format(count)
+    #     elif self.participating_accounts.filter(pk=account).count():
+    #         return "donated by {} (proportioned on {} recipients)".format(self.originator_account.name, count)
+    #     else:
+    #         pass
 
 class Recovery(Transaction): # donation backwards
-    excepted_accounts = models.ManyToManyField('Account')
+    participating_accounts = models.ManyToManyField('Account')
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
-    # TODO: perform
+    def matter_str(self, account):
+        count = self.participating_accounts.count()
+        if account == 0:
+            return "{} recovered {} € from {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+        else:
+            acc = Account.objects.get(pk=account)
+            if self.originator_account == acc:
+                return "You recovered {} € from {} participants".format(format(self.amount,'.2f'), count)
+            elif self.participating_accounts.filter(pk=account).count():
+                 return "{} recovered {} € from {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+            else:
+                 return " "
+
+class BatchTransactionTable:
+    def __init__(self, batch_id):
+        self.batch_id = batch_id
+        self.rows = list()
+        self.generate()
+
+    def generate(self):
+        takings = Taking.objects.filter(batch=self.batch_id)
+        restitutions = Restitution.objects.filter(batch=self.batch_id)
+        # cost_sharings = CostSharing.objects.all()
+        # proceeds_sharings = ProceedsSharing.objects.all()
+        # donations = Donation.objects.all()
+        # recoveries = Recovery.objects.all()
+        transactions = sorted(list(itertools.chain(takings, restitutions)), key=lambda t: (t.date, t.id))
+        for i in range(0, len(transactions)):
+            transaction = transactions[i]
+            row = list()
+            row.append(transaction.id)
+            row.append(transaction.date)
+            row.append(transaction.matter_str(account=0))
+            row.append(transaction.entry_details_str)
+            row.append(transaction.value_str(account=0))
+            row.append(transaction.balance_str(account=0))
+            row.append(transaction.comment_str)
+            self.rows.append(row)
+
+class ConsumableTransactionTable:
+    def __init__(self, consumable_id):
+        self.consumable_id = consumable_id
+        consumable = Consumable.objects.get(pk=consumable_id)
+        batches = Batch.objects.filter(consumable=consumable)
+        self.rows = list()
+        self.generate()
+
+    def generate(self):
+        # takings = []
+        # for t in Taking.objects.all():
+        #     if t.originator_account == acc or cs.participating_accounts.filter(pk=self.account_id).count():
+        #         cost_sharings.append(cs)
+        takings = Taking.objects.filter(batch__consumable=self.consumable_id)
+        restitutions = Restitution.objects.filter(batch__consumable=self.consumable_id)
+        # cost_sharings = CostSharing.objects.all()
+        # proceeds_sharings = ProceedsSharing.objects.all()
+        # donations = Donation.objects.all()
+        # recoveries = Recovery.objects.all()
+        transactions = sorted(list(itertools.chain(takings, restitutions)), key=lambda t: (t.date, t.id))
+        for i in range(0, len(transactions)):
+            transaction = transactions[i]
+            row = list()
+            row.append(transaction.id)
+            row.append(transaction.date)
+            row.append(transaction.matter_str(account=0))
+            row.append(transaction.entry_details_str)
+            row.append(transaction.value_str(account=0))
+            row.append(transaction.balance_str(account=0))
+            row.append(transaction.comment_str)
+            self.rows.append(row)
+
+class TransactionTable:
+    def __init__(self):
+        self.rows = list()
+        self.generate()
+
+    def generate(self):
+        takings = Taking.objects.all()
+        restitutions = Restitution.objects.all()
+        inpayments = Inpayment.objects.all()
+        depositations = Depositation.objects.all()
+        transfers = Transfer.objects.all()
+        cost_sharings = CostSharing.objects.all()
+        proceeds_sharings = ProceedsSharing.objects.all()
+        donations = Donation.objects.all()
+        recoveries = Recovery.objects.all()
+        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
+        for i in range(0, len(transactions)):
+            transaction = transactions[i]
+            row = list()
+            row.append(transaction.id)
+            row.append(transaction.date)
+            row.append(transaction.matter_str(account=0))
+            row.append(transaction.entry_details_str)
+            row.append(transaction.value_str(account=0))
+            row.append(transaction.balance_str(account=0))
+            row.append(transaction.comment_str)
+            self.rows.append(row)
 
 class AccountTable:
     def __init__(self, account_id):
@@ -1121,22 +1387,39 @@ class AccountTable:
         self.generate()
 
     def generate(self):
+        acc = Account.objects.get(pk=self.account_id)
         takings = Taking.objects.filter(originator_account=self.account_id)
         restitutions = Restitution.objects.filter(originator_account=self.account_id)
         inpayments = Inpayment.objects.filter(originator_account=self.account_id)
         depositations = Depositation.objects.filter(originator_account=self.account_id)
-        transfers = Transfer.objects.filter(Q(originator_account=self.account_id) | Q(involved_accounts=self.account_id))
-        cost_sharing = CostSharing.objects.filter(originator_account=self.account_id)
-        cost_sharing_involved = CostSharing.objects.filter(participating_accounts=self.account_id)
-        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharing, cost_sharing_involved)), key=lambda t: (t.date, t.id))
+        transfers = Transfer.objects.filter(Q(originator_account=self.account_id) | Q(recipient_account=self.account_id))
+        cost_sharings = []
+        for cs in CostSharing.objects.all():
+            if cs.originator_account == acc or cs.participating_accounts.filter(pk=self.account_id).count():
+                cost_sharings.append(cs)
+        # cost_sharing = CostSharing.objects.filter(originator_account=self.account_id) | CostSharing.objects.filter(participating_accounts=self.account_id)
+        proceeds_sharings = []
+        for ps in ProceedsSharing.objects.all():
+            if ps.originator_account == acc or ps.participating_accounts.filter(pk=self.account_id).count():
+                proceeds_sharings.append(ps)
+        # proceeds_sharing = ProceedsSharing.objects.filter(originator_account=self.account_id) | ProceedsSharing.objects.filter(participating_accounts=self.account_id)
+        donations = []
+        for dt in Donation.objects.all():
+            if dt.originator_account == acc or dt.participating_accounts.filter(pk=self.account_id).count():
+                donations.append(ps)
+        # donation = Donation.objects.filter(originator_account=self.account_id) & Donation.objects.filter(participating_accounts=self.account_id)
+        recoveries = []
+        for rc in Recovery.objects.all():
+            if rc.originator_account == acc or rc.participating_accounts.filter(pk=self.account_id).count():
+                recoveries.append(ps)
+        # recovery = Recovery.objects.filter(originator_account=self.account_id) & Recovery.objects.filter(participating_accounts=self.account_id)
+        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
             row.append(transaction.id)
             row.append(transaction.date)
-            row.append(transaction.__class__.__name__ + " of")
-            row.append(transaction.amount_str)
-            row.append(transaction.matter_str)
+            row.append(transaction.matter_str(account=self.account_id))
             row.append(transaction.entry_details_str)
             row.append(transaction.value_str(account=self.account_id))
             row.append(transaction.balance_str(account=self.account_id))
@@ -1147,4 +1430,32 @@ class AccountTable:
     #    return self.rows[row_index][column_index]
 
     def get_dimensions(self):
-        return (len(self.rows), 9)
+        return (len(self.rows), 7) # where is this used ???
+
+    class TrDetailsTable:
+        # Creates a table to show details to a transaction, such as the ID and, in case of cost sharing etc., the individual shares
+        def __init__(self, transaction):
+            transaction = transaction
+            self.rows = list()
+            self.generate()
+
+        def generate(self):
+            shares = sorted(Charge.objects.filter(transaction=transaction), key=lambda t: t.transaction.id).remove()
+            row = list()
+            row.append("Tr No. " + transaction.id)
+            if CostSharing.objects.get(id=transaction.id).count() or ProceedsSharing.objects.get(id=transaction.id).count() or Donation.objects.get(id=transaction.id).count() or Recovery.objects.get(id=transaction.id).count():
+                self.rows.append(row) # Head line of the table
+                row.append("Total: " + shares.count() + " participants")
+                total_rate = 0
+                total_value = 0
+                for charge in shares:
+                    total_rate += charge.account.calc_rate(date=transaction.date)
+                    total_value += charge.value
+                row.append(total_rate + "x")
+                row.append(total_value + " €")
+                self.rows.append(row)
+                for i in range(0, len(shares)):
+                    row.append(charge.account.name)
+                    row.append(charge.account.calc_rate(date=transaction.date) + "x")
+                    row.append(charge.value + " €")
+                    self.rows.append(row)

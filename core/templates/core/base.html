@@ -83,14 +83,39 @@
         <!-- Sidebar -->
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            <li><strong>Participate</strong></li>
+            <li><h2>Coopbook</h2></li>
+            <li><strong>Participate <a href="">New account</a></strong></li>
             <li><select class="selectpicker" data-live-search="true">
               {% for account in accounts %}
-              <option>{{ account }}</option>
+              <option>({{ account.id }}) {{ account.name }}</option>
               {% endfor %}
-            </select></li>
-            <li><a href="/account">My transactions</a></li>
-            <li><a href="">Bedarfschätzung</a></li>
+            </select> {{ balance }}</li>
+            <li><a href="/account">Transactions</a></li>
+            <li><a href="">Shopping list</a></li>
+            <li><a href="">Estimate consumption</a></li>
+            <li><a href="">Pre-order attachments</a></li>
+            <li><a href="">Settings</a></li>
+          </ul>
+           <ul class="nav nav-sidebar">
+            <li><strong>Overview</strong></li>
+            <li><a href="">Stock summary</a></li>
+            <li><a href="">Encyclopedia</a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><strong>Manage</strong></li>
+            <li><a href="">Order & insert</a></li>
+            <li><a href="">Supply & offers</a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><strong>Administrate</strong></li>
+            <li><a href="">Storage containers</a></li>
+            <li><a href="">Inventory</a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><strong>Transaction lists</strong></li>
+            <li><a href="/transactionlist">All transactions</a></li>
+            <li><a href="/batchtransactiontable">Specific batch</a></li>
+            <li><a href="/consumabletransactiontable">Specific consumable</a></li>
           </ul>
           <ul class="nav nav-sidebar">
             <li><strong>Lists</strong></li>
@@ -98,6 +123,16 @@
             <li><a href="/itemlist">Items</a></li>
             <li><a href="/consumablelist">Consumables</a></li>
             <li><a href="/batchlist">Batches</a></li>
+            <li><a href="/supplierlist">Suppliers</a></li>
+          </ul>
+          <ul class="nav nav-sidebar">
+            <li><strong>Setup & About</strong></li>
+            <li><a href="">General settings</a></li>
+            <li><a href="">Import data</a></li>
+            <li><a href="">Export data</a></li>
+            <li><a href="">Help</a></li>
+            <li><a href="">Coopbook portal</a></li>
+            <li><a href="">About this software</a></li>
           </ul>
         </div>
 

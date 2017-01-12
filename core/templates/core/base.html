@@ -84,11 +84,18 @@
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
             <li><strong>Participate</strong></li>
-            <li><select class="selectpicker" data-live-search="true">
-              {% for account in accounts %}
-              <option>{{ account }}</option>
-              {% endfor %}
-            </select></li>
+            <li>
+              <form action="/account" method="POST">
+                {% csrf_token %}
+                <!-- {{ account_selection_form.as_p }} -->
+                <select name="account" class="selectpicker" data-live-search="true">
+                  {% for account in accounts %}
+                  <option value="{{ account.id }}">{{ account }}</option>
+                  {% endfor %}
+                </select>
+                <input type="submit" value="Submit" />
+              </form>
+            </li>
             <li><a href="/account">My transactions</a></li>
             <li><a href="">Bedarfschätzung</a></li>
           </ul>

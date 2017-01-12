@@ -1,6 +1,9 @@
 from django import forms
 from .models import Taking
 
+class AccountSelectionForm(forms.Form):
+    account_id = forms.IntegerField()
+
 class TakingForm(forms.ModelForm):
     batch_name = forms.CharField(disabled=True, required=False)
     batch_no = forms.IntegerField()

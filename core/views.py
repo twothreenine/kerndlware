@@ -31,41 +31,61 @@ def index(request):
     # if a GET (or any other method) we'll create a blank form
     else:
         form = TakingForm()
-        
+    
     context = {"form" : form}
     return HttpResponse(template.render(context, request))
 
-def global_context():
+def account_selection_form(request):
+    if request.method == 'POST':
+        form = AccountSelectionForm(request.POST)
+        if form.is_valid():
+            print("Yay " + form.cleaned_data["account"])
+    else:
+        form = AccountSelectionForm()
+    return form
+
+def global_context(request):
     accounts = Account.objects.all()
-    context = {"accounts": accounts}
+    balance = "test €" # "{} €".format(format(Account.objects.get(pk=account_id).balance, '.2f')) # account_id has to be known from drop down menu
+    #balance = "{} €".format(format(Account.objects.get(pk=account_id).balance, '.2f'))
+    account_selection_form = account_selection_form(request)
+    context = {"accounts": accounts, "balance" : balance, "account_selection_form" : account_selection_form}
     return context
 
 def account(request):
-    # if this is a POST request we need to process the form data
-    if request.method == 'POST':
-        form = AccountSelectionForm(request.POST)
-        # check whether it's valid:
-        if form.is_valid():
-            print("Yay " + form.cleaned_data["account"])
-
-    # if a GET (or any other method) we'll create a blank form
-    else:
-        form = AccountSelectionForm()
     account_id = 4
     template = loader.get_template('core/account.html')
-    #takings = Taking.objects.filter(originator_account=account_id)
-    #restitutions = Restitution.objects.filter(originator_account=account_id)
-    #inpayments = Inpayment.objects.filter(originator_account=account_id)
-    #depositations = Depositation.objects.filter(originator_account=account_id)
-    #transfers = Transfer.objects.filter(Q(originator_account=account_id) | Q(recipient_account=account_id))
-    #transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers)), key=lambda t: (t.date, t.id))
-    # account_table = AccountTable(account_id)
     account_table = AccountTable(account_id) # [['2016-10-21', 'Taking of'],['2016-10-23', 'Taking of'],['2016-10-24', 'Taking of']]
-    context = {"account_table" : account_table, "form": form}
+    deposit = "{} €".format(format(Account.objects.get(pk=account_id).deposit, '.2f'))
+    taken = "{} kg".format(format(Account.objects.get(pk=account_id).taken, '.2f'))
+    context = {"account_table" : account_table, "deposit" : deposit, "taken" : taken}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def transactionlist(request):
+    template = loader.get_template('core/transactionlist.html')
+    transaction_table = TransactionTable()
+    context = {"transaction_table" : transaction_table}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def batchtransactiontable(request):
+    batches = Batch.objects.all()
+    batch_id = 3
+    stock = Batch.objects.get(pk=batch_id).stock
+    template = loader.get_template('core/batchtransactiontable.html')
+    batch_transaction_table = BatchTransactionTable(batch_id)
+    context = {"batches" : batches, "stock" : stock, "batch_transaction_table" : batch_transaction_table}
+    return HttpResponse(template.render({**global_context(), **context}, request))
+
+def consumabletransactiontable(request):
+    consumables = Consumable.objects.all()
+    consumable_id = 2
+    stock = Consumable.objects.get(pk=consumable_id).stock
+    template = loader.get_template('core/consumabletransactiontable.html')
+    consumable_transaction_table = ConsumableTransactionTable(consumable_id)
+    context = {"consumables" : consumables, "stock" : stock, "consumable_transaction_table" : consumable_transaction_table}
     return HttpResponse(template.render({**global_context(), **context}, request))
 
 def accountlist(request):
-
     template = loader.get_template('core/accountlist.html')
     accounts = Account.objects.all()
     accountlist = sorted(list(accounts), key=lambda t: t.id)

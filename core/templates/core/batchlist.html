@@ -28,16 +28,16 @@
               <td>{{ batch.consumable }}</td>
               <td>{{ batch.supplier.name }}</td>
               <td>{{ batch.supplier.broad_location }}</td>
-              <td>{{ batch.owner_account }}</td>
+              <td>{{ batch.owner_account.name }}</td>
               <td>{{ batch.price_str }}</td>
               <td>{{ batch.production_date }}</td>
               <td>{{ batch.purchase_date }}</td>
               <td>{{ batch.date_of_expiry }}</td>
               <td>{{ batch.exhaustion_date }}</td>
-              <td>{{ batch.stock }} {{ batch.unit }}</td>
-              <td>{{ batch.monthly_consumption }} {{ batch.unit }}</td>
-              <td>{{ batch.consumption_evaluation }}</td>
-              <td>{{ batch.taken }} {{ batch.unit }}</td>
+              <td>{{ batch.stock_str }}</td>
+              <td>{{ batch.monthly_consumption_str }}</td>
+              <td>{{ batch.evaluate_consumption }}</td>
+              <td>{{ batch.taken_str }}</td>
             </tr>
           {% endfor %}
           </tbody>

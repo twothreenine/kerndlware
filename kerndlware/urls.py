@@ -25,6 +25,9 @@ from core.views import BatchViewSet
 urlpatterns = [
     url(r'^$', views.index),
     url(r'^account$', views.account),
+    url(r'^transactionlist$', views.transactionlist),
+    url(r'^batchtransactiontable$', views.batchtransactiontable),
+    url(r'^consumabletransactiontable$', views.consumabletransactiontable),
     url(r'^accountlist$', views.accountlist),
     url(r'^batchlist$', views.batchlist),
     url(r'^itemlist$', views.itemlist),

@@ -1,6 +1,6 @@
 {% extends "core/base.html" %}
-{% block title %}Your transactions{% endblock %}
-{% block heading %}Your transactions{% endblock %}
+{% block title %}List of transactions of a specific consumable{% endblock %}
+{% block heading %}List of transactions of a specific consumable{% endblock %}
 {% block style %}
   tr.deposited {
     background-color: #61a8ff;
@@ -28,12 +28,11 @@
   }
 {% endblock %}
 {% block content %}
-<table class="table">
-<tbody>
-<td>Current balance: {{ balance }}</td>
-<td>Taken: {{ taken }}</td>
-<td>Deposited: {{ deposit }}</td>
-</table>
+<li><select class="selectpicker" data-live-search="true">
+  {% for consumable in consumables %}
+  <option>{{ consumable.name }}</option>
+  {% endfor %}
+</select> {{ stock }}</li>
 <table class="table">
   <thead>
     <th>Tr No</th>
@@ -45,7 +44,7 @@
     <th>Comment</th>
   </thead>
   <tbody>
-  {% for row in account_table.rows %}
+  {% for row in consumable_transaction_table.rows %}
     <tr class="{{ row.2|lower }}">
       {% for column in row %}
         <td> {{ column }} </td>

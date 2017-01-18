@@ -28,11 +28,15 @@
   }
 {% endblock %}
 {% block content %}
-<li><select class="selectpicker" data-live-search="true">
-  {% for batch in batches %}
-  <option>({{ batch.id }}) {{ batch.name }}</option>
-  {% endfor %}
-</select> {{ stock }}</li>
+<li>
+<form id="batch_selection_form" action="/batchtransactiontable" method="POST">
+  {% csrf_token %}
+  <select onchange="document.getElementById('batch_selection_form').submit();" name="batch_id" class="selectpicker" data-live-search="true">
+    {% for batch in batches %}
+    <option value="{{ batch.id }}" {% if batch.id == selected_batch_in_batchtransactiontable.id %}selected{% endif %}>{{ batch }}</option>
+    {% endfor %}
+  </select> {{ stock }}
+</form> </li>
 <table class="table">
   <thead>
     <th>Tr No</th>
@@ -40,7 +44,7 @@
     <th>Matter</th>
     <th>Entry details</th>
     <th>Value</th>
-    <th>Balance</th>
+    <th>Stock</th>
     <th>Comment</th>
   </thead>
   <tbody>

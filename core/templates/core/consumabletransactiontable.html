@@ -28,11 +28,15 @@
   }
 {% endblock %}
 {% block content %}
-<li><select class="selectpicker" data-live-search="true">
-  {% for consumable in consumables %}
-  <option>{{ consumable.name }}</option>
-  {% endfor %}
-</select> {{ stock }}</li>
+<li>
+<form id="consumable_selection_form" action="/consumabletransactiontable" method="POST">
+  {% csrf_token %}
+  <select onchange="document.getElementById('consumable_selection_form').submit();" name="consumable_id" class="selectpicker" data-live-search="true">
+    {% for consumable in consumables %}
+    <option value="{{ consumable.id }}" {% if consumable.id == selected_consumable_in_consumabletransactiontable.id %}selected{% endif %}>{{ consumable }}</option>
+    {% endfor %}
+  </select> {{ stock }}
+</form> </li>
 <table class="table">
   <thead>
     <th>Tr No</th>
@@ -40,7 +44,7 @@
     <th>Matter</th>
     <th>Entry details</th>
     <th>Value</th>
-    <th>Balance</th>
+    <th>Stock</th>
     <th>Comment</th>
   </thead>
   <tbody>

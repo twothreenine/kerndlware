@@ -141,8 +141,8 @@ class Account(models.Model):
 
 class AccPayPhase(models.Model):
     account = models.ManyToManyField('Account')
-    start = models.DateTimeField(blank=True, null=True) # null means the phase has no minimum date
-    end = models.DateTimeField(blank=True, null=True) # null means the phase has no maximum date (use null here for a current phase without any end given yet)
+    start = models.DateField(blank=True, null=True) # null means the phase has no minimum date
+    end = models.DateField(blank=True, null=True) # null means the phase has no maximum date (use null here for a current phase without any end given yet)
     rate = models.FloatField(default=1)
     comment = models.TextField(blank=True)
 
@@ -244,7 +244,7 @@ class StorageSpace(models.Model):
     ventilation_summer = PercentField(blank=True, null=True)
     rodentfree = models.NullBooleanField(blank=True) # safe from mice without further packaging
     mothfree = models.NullBooleanField(blank=True) # safe from moths without further packaging
-    conditions = models.ManyToManyField('StorageCondition', blank=True, null=True) # list of storage conditions this position complies
+    conditions = models.ManyToManyField('StorageCondition', blank=True) # list of storage conditions this position complies
     height_level = models.FloatField(blank=True, null=True) # height above room floor
     width = models.FloatField(blank=True, null=True) # width of the pace in cm
     depth = models.FloatField(blank=True, null=True) # width of the pace in cm
@@ -355,12 +355,28 @@ class SupplierRating(models.Model): # General rating of the supplier. Every offe
     official = models.PositiveSmallIntegerField(null=True, blank=True) # whether the rating shall be uploaded in the online portal. 0 = not at all; 1 = without importance; 2 = completely
 
 class Unit(models.Model):
-    name = models.CharField(max_length=100)
+    full_name = models.CharField(max_length=100)
+    abbr = models.CharField(max_length=100)
+    plural = models.CharField(max_length=100, blank=True, default='')
+    contents = models.CharField(max_length=100, blank=True, default='')
     weight = models.FloatField(null=True, blank=True) # in grams
     continuous = models.BooleanField()
 
     def __str__(self):
-        return self.name
+        return "{} ({})".format(self.full_name, self.abbr)
+
+    def display(self, amount, show_contents=True):
+        if self.continuous == True:
+            return "{} {}".format(format(amount, '.3f'), self.abbr)
+        else:
+            if not self.contents == '' and show_contents == True:
+                cont = " per {}".format(self.contents)
+            else:
+                cont = ""
+            if not amount == 1 and not self.plural == '':
+                return "{} {}{}".format(format(amount, '.0f'), self.plural, cont)
+            else:
+                return "{} {}{}".format(format(amount, '.0f'), self.abbr, cont)
 
 class Item(models.Model):
     name = models.CharField(max_length=100)
@@ -398,12 +414,24 @@ class Consumable(Item):
     def __str__(self):
         return self.name
 
+    # def calc_stock(self):
+    #     # funktioniert nicht
+    #     batches = Batch.objects.filter(consumable = self)
+    #     for batch in batches:
+    #         self.stock += batch.stock
+    #     self.save()
+
+    @property
+    def stock_str(self):
+        return "{} {}".format(format(self.calc_stock(), '.3f'), self.unit.abbr)
+
     def calc_stock(self):
-        # funktioniert nicht
-        batches = Batch.objects.filter(consumable = self)
-        for batch in batches:
-            self.stock += batch.stock
-        self.save()
+        stock = 0
+        for taking in Taking.objects.filter(batch__consumable=self):
+            stock -= taking.amount * taking.batch.unit.weight / self.unit.weight
+        for restitution in Restitution.objects.filter(batch__consumable=self):
+            stock += restitution.amount * restitution.batch.unit.weight/self.unit.weight
+        return stock
 
 class Product(Consumable):
     category = models.ForeignKey('ProductCat', blank=True, null=True)
@@ -428,10 +456,10 @@ class Product(Consumable):
     storage_ventilation_max = PercentField(blank=True, null=True)
     storage_mothfree_needed = models.NullBooleanField(blank=True)
     storage_micefree_needed = models.NullBooleanField(blank=True)
-    sc_essential = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of essential storage conditions
-    sc_favorable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of favorable storage conditions
-    sc_unfavorable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of unfavorable storage conditions
-    sc_intolerable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of intolerable storage conditions
+    # sc_essential = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of essential storage conditions
+    # sc_favorable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of favorable storage conditions
+    # sc_unfavorable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of unfavorable storage conditions
+    # sc_intolerable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of intolerable storage conditions
     lossfactor = PercentField(default=0) # presumed lossfactor per month in % for this product (e.g. 3 => it is presumed to lose 3% of the stock every month of storage)
     official = models.PositiveSmallIntegerField(blank=True, null=True) # whether the product shall be uploaded in the online portal. 0 = not at all; 1 = without strage conditions; 2 = completely
 
@@ -513,26 +541,38 @@ class Batch(models.Model):
         return "B{} - {} by {} from {}".format(str(self.id), self.name, self.supplier, self.purchase_date)
 
     def __str__(self):
-        return self.text
+        if not self.unit.contents == '':
+            cont = " ({} {})".format(self.unit.contents, self.unit.abbr)
+        else:
+            cont = ""
+        return "B{} - {}{} by {} from {}".format(str(self.id), self.name, cont, self.supplier, self.purchase_date)
 
     @property
     def stock_str(self):
-        return "{} " " {}".format(format(self.stock, '.3f'), self.unit)
+        return "{} {}".format(format(self.calc_stock(), '.3f'), self.unit.abbr)
+
+    def calc_stock(self):
+        stock = 0
+        for taking in Taking.objects.filter(batch=self):
+            stock -= taking.amount
+        for restitution in Restitution.objects.filter(batch=self):
+            stock += restitution.amount
+        return stock
 
     @property
     def monthly_consumption_str(self):
         if self.monthly_consumption == 0:
             return "None"
         else:
-            return "{} " " {}".format(format(self.monthly_consumption, '.3f'), self.unit)
+            return "{} " " {}".format(format(self.monthly_consumption, '.3f'), self.unit.abbr)
 
     @property
     def taken_str(self):
-        return "{} " " {}".format(format(self.taken, '.3f'), self.unit)
+        return "{} " " {}".format(format(self.taken, '.3f'), self.unit.abbr)
 
     @property
     def price_str(self):
-        return "{} €/{}".format(format(self.price,'.2f'), self.unit)
+        return "{} €/{}".format(format(self.price,'.2f'), self.unit.abbr)
 
     def calc_monthly_consumption(self):
         # not tried out yet
@@ -792,7 +832,7 @@ class Insertion(models.Model):
 
 class Transaction(models.Model):
     originator_account = models.ForeignKey('Account', related_name="originator_account")
-    involved_accounts = models.ManyToManyField('Account', related_name="involved_accounts", blank=True, null=True)
+    # involved_accounts = models.ManyToManyField('Account', related_name="involved_accounts", blank=True)
     entered_by_user = models.ForeignKey('User') # Person who typed in the transaction
     date = models.DateField()
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
@@ -843,7 +883,7 @@ class Transaction(models.Model):
             account = self.originator_account.id
         #linked_charges = Charge.objects.filter(transaction=self, account=account)
         #if linked_charges[0].to_balance == True:
-        if self.__class__ == Depositation:
+        if not self.__class__ == Depositation and not self.__class__ == PayOutDeposit:
             balance = 0
             charges = Charge.objects.filter(account=account, to_balance=True).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(transaction__lte = self.id)))
             for charge in charges:
@@ -865,21 +905,28 @@ class Charge(models.Model):
     def __str__(self):
         return "Tr{}: {}".format(self.transaction.id, self.account.name)
 
-# class BatchTransaction(Transaction):
-#     batch = models.ForeignKey('Batch')
-
-class Taking(Transaction): # taking of goods from balance
+class BatchTransaction(Transaction):
     batch = models.ForeignKey('Batch')
 
-    def __str__(self):
-        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit, self.entered_by_user.name)
+class Taking(BatchTransaction): # taking of goods from balance
 
-    def matter_str(self, account):
+    def __str__(self):
+        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit.abbr, self.entered_by_user.name)
+
+    @property
+    def type(self):
+        return self.__class__
+
+    def matter_str(self, account, show_contents=True):
         if account == 0:
             originator = self.originator_account.name
         else:
             originator = "You"
-        return "{} took {} {} from batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.amount, self.batch.unit, self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
+        # if self.batch.unit.continuous == False and not self.amount == 1:
+        #     unit = self.batch.unit.plural
+        # else:
+        #     unit = self.batch.unit.abbr
+        return "{} took {} from batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.batch.unit.display(self.amount, show_contents), self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
 
     # @property
     # def type_name(self):
@@ -887,10 +934,10 @@ class Taking(Transaction): # taking of goods from balance
 
     # @property
     # def amount_str(self):
-    #     return "{} {} from".format(self.amount, self.batch.unit)
+    #     return "{} {} from".format(self.amount, self.batch.unit.abbr)
 
     # def matter_str(self, account):
-    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
+    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
 
     def perform(self):
         self.save()
@@ -910,6 +957,21 @@ class Taking(Transaction): # taking of goods from balance
     def details(self):
         pass
 
+    def batch_stock_str(self):
+        stock = 0
+        for taking in Taking.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock -= taking.amount
+        for restitution in Restitution.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock += restitution.amount
+        return self.batch.unit.display(stock, False)
+
+    def consumable_stock_str(self):
+        stock = 0
+        for taking in Taking.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock -= taking.amount * taking.batch.unit.weight / taking.batch.consumable.unit.weight
+        for restitution in Restitution.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock += restitution.amount * restitution.batch.unit.weight / restitution.batch.consumable.unit.weight
+        return self.batch.consumable.unit.display(stock)
 
     # def unperform(self): # TODO
     #     batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
@@ -923,14 +985,17 @@ class Taking(Transaction): # taking of goods from balance
     #     account.save()
     #     self.save()
 
-class Restitution(Transaction): # return goods to the storage
-    batch = models.ForeignKey('Batch')
+class Restitution(BatchTransaction): # return goods to the storage
     original_taking = models.ForeignKey('Taking', blank=True, null=True)
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
     def __str__(self):
-        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit, self.entered_by_user.name)
+        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit.abbr, self.entered_by_user.name)
+
+    @property
+    def type(self):
+        return self.__class__
 
     def perform(self): # not tested yet
         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
@@ -945,12 +1010,12 @@ class Restitution(Transaction): # return goods to the storage
         self.originator_account.save()
         self.save()
 
-    def matter_str(self, account):
+    def matter_str(self, account, show_contents=True):
         if account == 0:
             originator = self.originator_account.name
         else:
             originator = "You"
-        return "{} restituted {} {} to batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.amount, self.batch.unit, self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit)
+        return "{} restituted {} to batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.batch.unit.display(self.amount, show_contents), self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
 
     # @property
     # def type_name(self):
@@ -958,11 +1023,26 @@ class Restitution(Transaction): # return goods to the storage
 
     # @property
     # def amount_str(self):
-    #     return "{} {} from".format(self.amount, self.batch.unit)
+    #     return "{} {} from".format(self.amount, self.batch.unit.abbr)
 
     # def matter_str(self, account):
-    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit)
+    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit.abbr)
 
+    def batch_stock_str(self):
+        stock = 0
+        for taking in Taking.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock -= taking.amount
+        for restitution in Restitution.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock += restitution.amount
+        return self.batch.unit.display(stock, False)
+
+    def consumable_stock_str(self):
+        stock = 0
+        for taking in Taking.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock -= taking.amount * taking.batch.unit.weight / taking.batch.consumable.unit.weight
+        for restitution in Restitution.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+            stock += restitution.amount * restitution.batch.unit.weight / restitution.batch.consumable.unit.weight
+        return self.batch.consumable.unit.display(stock)
 
 class Inpayment(Transaction): # insertion of money to balance
     currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
@@ -972,6 +1052,10 @@ class Inpayment(Transaction): # insertion of money to balance
 
     def __str__(self):
         return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
+
+    @property
+    def type(self):
+        return self.__class__
 
     def perform(self):
         self.save()
@@ -1021,6 +1105,10 @@ class Depositation(Transaction): # insertion of money to deposit
     def __str__(self):
         return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
 
+    @property
+    def type(self):
+        return self.__class__
+
     def perform(self):
         self.save()
         self.value = self.amount * self.currency.conversion_rate
@@ -1066,16 +1154,28 @@ class PayOutBalance(Transaction):
 
     # perform
 
+    @property
+    def type(self):
+        return self.__class__
+
 class PayOutDeposit(Transaction):
     currency = models.ForeignKey('Currency')
     moneybox = models.ForeignKey('MoneyBox')
 
     # perform
 
+    @property
+    def type(self):
+        return self.__class__
+
 class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Angaben in Felder Amount und entweder Currency oder Batch berechnet
     recipient_account = models.ForeignKey('Account')
     currency = models.ForeignKey('Currency', blank=True, null=True)
     batch = models.ForeignKey('Batch', blank=True, null=True)
+
+    @property
+    def type(self):
+        return self.__class__
 
     def perform(self):
         if not self.currency == None:
@@ -1132,6 +1232,10 @@ class CostSharing(Transaction):
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
+    @property
+    def type(self):
+        return self.__class__
+
     def perform(self):
         self.save()
         currency = Currency.objects.get(pk=1)
@@ -1164,9 +1268,9 @@ class CostSharing(Transaction):
             if self.originator_account == acc:
                 if self.participating_accounts.filter(pk=account).count():
                     share = Charge.objects.filter(transaction=self, account=acc)[1].value
-                    return "You shared costs of {} {} from {} participants (own share: {} €)".format(format(self.amount,'.2f'), self.currency.name, count, format(share, '.2f'))
+                    return "You shared costs of {} € from {} participants (own share: {} €)".format(format(self.amount,'.2f'), count, format(share, '.2f'))
                 else:
-                    return "You shared costs of {} {} from {} participants".format(format(self.amount,'.2f'), self.currency.name, count)
+                    return "You shared costs of {} € from {} participants".format(format(self.amount,'.2f'), count)
             elif self.participating_accounts.filter(pk=account).count():
                  return "{} shared costs of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
             else:
@@ -1189,6 +1293,10 @@ class ProceedsSharing(Transaction):
     participating_accounts = models.ManyToManyField('Account')
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
+
+    @property
+    def type(self):
+        return self.__class__
 
     def perform(self):
         self.save()
@@ -1254,6 +1362,10 @@ class Donation(Transaction):
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
+    @property
+    def type(self):
+        return self.__class__
+
     def matter_str(self, account):
         count = self.participating_accounts.count()
         if account == 0:
@@ -1282,6 +1394,10 @@ class Recovery(Transaction): # donation backwards
     approved_by = models.ForeignKey('User', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
+    @property
+    def type(self):
+        return self.__class__
+
     def matter_str(self, account):
         count = self.participating_accounts.count()
         if account == 0:
@@ -1294,169 +1410,3 @@ class Recovery(Transaction): # donation backwards
                  return "{} recovered {} € from {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
             else:
                  return " "
-
-class BatchTransactionTable:
-    def __init__(self, batch_id):
-        self.batch_id = batch_id
-        self.rows = list()
-        self.generate()
-
-    def generate(self):
-        takings = Taking.objects.filter(batch=self.batch_id)
-        restitutions = Restitution.objects.filter(batch=self.batch_id)
-        # cost_sharings = CostSharing.objects.all()
-        # proceeds_sharings = ProceedsSharing.objects.all()
-        # donations = Donation.objects.all()
-        # recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions)), key=lambda t: (t.date, t.id))
-        for i in range(0, len(transactions)):
-            transaction = transactions[i]
-            row = list()
-            row.append(transaction.id)
-            row.append(transaction.date)
-            row.append(transaction.matter_str(account=0))
-            row.append(transaction.entry_details_str)
-            row.append(transaction.value_str(account=0))
-            row.append(transaction.balance_str(account=0))
-            row.append(transaction.comment_str)
-            self.rows.append(row)
-
-class ConsumableTransactionTable:
-    def __init__(self, consumable_id):
-        self.consumable_id = consumable_id
-        consumable = Consumable.objects.get(pk=consumable_id)
-        batches = Batch.objects.filter(consumable=consumable)
-        self.rows = list()
-        self.generate()
-
-    def generate(self):
-        # takings = []
-        # for t in Taking.objects.all():
-        #     if t.originator_account == acc or cs.participating_accounts.filter(pk=self.account_id).count():
-        #         cost_sharings.append(cs)
-        takings = Taking.objects.filter(batch__consumable=self.consumable_id)
-        restitutions = Restitution.objects.filter(batch__consumable=self.consumable_id)
-        # cost_sharings = CostSharing.objects.all()
-        # proceeds_sharings = ProceedsSharing.objects.all()
-        # donations = Donation.objects.all()
-        # recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions)), key=lambda t: (t.date, t.id))
-        for i in range(0, len(transactions)):
-            transaction = transactions[i]
-            row = list()
-            row.append(transaction.id)
-            row.append(transaction.date)
-            row.append(transaction.matter_str(account=0))
-            row.append(transaction.entry_details_str)
-            row.append(transaction.value_str(account=0))
-            row.append(transaction.balance_str(account=0))
-            row.append(transaction.comment_str)
-            self.rows.append(row)
-
-class TransactionTable:
-    def __init__(self):
-        self.rows = list()
-        self.generate()
-
-    def generate(self):
-        takings = Taking.objects.all()
-        restitutions = Restitution.objects.all()
-        inpayments = Inpayment.objects.all()
-        depositations = Depositation.objects.all()
-        transfers = Transfer.objects.all()
-        cost_sharings = CostSharing.objects.all()
-        proceeds_sharings = ProceedsSharing.objects.all()
-        donations = Donation.objects.all()
-        recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
-        for i in range(0, len(transactions)):
-            transaction = transactions[i]
-            row = list()
-            row.append(transaction.id)
-            row.append(transaction.date)
-            row.append(transaction.matter_str(account=0))
-            row.append(transaction.entry_details_str)
-            row.append(transaction.value_str(account=0))
-            row.append(transaction.balance_str(account=0))
-            row.append(transaction.comment_str)
-            self.rows.append(row)
-
-class AccountTable:
-    def __init__(self, account_id):
-        self.account_id = account_id
-        self.rows = list()
-        self.generate()
-
-    def generate(self):
-        acc = Account.objects.get(pk=self.account_id)
-        takings = Taking.objects.filter(originator_account=self.account_id)
-        restitutions = Restitution.objects.filter(originator_account=self.account_id)
-        inpayments = Inpayment.objects.filter(originator_account=self.account_id)
-        depositations = Depositation.objects.filter(originator_account=self.account_id)
-        transfers = Transfer.objects.filter(Q(originator_account=self.account_id) | Q(recipient_account=self.account_id))
-        cost_sharings = []
-        for cs in CostSharing.objects.all():
-            if cs.originator_account == acc or cs.participating_accounts.filter(pk=self.account_id).count():
-                cost_sharings.append(cs)
-        # cost_sharing = CostSharing.objects.filter(originator_account=self.account_id) | CostSharing.objects.filter(participating_accounts=self.account_id)
-        proceeds_sharings = []
-        for ps in ProceedsSharing.objects.all():
-            if ps.originator_account == acc or ps.participating_accounts.filter(pk=self.account_id).count():
-                proceeds_sharings.append(ps)
-        # proceeds_sharing = ProceedsSharing.objects.filter(originator_account=self.account_id) | ProceedsSharing.objects.filter(participating_accounts=self.account_id)
-        donations = []
-        for dt in Donation.objects.all():
-            if dt.originator_account == acc or dt.participating_accounts.filter(pk=self.account_id).count():
-                donations.append(ps)
-        # donation = Donation.objects.filter(originator_account=self.account_id) & Donation.objects.filter(participating_accounts=self.account_id)
-        recoveries = []
-        for rc in Recovery.objects.all():
-            if rc.originator_account == acc or rc.participating_accounts.filter(pk=self.account_id).count():
-                recoveries.append(ps)
-        # recovery = Recovery.objects.filter(originator_account=self.account_id) & Recovery.objects.filter(participating_accounts=self.account_id)
-        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
-        for i in range(0, len(transactions)):
-            transaction = transactions[i]
-            row = list()
-            row.append(transaction.id)
-            row.append(transaction.date)
-            row.append(transaction.matter_str(account=self.account_id))
-            row.append(transaction.entry_details_str)
-            row.append(transaction.value_str(account=self.account_id))
-            row.append(transaction.balance_str(account=self.account_id))
-            row.append(transaction.comment_str)
-            self.rows.append(row)
-
-    # def get(self, row_index, column_index):
-    #    return self.rows[row_index][column_index]
-
-    def get_dimensions(self):
-        return (len(self.rows), 7) # where is this used ???
-
-    class TrDetailsTable:
-        # Creates a table to show details to a transaction, such as the ID and, in case of cost sharing etc., the individual shares
-        def __init__(self, transaction):
-            transaction = transaction
-            self.rows = list()
-            self.generate()
-
-        def generate(self):
-            shares = sorted(Charge.objects.filter(transaction=transaction), key=lambda t: t.transaction.id).remove()
-            row = list()
-            row.append("Tr No. " + transaction.id)
-            if CostSharing.objects.get(id=transaction.id).count() or ProceedsSharing.objects.get(id=transaction.id).count() or Donation.objects.get(id=transaction.id).count() or Recovery.objects.get(id=transaction.id).count():
-                self.rows.append(row) # Head line of the table
-                row.append("Total: " + shares.count() + " participants")
-                total_rate = 0
-                total_value = 0
-                for charge in shares:
-                    total_rate += charge.account.calc_rate(date=transaction.date)
-                    total_value += charge.value
-                row.append(total_rate + "x")
-                row.append(total_value + " €")
-                self.rows.append(row)
-                for i in range(0, len(shares)):
-                    row.append(charge.account.name)
-                    row.append(charge.account.calc_rate(date=transaction.date) + "x")
-                    row.append(charge.value + " €")
-                    self.rows.append(row)

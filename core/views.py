@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
-# from .forms import TakingForm
+from .forms import TransactionEntryForm
 from .models import *
 from .tables import *
 from .serializers import BatchSerializer
@@ -64,12 +64,16 @@ def select_consumable_for_consumabletransactiontable(request):
             selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=consumable_id)
 
 def global_context(request):
-    select_account(request)
     accounts = Account.objects.all()
     global selected_account
     balance = "{} €".format(format(selected_account.balance, '.2f'))
-    context = {"accounts": accounts, "balance" : balance, "selected_account" : selected_account}
+    current_path = request.get_full_path()
+    context = {"accounts": accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path}
     return context
+
+def base(request):
+    select_account(request)
+    return HttpResponseRedirect(request.POST['current_path'])
 
 def account(request):
     template = loader.get_template('core/account.html')
@@ -78,7 +82,25 @@ def account(request):
     account_table = AccountTable(account_id=selected_account.id)
     deposit = "{} €".format(format(selected_account.deposit, '.2f'))
     taken = "{} kg".format(format(selected_account.taken, '.1f'))
-    context = {"account_table" : account_table, "deposit" : deposit, "taken" : taken}
+
+    if request.method == 'POST':
+        entry_form = TransactionEntryForm(request.POST)
+        if entry_form.is_valid():
+            print(entry_form)
+            pass
+            #return HttpResponseRedirect('/')
+    else:
+        entry_form = TransactionEntryForm()
+
+    entry_types = ["Taking", "Restitution", "Inpayment", "Depositation"]
+    users = User.objects.all()
+    # TODO: currencies abfragen
+    currencies = ""
+    context = {
+        "account_table" : account_table, "deposit" : deposit,
+        "taken" : taken, "entry_form" : entry_form, "entry_types" : entry_types,
+        "users" : users, "currencies" : currencies
+    }
     return HttpResponse(template.render({**g_context, **context}, request))
 
 def transactionlist(request):

@@ -1,5 +1,23 @@
-# from django import forms
+from django import forms
 # from .models import Taking
+
+class TransactionEntryForm(forms.Form):
+
+    # Generic fields
+    transaction_type = forms.CharField()
+    by_user = forms.IntegerField()
+    date = forms.DateField()
+    amount = forms.FloatField()
+    value = forms.CharField(widget=forms.TextInput(attrs={"readonly": "true"}))
+    comment = forms.CharField()
+
+    # Taking & restitution fields
+    batch_no = forms.IntegerField()
+    batch_name = forms.CharField(widget=forms.TextInput(attrs={"readonly": "true"}))
+
+    # Inpayment & depositation
+    moneybox = forms.IntegerField()
+    currency = forms.IntegerField()
 
 # class TakingForm(forms.ModelForm):
 #     batch_name = forms.CharField(disabled=True, required=False)

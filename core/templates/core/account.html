@@ -106,6 +106,7 @@
   {% endfor %}
   </tbody>
 </table>
+
 <form id="transaction_entry_form" action="/account" method="POST">
   {% csrf_token %}
   
@@ -127,22 +128,6 @@
   <input type="date" name="date" placeholder="Date of transaction" required="true">
   <input type="number" name="batch_no" min="1" placeholder="Batch no.">
   <input type="text" name="batch_name" readonly>
-  <!-- 
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-  <script>
-    $('#id_batch_no').keyup(function(e) {
-      id = $('#id_batch_no').val()
-      api_url = "http://127.0.0.1:8000/batches/?format=json&id=" + id;
-      $.ajax({
-        url: api_url
-      }).success(function(json) {
-        text = json["text"]
-        $('#id_batch_name').val(text)
-      });
-    })
-  </script>
-  -->
 
   <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker">
     <option value="" disabled selected>Choose currency</option>
@@ -166,4 +151,17 @@
   <input type="submit" value="Submit" />
 
 </form>
+
+{% endblock %}
+
+{% block script %}
+<script>
+  $(document).ready(function() {
+    var dict = {
+      "taking": function() {
+        $("#transaction_entry_form");
+      }
+    }
+  });
+</script>
 {% endblock %}

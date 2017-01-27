@@ -26,46 +26,66 @@
   tr.donated {
     background-color: #77ff70;
   }
+  #account_info {
+    list-style-type: none;
+    padding: 0;
+  }
+  #account_info li {
+    display: inline;
+    margin-right: 2em;
+  }
+  #transaction_list_filter div {
+    float: left;
+    margin-right: 1em;
+  }
+  #transaction_list_filter div > label, #transaction_list_filter div > select {
+    display: block;
+  }
 {% endblock %}
 {% block content %}
-<table class="table">
-<tbody>
-<td>Current balance: {{ balance }}</td>
-<td>Taken: {{ taken }}</td>
-<td>Deposited: {{ deposit }}</td>
-</table>
-<table class="table">
-  <tbody>
-    <tr>
-      <td>Filter the list:</td>
-      <td>Transaction types <form id="all_types" action="/account" method="POST">{% csrf_token %}<input type="submit" value="All" /></form> <form id="none_type" action="/account" method="POST">{% csrf_token %}<input type="submit" value="None" /></form></td>
-      <td>Start date</td>
-      <td>End date</td>
-      <td>Enterer</td>
-    </tr>
-    <div><form id="transaction_list_filter" action="/account" method="POST">
+
+<ul id="account_info">
+  <li>Current balance: {{ balance }}</li>
+  <li>Taken: {{ taken }}</li>
+  <li>Deposited: {{ deposit }}</li>
+</ul>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    <form id="transaction_list_filter" action="/account" method="POST">
       {% csrf_token %}
-        <tr>
-          <td><input type="submit" value="Apply" /></td>
-          <td><select multiple="multiple" name="transaction_type" class="selectpicker">
-                <option value="" disabled>Choose type</option>
-                {% for type in transaction_types %}
-                <option value="{{ type.id }}" {% if type.id in selected_type_ids %}selected{% endif %}>{{ type.name }}</option>
-                {% endfor %}
-              </select></td>
-          <td><input type="text" name="start_date" value = {{ start_date }}></td>
-          <td><input type="text" name="end_date" value = {{ end_date }}></td>
-          <td><select name="enterer" class="selectpicker" data-live-search="true">
-                <option value="" disabled selected>Filter for enterer</option>            <!-- to not show this as an option add  class="text-hide"  -->
-                <option value=0>All users</option>
-                {% for user in users %}
-                <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
-                {% endfor %}
-              </select></td>
-      </tr>
-    </form></div>
-  </tbody>
-</table>
+      <div>
+        <label for="apply">Select filters</label>
+        <input name="apply" type="submit" value="Apply" />
+      </div>
+      <div>
+        <label for="transaction_type">Choose type</label>
+        <select multiple="multiple" name="transaction_type" class="selectpicker" data-actions-box="true">
+          {% for type in transaction_types %}
+          <option value="{{ type.id }}" {% if type.id in selected_type_ids %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="start_date">Start date</label>
+        <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd">
+      </div>
+      <div>
+        <label for="end_date">End date</label>
+        <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd">
+      </div>
+      <div>
+        <label for="enterer">Enterer</label>
+        <select name="enterer" class="selectpicker" data-live-search="true">
+          <option value=0>All users</option>
+          {% for user in users %}
+          <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
+</div>
 <table class="table">
   <thead>
     <th>Tr No</th>

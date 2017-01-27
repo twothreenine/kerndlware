@@ -1,4 +1,5 @@
 from django.db.models import Q
+import datetime
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
@@ -16,6 +17,13 @@ selected_account = Account.objects.get(pk=1)
 logger = logging.getLogger(__name__)
 selected_batch_in_batchtransactiontable = Batch.objects.get(pk=1)
 selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=1)
+selected_types_in_account_transactions = TransactionType.objects.all()
+start_date_in_account_transactions = models.DateField(blank=True, null=True)
+start_date_in_account_transactions = None # datetime.datetime.strptime('2014-01-01' , '%Y-%m-%d')
+end_date_in_account_transactions = models.DateField(blank=True, null=True)
+end_date_in_account_transactions = None
+enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
+enterer_in_account_transactions = None
 
 def index(request):
     template = loader.get_template('core/index.html')
@@ -63,12 +71,45 @@ def select_consumable_for_consumabletransactiontable(request):
             global selected_consumable_in_consumabletransactiontable
             selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=consumable_id)
 
+def filter_account_transactions(request):
+    if request.method == 'POST':
+        transaction_types = request.POST.getlist("transaction_type")
+        global selected_types_in_account_transactions
+        selected_types_in_account_transactions = []
+        if transaction_types:
+            for t in transaction_types:
+                t = int(t)
+                tt = TransactionType.objects.get(pk=t)
+                selected_types_in_account_transactions.append(tt)
+        start_date = request.POST.get("start_date")
+        global start_date_in_account_transactions
+        if start_date:
+            start_date_in_account_transactions = datetime.datetime.strptime(start_date , '%Y-%m-%d').date()
+        else:
+            start_date_in_account_transactions = None
+        end_date = request.POST.get("end_date")
+        global end_date_in_account_transactions
+        if end_date:
+            end_date_in_account_transactions = datetime.datetime.strptime(end_date , '%Y-%m-%d').date()
+        else:
+            end_date_in_account_transactions = None
+        enterer = request.POST.get("enterer")
+        global enterer_in_account_transactions
+        if enterer:
+            enterer_id = int(enterer)
+            if enterer_id == 0:
+                enterer_in_account_transactions = None
+            else:
+                enterer_in_account_transactions = User.objects.get(pk=enterer_id)
+        else:
+            enterer_in_account_transactions = None
+
 def global_context(request):
     accounts = Account.objects.all()
     global selected_account
-    balance = "{} €".format(format(selected_account.balance, '.2f'))
+    balance = selected_account.balance_str
     current_path = request.get_full_path()
-    context = {"accounts": accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path}
+    context = {"accounts": accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path, }
     return context
 
 def base(request):
@@ -76,13 +117,30 @@ def base(request):
     return HttpResponseRedirect(request.POST['current_path'])
 
 def account(request):
+    filter_account_transactions(request)
     template = loader.get_template('core/account.html')
     g_context = global_context(request)
     global selected_account
-    account_table = AccountTable(account_id=selected_account.id)
-    deposit = "{} €".format(format(selected_account.deposit, '.2f'))
-    taken = "{} kg".format(format(selected_account.taken, '.1f'))
-
+    deposit = selected_account.deposit_str
+    taken = selected_account.taken_str
+    transaction_types = TransactionType.objects.all()
+    global selected_types_in_account_transactions
+    selected_type_ids = []
+    for ttype in selected_types_in_account_transactions:
+        selected_type_ids.append(ttype.id)
+    global start_date_in_account_transactions
+    if not start_date_in_account_transactions == None:
+        start_date = start_date_in_account_transactions.strftime("%Y-%m-%d")
+    else:
+        start_date = ''
+    global end_date_in_account_transactions
+    if not end_date_in_account_transactions == None:
+        end_date = end_date_in_account_transactions.strftime("%Y-%m-%d")
+    else:
+        end_date = ''
+    global enterer_in_account_transactions
+    account_table = AccountTable(account_id = selected_account.id, types = selected_types_in_account_transactions, start_date = start_date_in_account_transactions, end_date = end_date_in_account_transactions, 
+                                enterer = enterer_in_account_transactions)
     if request.method == 'POST':
         entry_form = TransactionEntryForm(request.POST)
         if entry_form.is_valid():
@@ -91,15 +149,17 @@ def account(request):
             #return HttpResponseRedirect('/')
     else:
         entry_form = TransactionEntryForm()
-
-    entry_types = ["Taking", "Restitution", "Inpayment", "Depositation"]
+    entry_types = TransactionType.objects.filter(is_entry_type=True)
     users = User.objects.all()
-    # TODO: currencies abfragen
-    currencies = ""
+    batches = Batch.objects.all()
+    currencies = Currency.objects.all()
+    money_boxes = MoneyBox.objects.all()
     context = {
         "account_table" : account_table, "deposit" : deposit,
         "taken" : taken, "entry_form" : entry_form, "entry_types" : entry_types,
-        "users" : users, "currencies" : currencies
+        "users" : users, "currencies" : currencies, "money_boxes" : money_boxes,
+        "batches" : batches, "transaction_types" : transaction_types, "selected_type_ids" : selected_type_ids, 
+        "start_date" : start_date, "end_date" : end_date, "enterer_in_account_transactions" : enterer_in_account_transactions
     }
     return HttpResponse(template.render({**g_context, **context}, request))
 
@@ -114,9 +174,11 @@ def batchtransactiontable(request):
     global selected_batch_in_batchtransactiontable
     batch_transaction_table = BatchTransactionTable(selected_batch_in_batchtransactiontable.id)
     batches = Batch.objects.all()
-    stock = selected_batch_in_batchtransactiontable.unit.display(selected_batch_in_batchtransactiontable.calc_stock())
+    stock = selected_batch_in_batchtransactiontable.unit.display(selected_batch_in_batchtransactiontable.calc_stock(), show_contents=False)
+    price = selected_batch_in_batchtransactiontable.price_str_long()
+    unit_weight = selected_batch_in_batchtransactiontable.unit.unit_weight(selected_batch_in_batchtransactiontable)
     template = loader.get_template('core/batchtransactiontable.html')
-    context = {"batches" : batches, "stock" : stock, "batch_transaction_table" : batch_transaction_table, "selected_batch_in_batchtransactiontable" : selected_batch_in_batchtransactiontable}
+    context = {"batches" : batches, "stock" : stock, "batch_transaction_table" : batch_transaction_table, "selected_batch_in_batchtransactiontable" : selected_batch_in_batchtransactiontable, "unit_weight" : unit_weight, "price" : price, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def consumabletransactiontable(request):
@@ -125,8 +187,9 @@ def consumabletransactiontable(request):
     consumable_transaction_table = ConsumableTransactionTable(selected_consumable_in_consumabletransactiontable.id)
     consumables = Consumable.objects.all()
     stock = selected_consumable_in_consumabletransactiontable.unit.display(selected_consumable_in_consumabletransactiontable.calc_stock())
+    unit_weight = selected_consumable_in_consumabletransactiontable.unit.unit_weight(selected_consumable_in_consumabletransactiontable)
     template = loader.get_template('core/consumabletransactiontable.html')
-    context = {"consumables" : consumables, "stock" : stock, "consumable_transaction_table" : consumable_transaction_table, "selected_consumable_in_consumabletransactiontable" : selected_consumable_in_consumabletransactiontable}
+    context = {"consumables" : consumables, "stock" : stock, "consumable_transaction_table" : consumable_transaction_table, "selected_consumable_in_consumabletransactiontable" : selected_consumable_in_consumabletransactiontable, "unit_weight" : unit_weight, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def accountlist(request):
@@ -165,7 +228,7 @@ def batches(request):
         batch = Batch.objects.get(pk=int(request_id))
         serializer = BatchSerializer(batch, many=False)
         return Response(serializer.data)
-    #elif request.method == 'POST':
+    # elif request.method == 'POST':
     #    serializer = SnippetSerializer(data=request.data)
     #    if serializer.is_valid():
     #        serializer.save()

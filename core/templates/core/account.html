@@ -35,6 +35,38 @@
 <td>Deposited: {{ deposit }}</td>
 </table>
 <table class="table">
+  <tbody>
+    <tr>
+      <td>Filter the list:</td>
+      <td>Transaction types <form id="all_types" action="/account" method="POST">{% csrf_token %}<input type="submit" value="All" /></form> <form id="none_type" action="/account" method="POST">{% csrf_token %}<input type="submit" value="None" /></form></td>
+      <td>Start date</td>
+      <td>End date</td>
+      <td>Enterer</td>
+    </tr>
+    <div><form id="transaction_list_filter" action="/account" method="POST">
+      {% csrf_token %}
+        <tr>
+          <td><input type="submit" value="Apply" /></td>
+          <td><select multiple="multiple" name="transaction_type" class="selectpicker">
+                <option value="" disabled>Choose type</option>
+                {% for type in transaction_types %}
+                <option value="{{ type.id }}" {% if type.id in selected_type_ids %}selected{% endif %}>{{ type.name }}</option>
+                {% endfor %}
+              </select></td>
+          <td><input type="text" name="start_date" value = {{ start_date }}></td>
+          <td><input type="text" name="end_date" value = {{ end_date }}></td>
+          <td><select name="enterer" class="selectpicker" data-live-search="true">
+                <option value="" disabled selected>Filter for enterer</option>            <!-- to not show this as an option add  class="text-hide"  -->
+                <option value=0>All users</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+                {% endfor %}
+              </select></td>
+      </tr>
+    </form></div>
+  </tbody>
+</table>
+<table class="table">
   <thead>
     <th>Tr No</th>
     <th>Date</th>
@@ -57,25 +89,52 @@
 <form id="transaction_entry_form" action="/account" method="POST">
   {% csrf_token %}
   
+  <p><h3>Enter new transaction</h3>
   <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker">
+    <option value="" disabled>Choose type for new transaction</option>
     {% for type in entry_types %}
-    <option value="{{ type }}">{{ type }}</option>
+    <option value="{{ type }}">{{ type.name }}</option>
     {% endfor %}
   </select>
 
-  <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker" data-live-search="true">
+  <td><select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker" data-live-search="true" required="true">
+    <option value="" disabled selected>Select yourself as enterer</option>                                                                        <!-- to not show this as an option add  class="text-hide"  -->
     {% for user in users %}
     <option value="{{ user }}">{{ user }}</option>
     {% endfor %}
   </select>
 
-  <input type="date" name="date" placeholder="Date of transaction">
+  <input type="date" name="date" placeholder="Date of transaction" required="true">
   <input type="number" name="batch_no" min="1" placeholder="Batch no.">
   <input type="text" name="batch_name" readonly>
+  <!-- 
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <script>
+    $('#id_batch_no').keyup(function(e) {
+      id = $('#id_batch_no').val()
+      api_url = "http://127.0.0.1:8000/batches/?format=json&id=" + id;
+      $.ajax({
+        url: api_url
+      }).success(function(json) {
+        text = json["text"]
+        $('#id_batch_name').val(text)
+      });
+    })
+  </script>
+  -->
 
   <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker">
+    <option value="" disabled selected>Choose currency</option>
     {% for currency in currencies %}
     <option value="{{ currency }}">{{ currency }}</option>
+    {% endfor %}
+  </select>
+
+  <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker">
+    <option value="" disabled selected>Choose money box</option>
+    {% for money_box in money_boxes %}
+    <option value="{{ money_box }}">{{ money_box }}</option>
     {% endfor %}
   </select>
 
@@ -83,6 +142,8 @@
   <input type="text" name="value" readonly>
 
   <input type="text" name="comment">
+
+  <input type="submit" value="Submit" />
 
 </form>
 {% endblock %}

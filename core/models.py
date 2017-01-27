@@ -7,6 +7,7 @@ from .fields import PercentField
 import datetime
 import itertools
 
+
 class Currency(models.Model):
     name = models.CharField(max_length=10)
     conversion_rate = models.FloatField(default=1) # into anchor currency
@@ -16,6 +17,44 @@ class Currency(models.Model):
 
     def __str__(self):
         return "{} ({})".format(self.name, self.full_name)
+
+    def setup(self):
+        """
+        1 = Taking
+        2 = Restitution
+        3 = Inpayment
+        4 = Depositation
+        5 = PayOutBalance
+        6 = PayOutDeposit
+        7 = Transfer
+        8 = CostSharing
+        9 = ProceedsSharing
+        10 = Donation
+        11 = Recovery
+        12 = Insertion (planned)
+        """
+        taking = TransactionType(name="Taking", is_entry_type=True, to_balance=True, no=1)
+        taking.save()
+        restitution = TransactionType(name="Restitution", is_entry_type=True, to_balance=True, no=2)
+        restitution.save()
+        inpayment = TransactionType(name="Inpayment", is_entry_type=True, to_balance=True, no=3)
+        inpayment.save()
+        depositation = TransactionType(name="Depositation", is_entry_type=True, to_balance=False, no=4)
+        depositation.save()
+        pay_out_balance = TransactionType(name="Balance payout", is_entry_type=False, to_balance=True, no=5)
+        pay_out_balance.save()
+        pay_out_deposit = TransactionType(name="Deposit payout", is_entry_type=False, to_balance=False, no=6)
+        pay_out_deposit.save()
+        transfer = TransactionType(name="Transfer", is_entry_type=True, to_balance=True, no=7)
+        transfer.save()
+        cost_sharing = TransactionType(name="Cost sharing", is_entry_type=True, to_balance=True, no=8)
+        cost_sharing.save()
+        proceeds_sharing = TransactionType(name="Proceeds sharing", is_entry_type=True, to_balance=True, no=9)
+        proceeds_sharing.save()
+        donation = TransactionType(name="Donation", is_entry_type=True, to_balance=True, no=10)
+        donation.save()
+        recovery = TransactionType(name="Recovery", is_entry_type=True, to_balance=True, no=11)
+        recovery.save()
 
 class Role(models.Model):
     name = models.CharField(max_length=50)
@@ -128,6 +167,11 @@ class Account(models.Model):
         #self.subtract_balance(negative)
         #self.save()
 
+    @property
+    def deposit_str(self):
+        self.calc_deposit()
+        return "{} €".format(format(self.deposit,'.2f'))
+
     def calc_deposit(self):
         deposit = 0
         charges = Charge.objects.filter(account=self)
@@ -137,6 +181,22 @@ class Account(models.Model):
             else:
                 pass
         self.deposit = deposit
+        self.save()
+
+    @property
+    def taken_str(self):
+        self.calc_taken()
+        return "{} kg".format(format(self.taken,'.1f'))
+
+    def calc_taken(self):
+        taken = 0
+        takings = Taking.objects.filter(originator_account=self)
+        restitutions = Restitution.objects.filter(originator_account=self)
+        for taking in takings:
+            taken += taking.amount * taking.batch.unit.weight/1000
+        for restitution in restitutions:
+            taken -= restitution.amount * restitution.batch.unit.weight/1000
+        self.taken = taken
         self.save()
 
 class AccPayPhase(models.Model):
@@ -182,7 +242,7 @@ class MoneyBox(models.Model):
         return "{}".format(self.name)
 
     def calc_stock_value(self):
-        stocks = MoneyBoxStock.objects.filter(moneybox=self)
+        stocks = MoneyBoxStock.objects.filter(money_box=self)
         value = 0
         for moneyboxstock in stocks:
             value += moneyboxstock.stock * moneyboxstock.currency.conversion_rate
@@ -190,7 +250,7 @@ class MoneyBox(models.Model):
         self.save()
 
 class MoneyBoxStock(models.Model):
-    moneybox = models.ForeignKey('MoneyBox')
+    money_box = models.ForeignKey('MoneyBox')
     currency = models.ForeignKey('Currency')
     stock = models.FloatField(default=0)
 
@@ -205,7 +265,7 @@ class MoneyBoxStock(models.Model):
         recipient.inpayment(amount)
 
     def __str__(self):
-        return "{}: {}".format(self.moneybox, self.currency)
+        return "{}: {}".format(self.money_box, self.currency)
 
 class StorageCondition(models.Model):
     name = models.CharField(max_length=30)
@@ -356,27 +416,44 @@ class SupplierRating(models.Model): # General rating of the supplier. Every offe
 
 class Unit(models.Model):
     full_name = models.CharField(max_length=100)
-    abbr = models.CharField(max_length=100)
-    plural = models.CharField(max_length=100, blank=True, default='')
-    contents = models.CharField(max_length=100, blank=True, default='')
-    weight = models.FloatField(null=True, blank=True) # in grams
-    continuous = models.BooleanField()
+    abbr = models.CharField(max_length=100) # abbreviation of the unit, important for the display
+    plural = models.CharField(max_length=100, blank=True, default='') # how the unit shall be called in the plural
+    contents = models.CharField(max_length=100, blank=True, default='') # Only for non-continuous units for which the contents shouldn't be displayed in the anchor unit, e.g. "250 ml" if the anchor unit is grams.
+    weight = models.FloatField(null=True, blank=True) # in grams resp. anchor unit
+    continuous = models.BooleanField() # True for bulk units like kg or L if the goods get weighed. False 
 
     def __str__(self):
         return "{} ({})".format(self.full_name, self.abbr)
 
     def display(self, amount, show_contents=True):
+        """
+        Returns a string consisting of an amount, the unit (prn plural) and the contents of the unit (can be deactivated)
+        The string may be used in batch/consumable information (stock, average etc) and as transaction description.
+        Examples:  "2 bottles per 500 ml"; "1 package per 200 g"; "1.390 kg"
+        """
+        # If the unit is continuous, the contents (like "per 500 ml") won't be shown
         if self.continuous == True:
             return "{} {}".format(format(amount, '.3f'), self.abbr)
         else:
+            # If the attribute field is empty or not asked for, we won't write anything after the unit
             if not self.contents == '' and show_contents == True:
                 cont = " per {}".format(self.contents)
             else:
                 cont = ""
+            # If the plural attribute is empty, we'll use the abbreviation instead, better than printing nothing.
             if not amount == 1 and not self.plural == '':
                 return "{} {}{}".format(format(amount, '.0f'), self.plural, cont)
             else:
                 return "{} {}{}".format(format(amount, '.0f'), self.abbr, cont)
+
+    def unit_weight(self, batch_or_consumable):
+        """
+        Returns a string specifying the contents of the unit. Works both for batch and for consumable, since they both have unit as foreign key.
+        """
+        if batch_or_consumable.unit.contents == '':
+            return "1 {} contains {} gr".format(batch_or_consumable.unit.abbr, batch_or_consumable.unit.weight)
+        else:
+            return "1 {} contains {} ({} gr)".format(batch_or_consumable.unit.abbr, batch_or_consumable.unit.contents, batch_or_consumable.unit.weight)
 
 class Item(models.Model):
     name = models.CharField(max_length=100)
@@ -414,8 +491,8 @@ class Consumable(Item):
     def __str__(self):
         return self.name
 
-    # def calc_stock(self):
-    #     # funktioniert nicht
+    # def calc_stock(self): # calculates the stock as sum of the associated batches
+    #     # doesn't work
     #     batches = Batch.objects.filter(consumable = self)
     #     for batch in batches:
     #         self.stock += batch.stock
@@ -426,6 +503,12 @@ class Consumable(Item):
         return "{} {}".format(format(self.calc_stock(), '.3f'), self.unit.abbr)
 
     def calc_stock(self):
+        """
+        Calculates the stock of a consumable. For each transaction, the unit of the batch gets divided through the unit of the consumable.
+        For example, linseed oil (consumable) has the unit L (930 gr). B1 is a batch of linseed oil with the unit "500 ml bottle" (465 gr).
+        If someone takes 1 bottle of B1, we will calculate: 1 * 465 / 930 = 1/2
+        So for the consumable stock, it means a subtraction of 0.5
+        """
         stock = 0
         for taking in Taking.objects.filter(batch__consumable=self):
             stock -= taking.amount * taking.batch.unit.weight / self.unit.weight
@@ -569,6 +652,9 @@ class Batch(models.Model):
     @property
     def taken_str(self):
         return "{} " " {}".format(format(self.taken, '.3f'), self.unit.abbr)
+
+    def price_str_long(self):
+        return "{} € per {}".format(format(self.price, '.2f'), self.unit.abbr)
 
     @property
     def price_str(self):
@@ -830,6 +916,15 @@ class Insertion(models.Model):
     date_creation = models.DateField(auto_now_add=True)
     date_modified = models.DateField(auto_now=True)
 
+class TransactionType(models.Model):
+    name = models.CharField(max_length=50)
+    is_entry_type = models.BooleanField()
+    to_balance = models.BooleanField()
+    no = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
 class Transaction(models.Model):
     originator_account = models.ForeignKey('Account', related_name="originator_account")
     # involved_accounts = models.ManyToManyField('Account', related_name="involved_accounts", blank=True)
@@ -842,6 +937,7 @@ class Transaction(models.Model):
     #positive = models.NullBooleanField()
     #to_balance = models.NullBooleanField()
     status = models.ForeignKey('TransactionStatus', blank=True, null=True)
+    transaction_type = models.ForeignKey('TransactionType', blank=True, null=True)
 
     def __str__(self):
         return "Tr {}: Account {} on {} (entered by {})".format(self.id, self.originator_account.name, self.date, self.entered_by_user.name)
@@ -858,36 +954,36 @@ class Transaction(models.Model):
         return "entered on {} by {}".format(self.entry_date, self.entered_by_user.name)
     
     def value_str(self, account):
+        # Returns the value of a transaction affecting the selected account, in the anchor currency, as a string.
+        # In case the value shall be displayed generally, not regarding a specific account, provide account=0. The value will then be returned directly from the value attribute.
         if account == 0:
             return "{} €".format(format(self.value,'.2f'))
         else:
+            # For the case multiple accounts are involved (transfer, cost sharing etc.), we have to choose the charge affecting the selected account.
+            # If the account is both originator and participating, there can be 2 charges for the same account, that's why "filter" and a for loop are used instead of "get" (also for some potentially upcoming features)
             charges = Charge.objects.filter(transaction=self, account=account)
             value = 0
             for charge in charges:
                 value += charge.value
             return "{} €".format(format(value,'.2f'))
-        # if self.type_name == "Transfer":
-        #     return "+ {} €".format(format(self.value,'.2f'))
-        # elif self.type_name == "CostSharing":
-        #     # to be implemented
-        #     pass
-        # else:
-        #     if self.positive == True:
-        #         return "+ {} €".format(format(self.value,'.2f'))
-        #     else:
-        #         return "- {} €".format(format(self.value,'.2f'))
 
     def balance_str(self, account):
-        # return "{} €".format(self.balance()) #format(self.balance(),'.2f')
+    # Returns the resulting balance of the selected account after the transaction, in the anchor currency, as a string.
+    # In an account-specific transaction list, this function will be applied to every listed transaction, so the column shows the account's balance change over time.
+        # In some cases the balance of the originator account shall be shown (for example, in a batch-specific transaction list). If so, provide account=0
         if account == 0:
             account = self.originator_account.id
-        #linked_charges = Charge.objects.filter(transaction=self, account=account)
-        #if linked_charges[0].to_balance == True:
+        # If the transaction doesn't affect the balance but the deposit, the balance field should be empty in this row (-> else case)
+        # This If is a bit hacky, it assumes there aren't any other subclasses which don't affect the balance. The two lines below could be an alternative solution, not tested yet.
         if not self.__class__ == Depositation and not self.__class__ == PayOutDeposit:
+        #linked_charges = Charge.objects.filter(transaction=self, account=account, to_balance=True)
+        #if linked_charges:
             balance = 0
+            # Filtering all the charges leading up to and including this transaction.
+            # As the transactions in the list are sorted by date (and if same, by id), either the date must be lower, or the same but without a higher id.
             charges = Charge.objects.filter(account=account, to_balance=True).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(transaction__lte = self.id)))
             for charge in charges:
-                #if charge.date < self.date or (charge.date == self.date and charge.id <= self.id):
+                #if charge.date < self.date or (charge.date == self.date and charge.id <= self.id): # if the Q combination above causes any problems, you can use this instead.
                 balance += charge.value
             return "{} €".format(format(balance,'.2f'))
         else:
@@ -917,16 +1013,20 @@ class Taking(BatchTransaction): # taking of goods from balance
     def type(self):
         return self.__class__
 
-    def matter_str(self, account, show_contents=True):
+    def matter_str(self, account, show_contents=True, show_batch=True):
         if account == 0:
             originator = self.originator_account.name
         else:
             originator = "You"
+        if show_batch == True:
+            batch = " from batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+        else:
+            batch = ""
         # if self.batch.unit.continuous == False and not self.amount == 1:
         #     unit = self.batch.unit.plural
         # else:
         #     unit = self.batch.unit.abbr
-        return "{} took {} from batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.batch.unit.display(self.amount, show_contents), self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+        return "{} took {}{}".format(originator, self.batch.unit.display(self.amount, show_contents), batch)
 
     # @property
     # def type_name(self):
@@ -940,6 +1040,7 @@ class Taking(BatchTransaction): # taking of goods from balance
     #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
 
     def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=1)
         self.save()
         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
         batch.subtract_stock(self.amount)
@@ -998,6 +1099,7 @@ class Restitution(BatchTransaction): # return goods to the storage
         return self.__class__
 
     def perform(self): # not tested yet
+        self.transaction_type = TransactionType.objects.get(no=2)
         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
         batch.add_stock(self.amount)
         batch.subtract_taken(self.amount)
@@ -1010,12 +1112,16 @@ class Restitution(BatchTransaction): # return goods to the storage
         self.originator_account.save()
         self.save()
 
-    def matter_str(self, account, show_contents=True):
+    def matter_str(self, account, show_contents=True, show_batch=True):
         if account == 0:
             originator = self.originator_account.name
         else:
             originator = "You"
-        return "{} restituted {} to batch no. {} ({} from {} in {} for {}€/{})".format(originator, self.batch.unit.display(self.amount, show_contents), self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+        if show_batch == True:
+            batch = " to batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+        else:
+            batch = ""
+        return "{} restituted {}{}".format(originator, self.batch.unit.display(self.amount, show_contents), batch)
 
     # @property
     # def type_name(self):
@@ -1046,7 +1152,7 @@ class Restitution(BatchTransaction): # return goods to the storage
 
 class Inpayment(Transaction): # insertion of money to balance
     currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
-    moneybox = models.ForeignKey('MoneyBox')
+    money_box = models.ForeignKey('MoneyBox')
     confirmed_by = models.ForeignKey('User', blank=True, null=True)
     confirmation_comment = models.TextField(blank=True)
 
@@ -1058,9 +1164,10 @@ class Inpayment(Transaction): # insertion of money to balance
         return self.__class__
 
     def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=3)
         self.save()
         self.value = self.amount * self.currency.conversion_rate
-        moneyboxstock = MoneyBoxStock.objects.get(moneybox=self.moneybox, currency=self.currency) # foreign key?
+        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
         moneyboxstock.inpayment(self.amount)
         moneyboxstock.save()
         charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
@@ -1075,9 +1182,9 @@ class Inpayment(Transaction): # insertion of money to balance
         else:
             originator = "You"
         if self.currency.name == "€":
-            return "{} paid in {} € via {}".format(originator, format(self.amount,'.2f'), self.moneybox.name)
+            return "{} paid in {} € via {}".format(originator, format(self.amount,'.2f'), self.money_box.name)
         else:
-            return "{} paid in {} {} ({} €) via {}".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'), self.moneybox.name)
+            return "{} paid in {} {} ({} €) via {}".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'), self.money_box.name)
 
     # @property
     # def type_name(self):
@@ -1092,13 +1199,13 @@ class Inpayment(Transaction): # insertion of money to balance
 
     # def matter_str(self, account):
     #     if self.confirmed_by == None:
-    #         return "{}, not confirmed yet".format(self.moneybox.name)
+    #         return "{}, not confirmed yet".format(self.money_box.name)
     #     else:
-    #         return "{}, confirmed by {} '{}'".format(self.moneybox.name, self.confirmed_by.name, self.confirmation_comment)
+    #         return "{}, confirmed by {} '{}'".format(self.money_box.name, self.confirmed_by.name, self.confirmation_comment)
 
 class Depositation(Transaction): # insertion of money to deposit
     currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
-    moneybox = models.ForeignKey('MoneyBox')
+    money_box = models.ForeignKey('MoneyBox')
     confirmed_by = models.ForeignKey('User', blank=True, null=True)
     confirmation_comment = models.TextField(blank=True)
 
@@ -1110,9 +1217,10 @@ class Depositation(Transaction): # insertion of money to deposit
         return self.__class__
 
     def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=4)
         self.save()
         self.value = self.amount * self.currency.conversion_rate
-        moneyboxstock = MoneyBoxStock.objects.get(moneybox=self.moneybox, currency=self.currency) # foreign key?
+        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
         moneyboxstock.inpayment(self.amount)
         moneyboxstock.save()
         charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=False, date=self.date)
@@ -1127,9 +1235,9 @@ class Depositation(Transaction): # insertion of money to deposit
         else:
             originator = "You"
         if self.currency.name == "€":
-            return "{} deposited {} € via {}".format(originator, format(self.amount,'.2f'), self.moneybox.name)
+            return "{} deposited {} € via {}".format(originator, format(self.amount,'.2f'), self.money_box.name)
         else:
-            return "{} deposited {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.name, self.value, self.moneybox.name)
+            return "{} deposited {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.name, self.value, self.money_box.name)
 
     # @property
     # def type_name(self):
@@ -1144,15 +1252,16 @@ class Depositation(Transaction): # insertion of money to deposit
 
     # def matter_str(self, account):
     #     if self.confirmed_by == None:
-    #         return "{}, not confirmed yet".format(self.moneybox.name)
+    #         return "{}, not confirmed yet".format(self.money_box.name)
     #     else:
-    #         return "{}, confirmed by {} '{}'".format(self.moneybox.name, self.confirmed_by.name, self.confirmation_comment)
+    #         return "{}, confirmed by {} '{}'".format(self.money_box.name, self.confirmed_by.name, self.confirmation_comment)
 
 class PayOutBalance(Transaction):
     currency = models.ForeignKey('Currency')
-    moneybox = models.ForeignKey('MoneyBox')
+    money_box = models.ForeignKey('MoneyBox')
 
     # perform
+    # self.transaction_type = TransactionType.objects.get(no=5)
 
     @property
     def type(self):
@@ -1160,9 +1269,10 @@ class PayOutBalance(Transaction):
 
 class PayOutDeposit(Transaction):
     currency = models.ForeignKey('Currency')
-    moneybox = models.ForeignKey('MoneyBox')
+    money_box = models.ForeignKey('MoneyBox')
 
     # perform
+    # self.transaction_type = TransactionType.objects.get(no=6)
 
     @property
     def type(self):
@@ -1178,6 +1288,7 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
         return self.__class__
 
     def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=7)
         if not self.currency == None:
             self.value = self.amount * self.currency.conversion_rate
         else:
@@ -1237,6 +1348,7 @@ class CostSharing(Transaction):
         return self.__class__
 
     def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=8)
         self.save()
         currency = Currency.objects.get(pk=1)
         if not currency == None:
@@ -1299,6 +1411,7 @@ class ProceedsSharing(Transaction):
         return self.__class__
 
     def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=9)
         self.save()
         currency = Currency.objects.get(pk=1)
         if not currency == None:
@@ -1389,6 +1502,8 @@ class Donation(Transaction):
     #     else:
     #         pass
 
+    # perform: self.transaction_type = TransactionType.objects.get(no=10)
+
 class Recovery(Transaction): # donation backwards
     participating_accounts = models.ManyToManyField('Account')
     approved_by = models.ForeignKey('User', blank=True, null=True)
@@ -1410,3 +1525,5 @@ class Recovery(Transaction): # donation backwards
                  return "{} recovered {} € from {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
             else:
                  return " "
+
+    # perform: self.transaction_type = TransactionType.objects.get(no=11)

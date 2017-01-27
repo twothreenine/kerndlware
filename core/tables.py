@@ -25,7 +25,7 @@ class BatchTransactionTable:
             row = list()
             row.append(transaction.id)
             row.append(transaction.date)
-            row.append(transaction.matter_str(account=0, show_contents=False))
+            row.append(transaction.matter_str(account=0, show_contents=False, show_batch=False))
             row.append(transaction.entry_details_str)
             row.append(transaction.value_str(account=0))
             row.append(transaction.batch_stock_str())
@@ -92,8 +92,12 @@ class TransactionTable:
             self.rows.append(row)
 
 class AccountTable:
-    def __init__(self, account_id):
+    def __init__(self, account_id, types, start_date, end_date, enterer):
         self.account_id = account_id
+        self.types = types
+        self.start_date = start_date
+        self.end_date = end_date
+        self.enterer = enterer
         self.rows = list()
         self.generate()
 
@@ -124,7 +128,31 @@ class AccountTable:
             if rc.originator_account == acc or rc.participating_accounts.filter(pk=self.account_id).count():
                 recoveries.append(ps)
         # recovery = Recovery.objects.filter(originator_account=self.account_id) & Recovery.objects.filter(participating_accounts=self.account_id)
-        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
+        all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
+        transactions = []
+        for tr in all_transactions:
+            if self.start_date == None:
+                start_condition = True
+            else:
+                if tr.date >= self.start_date:
+                    start_condition = True
+                else:
+                    start_condition = False
+            if self.end_date == None:
+                end_condition = True
+            else:
+                if tr.date <= self.end_date:
+                    end_condition = True
+                else:
+                    end_condition = False
+            if self.enterer == None:
+                enterer_condition = True
+            elif self.enterer == tr.entered_by_user:
+                enterer_condition = True
+            else:
+                enterer_condition = False
+            if tr.transaction_type in self.types and start_condition == True and end_condition == True and enterer_condition == True:
+                transactions.append(tr)
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()

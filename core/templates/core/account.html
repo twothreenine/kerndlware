@@ -2,6 +2,12 @@
 {% block title %}Your transactions{% endblock %}
 {% block heading %}Your transactions{% endblock %}
 {% block style %}
+  <!-- thead, tbody { display: block; }
+  tbody {
+    height: 200px;       /* Just for the demo          */
+    overflow-y: auto;    /* Trigger vertical scroll    */
+    overflow-x: hidden;  /* Hide the horizontal scroll */
+  } -->
   tr.deposited {
     background-color: #61a8ff;
   }
@@ -41,6 +47,12 @@
   #transaction_list_filter div > label, #transaction_list_filter div > select {
     display: block;
   }
+  .scroll {
+    height: 200px;
+    overflow-y: scroll;
+    <!-- border: 1px solid #000;
+    padding: 10px; -->
+  } 
 {% endblock %}
 {% block content %}
 
@@ -55,11 +67,11 @@
     <form id="transaction_list_filter" action="/account" method="POST">
       {% csrf_token %}
       <div>
-        <label for="apply">Select filters</label>
+        <label for="apply">Filter this list</label>
         <input name="apply" type="submit" value="Apply" />
       </div>
       <div>
-        <label for="transaction_type">Choose type</label>
+        <label for="transaction_type">Types</label>
         <select multiple="multiple" name="transaction_type" class="selectpicker" data-actions-box="true">
           {% for type in transaction_types %}
           <option value="{{ type.id }}" {% if type.id in selected_type_ids %}selected{% endif %}>{{ type.name }}</option>
@@ -68,11 +80,11 @@
       </div>
       <div>
         <label for="start_date">Start date</label>
-        <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd">
+        <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
       </div>
       <div>
         <label for="end_date">End date</label>
-        <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd">
+        <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
       </div>
       <div>
         <label for="enterer">Enterer</label>
@@ -97,60 +109,86 @@
     <th>Comment</th>
   </thead>
   <tbody>
-  {% for row in account_table.rows %}
-    <tr class="{{ row.2|lower }}">
-      {% for column in row %}
-        <td> {{ column }} </td>
-      {% endfor %}
-    </tr>
-  {% endfor %}
+    {% for row in account_table.rows %}
+      <tr class="{{ row.2|lower }}">
+        {% for column in row %}
+          <td> {{ column }} </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
   </tbody>
 </table>
-
-<form id="transaction_entry_form" action="/account" method="POST">
-  {% csrf_token %}
-  
-  <p><h3>Enter new transaction</h3>
-  <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker">
-    <option value="" disabled>Choose type for new transaction</option>
-    {% for type in entry_types %}
-    <option value="{{ type }}">{{ type.name }}</option>
-    {% endfor %}
-  </select>
-
-  <td><select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker" data-live-search="true" required="true">
-    <option value="" disabled selected>Select yourself as enterer</option>                                                                        <!-- to not show this as an option add  class="text-hide"  -->
-    {% for user in users %}
-    <option value="{{ user }}">{{ user }}</option>
-    {% endfor %}
-  </select>
-
-  <input type="date" name="date" placeholder="Date of transaction" required="true">
-  <input type="number" name="batch_no" min="1" placeholder="Batch no.">
-  <input type="text" name="batch_name" readonly>
-
-  <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker">
-    <option value="" disabled selected>Choose currency</option>
-    {% for currency in currencies %}
-    <option value="{{ currency }}">{{ currency }}</option>
-    {% endfor %}
-  </select>
-
-  <select onchange="// TODO: Felder ein- und ausblenden" name="transaction_type" class="selectpicker">
-    <option value="" disabled selected>Choose money box</option>
-    {% for money_box in money_boxes %}
-    <option value="{{ money_box }}">{{ money_box }}</option>
-    {% endfor %}
-  </select>
-
-  <input type="number" name="amount" step="any" placeholder="Amount">
-  <input type="text" name="value" readonly>
-
-  <input type="text" name="comment">
-
-  <input type="submit" value="Submit" />
-
-</form>
+<div class="panel panel-default">
+  <form id="transaction_entry_form" action="/account" method="POST">
+    {% csrf_token %}
+    <div class="panel-heading">Enter new transaction 
+      <select onchange="// TODO: Felder ein- und ausblenden" name="type" class="selectpicker">
+        <option value="" disabled>Choose type for new transaction</option>
+        {% for type in entry_types %}
+        <option value="{{ type.id }}">{{ type.name }}</option>
+        {% endfor %}
+      </select>
+      </div>
+    <div class="panel-body">
+      <div>
+        <label for="entered_by">Select yourself as enterer</label>
+        <select onchange="// TODO: Felder ein- und ausblenden" name="entered_by" class="selectpicker" data-live-search="true" required="true">
+          <option value="" disabled selected>Select user</option>
+          {% for user in users %}
+          <option value="{{ user.id }}">{{ user }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="date">Date of transaction</label>
+        <input type="date" name="date" placeholder="Select date" required="true" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-today-highlight="true" >
+      </div>
+      <div>
+        <input type="number" name="batch_no" min="1" placeholder="Batch no.">
+        <input type="text" name="batch_name" readonly disabled>
+      </div>
+      <div>
+        <select onchange="// TODO: Felder ein- und ausblenden" name="currency" class="selectpicker">
+          <option value="" disabled selected>Select currency</option>
+          {% for currency in currencies %}
+          <option value="{{ currency.id }}">{{ currency }}</option>
+          {% endfor %}
+        </select>
+        <select onchange="// TODO: Felder ein- und ausblenden" name="money_box" class="selectpicker">
+          <option value="" disabled selected>Select money box</option>
+          {% for money_box in money_boxes %}
+          <option value="{{ money_box.id }}">{{ money_box }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <input type="number" name="amount" step="any" placeholder="Amount"> <!-- {{ batch.unit.abbr }} bzw. {{ currency.name }} -->
+        <input type="text" name="value" readonly disabled>
+      </div>
+      <div>
+        <label for="participating_accounts">Select participating accounts</label>
+        <select multiple="multiple" name="participating_accounts" class="selectpicker" data-actions-box="true" data-live-search="true" >
+          {% for account in accounts %}
+            <option value="{{ account.id }}">{{ account }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="recipient_account">Select recipient account</label>
+        <select name="recipient_account" class="selectpicker" data-actions-box="true" data-live-search="true" >
+          {% for account in accounts %}
+            <option value="{{ account.id }}">{{ account }}</option>
+          {% endfor %}
+        </select>
+      <div>
+        <input type="text" name="comment" placeholder="Enter comment">
+      </div>
+      <div>
+        <input type="submit" value="Submit" />
+      </div>
+    </div>
+  </form>
+</div>
 
 {% endblock %}
 

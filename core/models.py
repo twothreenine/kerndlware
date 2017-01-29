@@ -1005,6 +1005,7 @@ class BatchTransaction(Transaction):
     batch = models.ForeignKey('Batch')
 
 class Taking(BatchTransaction): # taking of goods from balance
+    type_name = "Taking" # for s in Transaction.__subclasses__(): print (s.__qualname__)
 
     def __str__(self):
         return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit.abbr, self.entered_by_user.name)

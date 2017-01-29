@@ -104,6 +104,54 @@ def filter_account_transactions(request):
         else:
             enterer_in_account_transactions = None
 
+def enter_new_transaction(request):
+    if request.method == 'POST':
+        transaction_type = request.POST.get("type")
+        if transaction_type:
+            t_type = TransactionType.objects.get(pk=int(transaction_type))
+        entered_by = request.POST.get("entered_by")
+        if entered_by:
+            t_enterer = User.objects.get(pk=int(entered_by))
+        date = request.POST.get("date")
+        if date:
+            t_date = datetime.datetime.strptime(date , '%Y-%m-%d').date()
+        amount = request.POST.get("amount")
+        if amount:
+            t_amount = float(amount)
+        comment = request.POST.get("comment")
+        if comment:
+            t_comment = str(comment)
+        else:
+            t_comment = ''
+        if t_type.id == 1:
+            batch_no = request.POST.get("batch_no")
+            if batch_no:
+                t_batch = Batch.objects.get(pk=int(batch_no))
+            if t_date and t_amount and t_batch:
+                global selected_account
+                t = Taking(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+        elif t_type.id == 2:
+            batch_no = request.POST.get("batch_no")
+            if batch_no:
+                t_batch = Batch.objects.get(pk=int(batch_no))
+            if t_date and t_amount and t_batch:
+                global selected_account
+                t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+        elif t_type.id == 3:
+            currency = request.POST.get("currency")
+            if currency:
+                t_currency = Currency.objects.get(pk=int(currency))
+            else:
+                t_currency = Currency.objects.get(pk=1) # get anchor currency
+            money_box = request.POST.get("money_box")
+            if money_box:
+                t_money_box = MoneyBox.objects.get(pk=int(money_box))
+            if t_date and t_amount and t_currency and t_money_box:
+                global selected_account
+                t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+        # TODO: elifs for depositation and other transaction types
+        t.perform()
+
 def global_context(request):
     accounts = Account.objects.all()
     global selected_account
@@ -118,6 +166,7 @@ def base(request):
 
 def account(request):
     filter_account_transactions(request)
+    enter_new_transaction(request)
     template = loader.get_template('core/account.html')
     g_context = global_context(request)
     global selected_account

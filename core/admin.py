@@ -1,11 +1,14 @@
 from django.contrib import admin
-from .models import Account, AccPayPhase, Item, Consumable, Product, Batch, User, Person, VirtualUser, Supplier, Unit, TransactionType, Transaction, BatchTransaction, Taking, Restitution, Inpayment, Depositation, Transfer, CostSharing, ProceedsSharing, Donation, Recovery, MoneyBox, Currency, MoneyBoxStock, Charge
+from .models import Account, AccPayPhase, ItemCategory, Item, Consumable, ProductCategory, Product, ConsumptionEstimation, Batch, User, Person, VirtualUser, Supplier, Unit, TransactionType, Transaction, BatchTransaction, Taking, Restitution, Inpayment, Depositation, Transfer, CostSharing, ProceedsSharing, Donation, Recovery, MoneyBox, Currency, MoneyBoxStock, Charge
 
 admin.site.register(Account)
 admin.site.register(AccPayPhase)
+admin.site.register(ItemCategory)
 admin.site.register(Item)
 admin.site.register(Consumable)
+admin.site.register(ProductCategory)
 admin.site.register(Product)
+admin.site.register(ConsumptionEstimation)
 admin.site.register(Batch)
 admin.site.register(User)
 admin.site.register(Person)

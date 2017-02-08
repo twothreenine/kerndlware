@@ -7,7 +7,6 @@ from .fields import PercentField
 import datetime
 import itertools
 
-
 class Currency(models.Model):
     name = models.CharField(max_length=10)
     conversion_rate = models.FloatField(default=1) # into anchor currency
@@ -17,45 +16,7 @@ class Currency(models.Model):
 
     def __str__(self):
         return "{} ({})".format(self.name, self.full_name)
-
-    def setup(self):
-        """
-        1 = Taking
-        2 = Restitution
-        3 = Inpayment
-        4 = Depositation
-        5 = PayOutBalance
-        6 = PayOutDeposit
-        7 = Transfer
-        8 = CostSharing
-        9 = ProceedsSharing
-        10 = Donation
-        11 = Recovery
-        12 = Insertion (planned)
-        """
-        taking = TransactionType(name="Taking", is_entry_type=True, to_balance=True, no=1)
-        taking.save()
-        restitution = TransactionType(name="Restitution", is_entry_type=True, to_balance=True, no=2)
-        restitution.save()
-        inpayment = TransactionType(name="Inpayment", is_entry_type=True, to_balance=True, no=3)
-        inpayment.save()
-        depositation = TransactionType(name="Depositation", is_entry_type=True, to_balance=False, no=4)
-        depositation.save()
-        pay_out_balance = TransactionType(name="Balance payout", is_entry_type=False, to_balance=True, no=5)
-        pay_out_balance.save()
-        pay_out_deposit = TransactionType(name="Deposit payout", is_entry_type=False, to_balance=False, no=6)
-        pay_out_deposit.save()
-        transfer = TransactionType(name="Transfer", is_entry_type=True, to_balance=True, no=7)
-        transfer.save()
-        cost_sharing = TransactionType(name="Cost sharing", is_entry_type=True, to_balance=True, no=8)
-        cost_sharing.save()
-        proceeds_sharing = TransactionType(name="Proceeds sharing", is_entry_type=True, to_balance=True, no=9)
-        proceeds_sharing.save()
-        donation = TransactionType(name="Donation", is_entry_type=True, to_balance=True, no=10)
-        donation.save()
-        recovery = TransactionType(name="Recovery", is_entry_type=True, to_balance=True, no=11)
-        recovery.save()
-
+        
 class Role(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
@@ -372,10 +333,6 @@ class Supplier(models.Model):
     def __str__(self):
         return "{} in {} (area)".format(self.name, self.broad_location)
 
-class ProductCat(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-
 class VAT(models.Model):
     percentage = models.DecimalField(max_digits=4, decimal_places=2)
     name = models.CharField(max_length=50, blank=True)
@@ -455,6 +412,10 @@ class Unit(models.Model):
         else:
             return "1 {} contains {} ({} gr)".format(batch_or_consumable.unit.abbr, batch_or_consumable.unit.contents, batch_or_consumable.unit.weight)
 
+class ItemCategory(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+
 class Item(models.Model):
     name = models.CharField(max_length=100)
 
@@ -516,8 +477,14 @@ class Consumable(Item):
             stock += restitution.amount * restitution.batch.unit.weight/self.unit.weight
         return stock
 
+class ProductCategory(ItemCategory):
+    pass
+
+    def __str__(self):
+        return self.name
+
 class Product(Consumable):
-    category = models.ForeignKey('ProductCat', blank=True, null=True)
+    category = models.ForeignKey('ProductCategory', blank=True, null=True)
     density = models.FloatField(blank=True, null=True) # kg/l
     storability = models.DurationField(blank=True, null=True)
     usual_taking_min = models.FloatField(blank=True, null=True) # in which amounts the product is usually taken at once
@@ -547,7 +514,7 @@ class Product(Consumable):
     official = models.PositiveSmallIntegerField(blank=True, null=True) # whether the product shall be uploaded in the online portal. 0 = not at all; 1 = without strage conditions; 2 = completely
 
     def __str__(self):
-        return self.name
+        return "({}) {}".format(self.id, self.name)
 
 class Durable(Item):
     pass
@@ -564,12 +531,12 @@ class DeviceStatus(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
 
-class DeviceCat(models.Model):
+class DeviceCategory(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(blank=True)
 
 class Device(Durable):
-    category = models.ForeignKey('DeviceCat')
+    category = models.ForeignKey('DeviceCategory')
     status = models.ForeignKey('DeviceStatus')
     active = models.BooleanField(default=True)
 
@@ -592,7 +559,7 @@ class Batch(models.Model):
     comment = models.TextField(blank=True)
     consumable = models.ForeignKey('Consumable', blank=True, null=True)
     supplier = models.ForeignKey('Supplier', blank=True, null=True)
-    owner_account = models.ForeignKey('Account')
+    owner_account = models.ForeignKey('Account', blank=True, null=True)
     unit = models.ForeignKey('Unit', blank=True, null=True)
     price = models.FloatField() #MoneyField; 
     production_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
@@ -713,8 +680,8 @@ class BatchStorage(models.Model):
     amount_approx = models.FloatField(blank=True, null=True) # e.g. 25 for a bag with 24.697 kg
     comment = models.TextField(blank=True)
 
-class ContainerCategory(ProductCat):
-    pass
+class ContainerCategory(ItemCategory):
+     pass
 
 class Container(Consumable):
     # A type of storage containers or packaging containers/material
@@ -1290,30 +1257,30 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
 
     def perform(self):
         self.transaction_type = TransactionType.objects.get(no=7)
-        if not self.currency == None:
-            self.value = self.amount * self.currency.conversion_rate
-        else:
-            batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
-            self.value = self.amount * batch.price
-        cs = Charge(transaction=self, account=self.originator_account, value=self.value*(-1), to_balance=True, date=self.date)
+        # if not self.currency == None:
+        #     self.value = self.amount * self.currency.conversion_rate
+        # else:
+        #     batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+        #     self.value = self.amount * batch.price
+        self.save()
+        cs = Charge(transaction=self, account=self.originator_account, value=self.amount*(-1), to_balance=True, date=self.date) # self.amount could be replaced by self.value if calculated per batch or currency
         cs.save()
         # self.sender_account.subtract_balance(self.value)
         # self.sender_account.save()
-        cr = Charge(transaction=self, account=self.recipient_account, value=self.value, to_balance=True, date=self.date)
+        cr = Charge(transaction=self, account=self.recipient_account, value=self.amount, to_balance=True, date=self.date) # self.amount could be replaced by self.value if calculated per batch or currency
         cr.save()
         # self.recipient_account.add_balance(self.value)
         # self.recipient_account.save()
-        self.save()
 
     def matter_str(self, account):
         if account == 0:
-            return "{} transferred {} {} to {}".format(self.originator_account.name, format(self.amount,'.2f'), self.currency.name, self.recipient_account.name)
+            return "{} transferred {} € to {}".format(self.originator_account.name, format(self.amount,'.2f'), self.recipient_account.name)
         else:
             acc = Account.objects.get(pk=account)
             if self.originator_account == acc:
-                return "You transferred {} {} to {}".format(format(self.amount,'.2f'), self.currency.name, self.recipient_account.name)
+                return "You transferred {} € to {}".format(format(self.amount,'.2f'), self.recipient_account.name)
             elif self.recipient_account == acc:
-                return "{} transferred {} {} to you".format(self.originator_account.name, format(self.amount,'.2f'), self.currency.name)
+                return "{} transferred {} € to you".format(self.originator_account.name, format(self.amount,'.2f'))
             else:
                 return " "
 
@@ -1348,7 +1315,7 @@ class CostSharing(Transaction):
     def type(self):
         return self.__class__
 
-    def perform(self):
+    def perform(self, participating_accounts):
         self.transaction_type = TransactionType.objects.get(no=8)
         self.save()
         currency = Currency.objects.get(pk=1)
@@ -1357,35 +1324,37 @@ class CostSharing(Transaction):
         else:
             batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
             self.value = self.amount * batch.price
-        co = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
-        co.save()
         sum_of_rates = 0
-        for account in self.participating_accounts.all():
-            sum_of_rates += account.calc_rate(datetime=self.date)
+        for account in participating_accounts: # self.participating_accounts.all()
+            rate = account.calc_rate(datetime=self.date)
+            sum_of_rates += rate
+            if rate > 0:
+                self.participating_accounts.add(account)
         if sum_of_rates > 0:
+            co = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
+            co.save()
             for account in self.participating_accounts.all():
-                rate = account.calc_rate(datetime=self.date)
-                if rate > 0:
-                    share = self.value * rate / sum_of_rates * (-1)
-                    cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
-                    cp.save()
+                share = self.value * account.calc_rate(datetime=self.date) / sum_of_rates * (-1)
+                cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
+                cp.save()
         else:
-            pass
+            print("Error: Sum of current account rates is 0")
+        self.save()
 
     def matter_str(self, account):
         count = self.participating_accounts.count()
         if account == 0:
-            return "{} shared costs of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+            return "{} divided costs of {} € among {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
         else:
             acc = Account.objects.get(pk=account)
             if self.originator_account == acc:
                 if self.participating_accounts.filter(pk=account).count():
                     share = Charge.objects.filter(transaction=self, account=acc)[1].value
-                    return "You shared costs of {} € from {} participants (own share: {} €)".format(format(self.amount,'.2f'), count, format(share, '.2f'))
+                    return "You divided costs of {} € among {} participants (own share: {} €)".format(format(self.amount,'.2f'), count, format(share, '.2f'))
                 else:
-                    return "You shared costs of {} € from {} participants".format(format(self.amount,'.2f'), count)
+                    return "You divided costs of {} € among {} participants".format(format(self.amount,'.2f'), count)
             elif self.participating_accounts.filter(pk=account).count():
-                 return "{} shared costs of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+                 return "{} divided costs of {} € among {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
             else:
                  return " "
 
@@ -1411,44 +1380,46 @@ class ProceedsSharing(Transaction):
     def type(self):
         return self.__class__
 
-    def perform(self):
+    def perform(self, participating_accounts):
         self.transaction_type = TransactionType.objects.get(no=9)
         self.save()
         currency = Currency.objects.get(pk=1)
         if not currency == None:
-            self.value = self.amount * currency.conversion_rate * (-1)
+            self.value = self.amount * currency.conversion_rate
         else:
             batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
             self.value = self.amount * batch.price
-        co = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
-        co.save()
         sum_of_rates = 0
-        for account in self.participating_accounts.all():
-            sum_of_rates += account.calc_rate(datetime=self.date)
+        for account in participating_accounts: # self.participating_accounts.all()
+            rate = account.calc_rate(datetime=self.date)
+            sum_of_rates += rate
+            if rate > 0:
+                self.participating_accounts.add(account)
         if sum_of_rates > 0:
+            co = Charge(transaction=self, account=self.originator_account, value=self.value*(-1), to_balance=True, date=self.date)
+            co.save()
             for account in self.participating_accounts.all():
-                rate = account.calc_rate(datetime=self.date)
-                if rate > 0:
-                    share = self.value * rate / sum_of_rates * (-1)
-                    cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
-                    cp.save()
+                share = self.value * account.calc_rate(datetime=self.date) / sum_of_rates
+                cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
+                cp.save()
         else:
-            pass
+            print("Error: Sum of current account rates is 0")
+        self.save()
 
     def matter_str(self, account):
         count = self.participating_accounts.count()
         if account == 0:
-            return "{} shared proceeds of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+            return "{} divided proceeds of {} € among {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
         else:
             acc = Account.objects.get(pk=account)
             if self.originator_account == acc:
                 if self.participating_accounts.filter(pk=account).count():
                     share = Charge.objects.filter(transaction=self, account=acc)[1].value
-                    return "You shared proceeds of {} € with {} participants (own share: {} €)".format(format(self.amount,'.2f'), count, format(share, '.2f'))
+                    return "You divided proceeds of {} € among {} participants (own share: {} €)".format(format(self.amount,'.2f'), count, format(share, '.2f'))
                 else:
-                    return "You shared proceeds of {} € with {} participants".format(format(self.amount,'.2f'), count)
+                    return "You divided proceeds of {} € among {} participants".format(format(self.amount,'.2f'), count)
             elif self.participating_accounts.filter(pk=account).count():
-                 return "{} shared proceeds of {} € with {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
+                 return "{} divided proceeds of {} € among {} participants".format(self.originator_account.name, format(self.amount,'.2f'), count)
             else:
                  return ""
 
@@ -1503,7 +1474,31 @@ class Donation(Transaction):
     #     else:
     #         pass
 
-    # perform: self.transaction_type = TransactionType.objects.get(no=10)
+    def perform(self, participating_accounts):
+        self.transaction_type = TransactionType.objects.get(no=10)
+        self.save()
+        currency = Currency.objects.get(pk=1)
+        if not currency == None:
+            self.value = self.amount * currency.conversion_rate
+        else:
+            batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+            self.value = self.amount * batch.price
+        sum_of_rates = 0
+        for account in participating_accounts: # self.participating_accounts.all()
+            rate = account.calc_rate(datetime=self.date)
+            sum_of_rates += rate
+            if rate > 0:
+                self.participating_accounts.add(account)
+        if sum_of_rates > 0:
+            co = Charge(transaction=self, account=self.originator_account, value=self.value*(-1), to_balance=True, date=self.date)
+            co.save()
+            for account in self.participating_accounts.all():
+                share = self.value * account.calc_rate(datetime=self.date) / sum_of_rates
+                cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
+                cp.save()
+        else:
+            print("Error: Sum of current account rates is 0")
+        self.save()
 
 class Recovery(Transaction): # donation backwards
     participating_accounts = models.ManyToManyField('Account')
@@ -1527,4 +1522,28 @@ class Recovery(Transaction): # donation backwards
             else:
                  return " "
 
-    # perform: self.transaction_type = TransactionType.objects.get(no=11)
+    def perform(self, participating_accounts):
+        self.transaction_type = TransactionType.objects.get(no=11)
+        self.save()
+        currency = Currency.objects.get(pk=1)
+        if not currency == None:
+            self.value = self.amount * currency.conversion_rate
+        else:
+            batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+            self.value = self.amount * batch.price
+        sum_of_rates = 0
+        for account in participating_accounts: # self.participating_accounts.all()
+            rate = account.calc_rate(datetime=self.date)
+            sum_of_rates += rate
+            if rate > 0:
+                self.participating_accounts.add(account)
+        if sum_of_rates > 0:
+            co = Charge(transaction=self, account=self.originator_account, value=self.value*(-1), to_balance=True, date=self.date)
+            co.save()
+            for account in self.participating_accounts.all():
+                share = self.value * account.calc_rate(datetime=self.date) / sum_of_rates
+                cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
+                cp.save()
+        else:
+            print("Error: Sum of current account rates is 0")
+        self.save()

@@ -1,0 +1,76 @@
+{% extends "core/base.html" %}
+{% block title %}Estimate consumption{% endblock %}
+{% block heading %}Estimate your monthly consumption{% endblock %}
+{% block content %}
+
+<table class="table">
+  <thead>
+    <th>Consumable</th>
+    <th>Description</th>
+    <th>Presumed price</th>
+    <th>Unit</th>
+    <th>Your average consumption</th>
+    <th>Your estimation</th>
+    <th>Comment</th>
+    <th>Relevant?</th>
+  </thead>
+<!--
+  <tbody>
+    {% for st in product_category_subtables %}
+    <tr><td> {{ st.heading }} </td></tr>
+    <tr><td> {{ st.subheading }} </td></tr>
+      {% for row in st.rows %}
+      <tr>
+        {% for column in row %}
+        <td> {{ column }} </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    {% endfor %}
+  </tbody>
+-->
+</table>
+
+<div class="panel-group">
+  <form id="account_consumption_form" action="/account_consumption" method="POST">
+  {% csrf_token %}
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <div>
+          <input name="save" type="submit" value="Save" />
+        </div>
+        <div>Total amount: {{ total_amount }}</div>
+        <div>Value sum: {{ total_pres_value }}</div>
+      </div>
+    </div>
+    {% for st in product_category_subtables %}
+      <div class="panel panel-default">
+        <div class="panel-heading">{{ st.heading }}
+        </div>
+        <div class="panel-body">
+          <p>{{ st.subheading }}
+          <table>
+            {% for row in st.rows %}
+            <tr>
+              <td>{{ row.1 }}</td>
+              <td>{{ row.2 }}</td>
+              <td>{{ row.3 }}</td>
+              <td>{{ row.4 }}</td>
+              <!--
+              {% for column in row %}
+              <td>{{ column }}</td>
+              {% endfor %}
+              -->
+              <td><input type="number" name="{{ row.0 }}" step="any" value={{ row.5 }}></td>
+              <td>{{ row.6 }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </form>
+</div>
+
+
+{% endblock %}

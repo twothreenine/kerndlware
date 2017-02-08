@@ -85,7 +85,7 @@
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
             <li><h2>Coopbook</h2></li>
-            <li><strong>Participate <a href="">New account</a></strong></li>
+            <li><strong>Participate <a href="/register">New account</a></strong></li>
             <li>
               <form id="account_selection_form" action="/base" method="POST">
                 {% csrf_token %}
@@ -99,9 +99,9 @@
             </li>
             <li><a href="/account">Transactions</a></li>
             <li><a href="">Shopping list</a></li>
-            <li><a href="">Estimate consumption</a></li>
+            <li><a href="/account_consumption">Estimate consumption</a></li>
             <li><a href="">Pre-order attachments</a></li>
-            <li><a href="">Settings</a></li>
+            <li><a href="/account_settings">Settings</a></li>
           </ul>
            <ul class="nav nav-sidebar">
             <li><strong>Overview</strong></li>
@@ -143,7 +143,7 @@
           </ul>
         </div>
 
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main" id="content">
           <h1>{% block heading %}{% endblock %}</h1>
           {% block content %}{% endblock %}
         </div>

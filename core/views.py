@@ -13,10 +13,22 @@ from rest_framework.response import Response
 import itertools
 import logging
 
-selected_account = Account.objects.get(pk=1)
+if Account.objects.filter(pk=1).count():
+    selected_account = Account.objects.get(pk=1)
+else:
+    selected_account = Account(name="Test")
+    selected_account.save()
 logger = logging.getLogger(__name__)
-selected_batch_in_batchtransactiontable = Batch.objects.get(pk=1)
-selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=1)
+if Batch.objects.filter(pk=1).count():
+    selected_batch_in_batchtransactiontable = Batch.objects.get(pk=1)
+else:
+    selected_batch_in_batchtransactiontable = Batch(name="Test", price=0)
+    selected_batch_in_batchtransactiontable.save()
+if Consumable.objects.filter(pk=1).count():
+    selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=1)
+else:
+    selected_consumable_in_consumabletransactiontable = Consumable(name="Test")
+    selected_consumable_in_consumabletransactiontable.save()
 selected_types_in_account_transactions = TransactionType.objects.all()
 start_date_in_account_transactions = models.DateField(blank=True, null=True)
 start_date_in_account_transactions = None # datetime.datetime.strptime('2014-01-01' , '%Y-%m-%d')
@@ -24,6 +36,44 @@ end_date_in_account_transactions = models.DateField(blank=True, null=True)
 end_date_in_account_transactions = None
 enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
 enterer_in_account_transactions = None
+
+if not TransactionType.objects.all():
+    """
+    1 = Taking
+    2 = Restitution
+    3 = Inpayment
+    4 = Depositation
+    5 = PayOutBalance
+    6 = PayOutDeposit
+    7 = Transfer
+    8 = CostSharing
+    9 = ProceedsSharing
+    10 = Donation
+    11 = Recovery
+    12 = Insertion (planned)
+    """
+    taking = TransactionType(name="Taking", is_entry_type=True, to_balance=True, no=1)
+    taking.save()
+    restitution = TransactionType(name="Restitution", is_entry_type=True, to_balance=True, no=2)
+    restitution.save()
+    inpayment = TransactionType(name="Inpayment", is_entry_type=True, to_balance=True, no=3)
+    inpayment.save()
+    depositation = TransactionType(name="Depositation", is_entry_type=True, to_balance=False, no=4)
+    depositation.save()
+    pay_out_balance = TransactionType(name="Balance payout", is_entry_type=False, to_balance=True, no=5)
+    pay_out_balance.save()
+    pay_out_deposit = TransactionType(name="Deposit payout", is_entry_type=False, to_balance=False, no=6)
+    pay_out_deposit.save()
+    transfer = TransactionType(name="Transfer", is_entry_type=True, to_balance=True, no=7)
+    transfer.save()
+    cost_sharing = TransactionType(name="Cost sharing", is_entry_type=True, to_balance=True, no=8)
+    cost_sharing.save()
+    proceeds_sharing = TransactionType(name="Proceeds sharing", is_entry_type=True, to_balance=True, no=9)
+    proceeds_sharing.save()
+    donation = TransactionType(name="Donation", is_entry_type=True, to_balance=True, no=10)
+    donation.save()
+    recovery = TransactionType(name="Recovery", is_entry_type=True, to_balance=True, no=11)
+    recovery.save()
 
 def index(request):
     template = loader.get_template('core/index.html')
@@ -109,6 +159,8 @@ def enter_new_transaction(request):
         transaction_type = request.POST.get("type")
         if transaction_type:
             t_type = TransactionType.objects.get(pk=int(transaction_type))
+        else:
+            t_type = None
         entered_by = request.POST.get("entered_by")
         if entered_by:
             t_enterer = User.objects.get(pk=int(entered_by))
@@ -123,34 +175,115 @@ def enter_new_transaction(request):
             t_comment = str(comment)
         else:
             t_comment = ''
-        if t_type.id == 1:
-            batch_no = request.POST.get("batch_no")
-            if batch_no:
-                t_batch = Batch.objects.get(pk=int(batch_no))
-            if t_date and t_amount and t_batch:
-                global selected_account
-                t = Taking(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
-        elif t_type.id == 2:
-            batch_no = request.POST.get("batch_no")
-            if batch_no:
-                t_batch = Batch.objects.get(pk=int(batch_no))
-            if t_date and t_amount and t_batch:
-                global selected_account
-                t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
-        elif t_type.id == 3:
-            currency = request.POST.get("currency")
-            if currency:
-                t_currency = Currency.objects.get(pk=int(currency))
+        if not t_type == None:
+            global selected_account
+            if t_type.id == 1: # taking
+                batch_no = request.POST.get("batch_no")
+                if batch_no:
+                    t_batch = Batch.objects.get(pk=int(batch_no))
+                if t_date and t_amount and t_batch:
+                    t = Taking(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t.perform()
+            elif t_type.id == 2: # restitution
+                batch_no = request.POST.get("batch_no")
+                if batch_no:
+                    t_batch = Batch.objects.get(pk=int(batch_no))
+                if t_date and t_amount and t_batch:
+                    t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t.perform()
+            elif t_type.id == 3: # inpayment
+                currency = request.POST.get("currency")
+                if currency:
+                    t_currency = Currency.objects.get(pk=int(currency))
+                else:
+                    t_currency = Currency.objects.get(pk=1) # get anchor currency
+                money_box = request.POST.get("money_box")
+                if money_box:
+                    t_money_box = MoneyBox.objects.get(pk=int(money_box))
+                if t_date and t_amount and t_currency and t_money_box:
+                    t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+                    t.perform()
+            elif t_type.id == 4: # depositation
+                currency = request.POST.get("currency")
+                if currency:
+                    t_currency = Currency.objects.get(pk=int(currency))
+                else:
+                    t_currency = Currency.objects.get(pk=1) # get anchor currency
+                money_box = request.POST.get("money_box")
+                if money_box:
+                    t_money_box = MoneyBox.objects.get(pk=int(money_box))
+                if t_date and t_amount and t_currency and t_money_box:
+                    t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+                    t.perform()
+            elif t_type.id == 7: # transfer
+                recipient_account = request.POST.get("recipient_account")
+                if recipient_account:
+                    t_recipient_account = Account.objects.get(pk=int(recipient_account))
+                if t_date and t_amount and t_recipient_account:
+                    t = Transfer(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, recipient_account=t_recipient_account)
+                    t.perform()
+            elif t_type.id == 8 or t_type.id == 9 or t_type.id == 10 or t_type.id == 11: # cost sharing, proceeds sharing, donation, recovery
+                participating_accounts = request.POST.getlist("participating_accounts")
+                t_participating_accounts = []
+                if participating_accounts:
+                    for p in participating_accounts:
+                        pa = Account.objects.get(pk=int(p))
+                        t_participating_accounts.append(pa)
+                if t_date and t_amount and t_participating_accounts:
+                    if t_type.id == 8:
+                        t = CostSharing(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                    if t_type.id == 9:
+                        t = ProceedsSharing(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                    if t_type.id == 10:
+                        t = Donation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                    if t_type.id == 11:
+                        t = Recovery(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                    t.save()
+                    t.perform(participating_accounts=t_participating_accounts)
+
+def create_account(request):
+    if request.method == 'POST':
+        a = Account(name=str(request.POST.get("name")))
+        a.save()
+        if request.POST.getlist("users"):
+            for us in request.POST.getlist("users"):
+                us = User.objects.get(pk=int(us))
+                us.save()
+                us.accounts.add(a)
+                us.save()
+                a.users.add(us)
+                a.save()
+        if not request.POST.get("new_user") == '':
+            if request.POST.get("is_non_real") == True:
+                u = User(name=str(request.POST.get("new_user")))
             else:
-                t_currency = Currency.objects.get(pk=1) # get anchor currency
-            money_box = request.POST.get("money_box")
-            if money_box:
-                t_money_box = MoneyBox.objects.get(pk=int(money_box))
-            if t_date and t_amount and t_currency and t_money_box:
-                global selected_account
-                t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
-        # TODO: elifs for depositation and other transaction types
-        t.perform()
+                u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
+            u.save()
+            u.accounts.add(a)
+            u.save()
+            a.users.add(u)
+            a.save()
+
+def modify_account(request):
+    if request.method == 'POST':
+        global selected_account
+        selected_account.name = str(request.POST.get("name"))
+        selected_account.users.clear()
+        for us in request.POST.getlist("users"):
+            us = User.objects.get(pk=int(us))
+            us.accounts.add(selected_account)
+            us.save()
+            selected_account.users.add(us)
+        if not request.POST.get("new_user") == '':
+            if request.POST.get("is_non_real"):
+                u = User(name=str(request.POST.get("new_user")))
+            else:
+                u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
+            u.save()
+            u.accounts.add(selected_account)
+            u.save()
+            selected_account.users.add(u)
+        selected_account.save()
 
 def global_context(request):
     accounts = Account.objects.all()
@@ -165,8 +298,11 @@ def base(request):
     return HttpResponseRedirect(request.POST['current_path'])
 
 def account(request):
-    filter_account_transactions(request)
-    enter_new_transaction(request)
+    if request.method == 'POST':
+        if request.POST["form_name"] == "transaction_list_filter":
+            filter_account_transactions(request) 
+        if request.POST["form_name"] == "transaction_entry_form":
+            enter_new_transaction(request)
     template = loader.get_template('core/account.html')
     g_context = global_context(request)
     global selected_account
@@ -188,6 +324,7 @@ def account(request):
     else:
         end_date = ''
     global enterer_in_account_transactions
+    transactions = Transaction.objects.all()
     account_table = AccountTable(account_id = selected_account.id, types = selected_types_in_account_transactions, start_date = start_date_in_account_transactions, end_date = end_date_in_account_transactions, 
                                 enterer = enterer_in_account_transactions)
     if request.method == 'POST':
@@ -203,14 +340,66 @@ def account(request):
     batches = Batch.objects.all()
     currencies = Currency.objects.all()
     money_boxes = MoneyBox.objects.all()
+    accounts = Account.objects.all()
+    accounts_except_itself = Account.objects.exclude(id=selected_account.id)
     context = {
         "account_table" : account_table, "deposit" : deposit,
         "taken" : taken, "entry_form" : entry_form, "entry_types" : entry_types,
         "users" : users, "currencies" : currencies, "money_boxes" : money_boxes,
         "batches" : batches, "transaction_types" : transaction_types, "selected_type_ids" : selected_type_ids, 
-        "start_date" : start_date, "end_date" : end_date, "enterer_in_account_transactions" : enterer_in_account_transactions
+        "start_date" : start_date, "end_date" : end_date, "enterer_in_account_transactions" : enterer_in_account_transactions,
+        "accounts_except_itself" : accounts_except_itself, "accounts" : accounts, 
     }
     return HttpResponse(template.render({**g_context, **context}, request))
+
+def register(request):
+    create_account(request)
+    template = loader.get_template('core/register.html')
+    global selected_account
+    users = User.objects.all()
+    context = {"account" : selected_account, "users" : users}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def account_consumption_form(request):
+    if request.method == 'POST':
+        global selected_account
+        for p in Product.objects.all():
+            estimation = request.POST.get(str(p.id))
+            if not estimation == "" and not estimation == None:
+                estimation = float(estimation)
+                try:
+                    ce = ConsumptionEstimation.objects.get(account=selected_account, consumable=p)
+                    ce.amount = estimation
+                    ce.save()
+                except ConsumptionEstimation.DoesNotExist:
+                    ce = ConsumptionEstimation(account=selected_account, consumable=p, amount=estimation)
+                    ce.save()
+
+
+def account_consumption(request):
+    account_consumption_form(request)
+    template = loader.get_template('core/account_consumption.html')
+    global selected_account
+    product_category_table = ProductCategoryTable(objective="account consumption", account_id=selected_account)
+    product_category_subtables = product_category_table.subtables
+    consumables = Consumable.objects.all()
+    total_amount = 0
+    total_pres_value = 0
+    for ce in ConsumptionEstimation.objects.filter(account=selected_account):
+        total_amount += ce.amount * ce.consumable.unit.weight / 1000
+        if ce.consumable.presumed_price:
+            total_pres_value += ce.amount * ce.consumable.presumed_price
+    context = {"account" : selected_account, "consumables" : consumables, "product_category_table" : product_category_table, "product_category_subtables" : product_category_subtables, 
+                "total_amount" : "{} kg".format(format(total_amount, '.3f')), "total_pres_value" : "{} €".format(format(total_pres_value, '.2f')), }
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def account_settings(request):
+    modify_account(request)
+    template = loader.get_template('core/account_settings.html')
+    global selected_account
+    users = User.objects.all()
+    context = {"account" : selected_account, "users" : users}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def transactionlist(request):
     template = loader.get_template('core/transactionlist.html')

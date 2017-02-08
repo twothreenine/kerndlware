@@ -1,13 +1,16 @@
 {% extends "core/base.html" %}
 {% block title %}Your transactions{% endblock %}
-{% block heading %}Your transactions{% endblock %}
 {% block style %}
-  <!-- thead, tbody { display: block; }
-  tbody {
-    height: 200px;       /* Just for the demo          */
+  #transactions > tbody { display: block;
     overflow-y: auto;    /* Trigger vertical scroll    */
     overflow-x: hidden;  /* Hide the horizontal scroll */
-  } -->
+  }
+  <!-- tr.positive {
+    background-color: #61a8ff;
+  }
+  tr.negative {
+    background-color: #97ff9c; -->
+  }
   tr.deposited {
     background-color: #61a8ff;
   }
@@ -17,8 +20,12 @@
   tr.restituted {
     background-color: #c4c4c4;
   }
-  tr.transferred {
-    background-color: #99ffff;
+  <!-- tr.transferred {
+    background-color: #ffff99;
+  } -->
+  <!-- <tr class="You transferred">-->
+  tr.you.transferred { <!-- how to give multiple words as term ?? -->
+    background-color: #f77770;
   }
   tr.costs {
     background-color: #f77770;
@@ -40,65 +47,72 @@
     display: inline;
     margin-right: 2em;
   }
-  #transaction_list_filter div {
+  #transaction_list_filter div, #transaction_entry_form div {
     float: left;
     margin-right: 1em;
   }
-  #transaction_list_filter div > label, #transaction_list_filter div > select {
+  #transaction_list_filter div > label, #transaction_list_filter div > select, #transaction_entry_form div > label, #transaction_entry_form div select, #transaction_entry_form div > input, 
+  #transaction_entry_form div .btn-group.bootstrap-select {
     display: block;
   }
-  .scroll {
+  .btn-group.bootstrap-select { float: none; }
+/* .scroll {
     height: 200px;
     overflow-y: scroll;
-    <!-- border: 1px solid #000;
-    padding: 10px; -->
+    border: 1px solid #000;
+    padding: 10px; */
   } 
 {% endblock %}
 {% block content %}
 
-<ul id="account_info">
-  <li>Current balance: {{ balance }}</li>
-  <li>Taken: {{ taken }}</li>
-  <li>Deposited: {{ deposit }}</li>
-</ul>
+<div id="head">
+  <h1>Your transactions</h1>
+  <ul id="account_info">
+    <li>Current balance: {{ balance }}</li>
+    <li>Taken: {{ taken }}</li>
+    <li>Deposited: {{ deposit }}</li>
+  </ul>
 
-<div class="panel panel-default">
-  <div class="panel-body">
-    <form id="transaction_list_filter" action="/account" method="POST">
-      {% csrf_token %}
-      <div>
-        <label for="apply">Filter this list</label>
-        <input name="apply" type="submit" value="Apply" />
-      </div>
-      <div>
-        <label for="transaction_type">Types</label>
-        <select multiple="multiple" name="transaction_type" class="selectpicker" data-actions-box="true">
-          {% for type in transaction_types %}
-          <option value="{{ type.id }}" {% if type.id in selected_type_ids %}selected{% endif %}>{{ type.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label for="start_date">Start date</label>
-        <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
-      </div>
-      <div>
-        <label for="end_date">End date</label>
-        <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
-      </div>
-      <div>
-        <label for="enterer">Enterer</label>
-        <select name="enterer" class="selectpicker" data-live-search="true">
-          <option value=0>All users</option>
-          {% for user in users %}
-          <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </form>
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <form id="transaction_list_filter" action="/account" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="form_name" value="transaction_list_filter">
+        <div>
+          <label for="apply">Filter this list</label>
+          <input name="apply" type="submit" value="Apply" />
+        </div>
+        <div>
+          <label for="transaction_type">Types</label>
+          <select multiple="multiple" name="transaction_type" class="selectpicker" data-actions-box="true">
+            {% for type in transaction_types %}
+            <option value="{{ type.id }}" {% if type.id in selected_type_ids %}selected{% endif %}>{{ type.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="start_date">Start date</label>
+          <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
+        </div>
+        <div>
+          <label for="end_date">End date</label>
+          <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
+        </div>
+        <div>
+          <label for="enterer">Enterer</label>
+          <select name="enterer" class="selectpicker" data-live-search="true">
+            <option value=0>All users</option>
+            {% for user in users %}
+            <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
-<table class="table">
+
+<table class="table" id="transactions"> <!-- class="table table-condensed"  should make it more compact? -->
   <thead>
     <th>Tr No</th>
     <th>Date</th>
@@ -110,7 +124,7 @@
   </thead>
   <tbody>
     {% for row in account_table.rows %}
-      <tr class="{{ row.2|lower }}">
+      <tr class="{{ row.2|lower }}"> <!-- if transactions.objects.get(pk=int(row.0)).value < 0 }}"negative"  else  "positive" --> 
         {% for column in row %}
           <td> {{ column }} </td>
         {% endfor %}
@@ -118,21 +132,92 @@
     {% endfor %}
   </tbody>
 </table>
-<div class="panel panel-default">
+
+<script>
+  function show_fields() {
+    var type = $("select[name=type]").val()
+    switch(type) {
+    case '1': // taking
+        $("#money_fields").hide()
+        $("#participating_accounts").hide()
+        $("#recipient_account").hide()
+        $("#batch_fields").show()
+        $("#recipient_account").hide()
+        $("#participating_accounts").hide()
+        $("#participating_accounts_except_itself").hide()
+        break;
+    case '2': // restitution
+        $("#money_fields").hide()
+        $("#participating_accounts").hide()
+        $("#recipient_account").hide()
+        $("#batch_fields").show()
+        $("#recipient_account").hide()
+        $("#participating_accounts").hide()
+        $("#participating_accounts_except_itself").hide()
+        break;
+    case '3': // inpayment
+    case '4': // depositation
+        $("#money_fields").css("display", "")
+        $("#participating_accounts").hide()
+        $("#recipient_account").hide()
+        $("#batch_fields").hide()
+        $("#recipient_account").hide()
+        $("#participating_accounts").hide()
+        $("#participating_accounts_except_itself").hide()
+        break;
+    case '7': // transfer
+        $("#money_fields").hide()
+        $("#participating_accounts").hide()
+        $("#recipient_account").hide()
+        $("#batch_fields").hide()
+        $("#recipient_account").css("display", "")
+        $("#participating_accounts").hide()
+        $("#participating_accounts_except_itself").hide()
+        break;
+    case '8': // cost sharing
+    case '9': // proceeds sharing
+        $("#money_fields").hide()
+        $("#participating_accounts").hide()
+        $("#recipient_account").hide()
+        $("#batch_fields").hide()
+        $("#recipient_account").hide()
+        $("#participating_accounts").css("display", "")
+        $("#participating_accounts_except_itself").hide()
+        break;
+    case '10': // transfer
+    case '11': // transfer
+        $("#money_fields").hide()
+        $("#participating_accounts").hide()
+        $("#recipient_account").hide()
+        $("#batch_fields").hide()
+        $("#recipient_account").hide()
+        $("#participating_accounts").hide()
+        $("#participating_accounts_except_itself").css("display", "")
+        break;
+    default:
+        break;
+    }
+}
+</script>
+
+<div class="panel panel-default" id="bottom">
   <form id="transaction_entry_form" action="/account" method="POST">
     {% csrf_token %}
-    <div class="panel-heading">Enter new transaction 
-      <select onchange="// TODO: Felder ein- und ausblenden" name="type" class="selectpicker">
-        <option value="" disabled>Choose type for new transaction</option>
-        {% for type in entry_types %}
-        <option value="{{ type.id }}">{{ type.name }}</option>
-        {% endfor %}
-      </select>
-      </div>
+    <input type="hidden" name="form_name" value="transaction_entry_form">
+    <div class="panel-heading">Enter new transaction</div>
     <div class="panel-body">
       <div>
-        <label for="entered_by">Select yourself as enterer</label>
-        <select onchange="// TODO: Felder ein- und ausblenden" name="entered_by" class="selectpicker" data-live-search="true" required="true">
+        <label for="entered_by">Type</label>
+        <select onchange="show_fields()" name="type" class="selectpicker">
+          <option value="" disabled>Choose type for new transaction</option>
+          {% for type in entry_types %}
+          <option value="{{ type.no }}">{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="entered_by">Entering user</label>
+        <select name="entered_by" class="selectpicker" data-live-search="true" required="true">
           <option value="" disabled selected>Select user</option>
           {% for user in users %}
           <option value="{{ user.id }}">{{ user }}</option>
@@ -143,11 +228,13 @@
         <label for="date">Date of transaction</label>
         <input type="date" name="date" placeholder="Select date" required="true" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-today-highlight="true" >
       </div>
-      <div>
+      <div id="batch_fields">
+        <label for="batch_no">Batch</label>
         <input type="number" name="batch_no" min="1" placeholder="Batch no.">
         <input type="text" name="batch_name" readonly disabled>
       </div>
-      <div>
+      <div id="money_fields" style="display: none">
+        <label for="currency">Currency, money box</label>
         <select onchange="// TODO: Felder ein- und ausblenden" name="currency" class="selectpicker">
           <option value="" disabled selected>Select currency</option>
           {% for currency in currencies %}
@@ -165,7 +252,7 @@
         <input type="number" name="amount" step="any" placeholder="Amount"> <!-- {{ batch.unit.abbr }} bzw. {{ currency.name }} -->
         <input type="text" name="value" readonly disabled>
       </div>
-      <div>
+      <div id="participating_accounts" style="display: none">
         <label for="participating_accounts">Select participating accounts</label>
         <select multiple="multiple" name="participating_accounts" class="selectpicker" data-actions-box="true" data-live-search="true" >
           {% for account in accounts %}
@@ -173,13 +260,22 @@
           {% endfor %}
         </select>
       </div>
-      <div>
-        <label for="recipient_account">Select recipient account</label>
-        <select name="recipient_account" class="selectpicker" data-actions-box="true" data-live-search="true" >
-          {% for account in accounts %}
+      <div id="participating_accounts_except_itself" style="display: none">
+        <label for="participating_accounts">Select participating accounts</label>
+        <select multiple="multiple" name="participating_accounts" class="selectpicker" data-actions-box="true" data-live-search="true" >
+          {% for account in accounts_except_itself %}
             <option value="{{ account.id }}">{{ account }}</option>
           {% endfor %}
         </select>
+      </div>
+      <div id="recipient_account" style="display: none">
+        <label for="recipient_account">Select recipient account</label>
+        <select name="recipient_account" class="selectpicker" data-actions-box="true" data-live-search="true" >
+          {% for account in accounts_except_itself %}
+            <option value="{{ account.id }}">{{ account }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div>
         <input type="text" name="comment" placeholder="Enter comment">
       </div>
@@ -194,12 +290,17 @@
 
 {% block script %}
 <script>
-  $(document).ready(function() {
-    var dict = {
-      "taking": function() {
-        $("#transaction_entry_form");
-      }
-    }
+/*
+   $(document).ready(function() {
+    var height = $('#head').height();
+    $('#transactions').css("margin-top", height);
+  });
+  */
+  $(window).resize(function() {
+    var head_height = $('#head').height();
+    var bottom_height = $('#bottom').height();
+    var transactions_height = $(window).height() - head_height - $('#transactions > thead').height() - bottom_height - $('#content').css('padding')*2 - $('#content').css('margin')*2;
+    $('#transactions > tbody').css('height', transactions_height + 'px')
   });
 </script>
 {% endblock %}

@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+{% block title %}Create new account{% endblock %}
+{% block heading %}Create new account{% endblock %}
+{% block style %}
+
+{% endblock %}
+{% block content %}
+
+<div class="panel panel-default">
+  <form id="register_form" action="/register" method="POST">
+    {% csrf_token %}
+    <div class="panel-heading"></div>
+    <div class="panel-body">
+      <div>
+        <input type="text" name="name" placeholder="Name of new account" required="true">
+      </div>
+      <div>
+        <label for="users">Select associated users if they already exist</label>
+        <select multiple="multiple" name="users" class="selectpicker" data-actions-box="true" data-live-search="true">
+          <option value="" disabled>Select users</option>
+          {% for user in users %}
+          <option value="{{ user.id }}">{{ user }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="new_user">Create new users for this account</label>
+        <input type="text" name="new_user" placeholder="Name of new user">
+        <input type="checkbox" name="is_non_real"> is non-real
+      </div>
+      <div>
+        <input type="submit" value="Register" />
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<!-- <script>
+  }
+  $(document).ready(function() {
+    
+    var dict = {
+      "taking": function() {
+        $("#transaction_entry_form");
+      }
+    }
+  });
+</script> -->
+{% endblock %}

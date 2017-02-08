@@ -121,12 +121,12 @@ class AccountTable:
         donations = []
         for dt in Donation.objects.all():
             if dt.originator_account == acc or dt.participating_accounts.filter(pk=self.account_id).count():
-                donations.append(ps)
+                donations.append(dt)
         # donation = Donation.objects.filter(originator_account=self.account_id) & Donation.objects.filter(participating_accounts=self.account_id)
         recoveries = []
         for rc in Recovery.objects.all():
             if rc.originator_account == acc or rc.participating_accounts.filter(pk=self.account_id).count():
-                recoveries.append(ps)
+                recoveries.append(rc)
         # recovery = Recovery.objects.filter(originator_account=self.account_id) & Recovery.objects.filter(participating_accounts=self.account_id)
         all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
         transactions = []
@@ -198,3 +198,94 @@ class TrDetailsTable:
                 row.append(charge.account.calc_rate(date=transaction.date) + "x")
                 row.append(charge.value + " €")
                 self.rows.append(row)
+
+class ProductCategoryTable:
+    def __init__(self, objective, account_id=0):
+        self.objective = objective
+        self.account_id = account_id
+        self.subtables = list()
+        self.generate()
+
+    def generate(self):
+        prodcats = ProductCategory.objects.all()
+        for pc in prodcats:
+            if Product.objects.filter(category = pc).count():
+                pcs = ProductCategorySubtable(objective=self.objective, account_id=self.account_id, product_category_id=pc.id)
+                self.subtables.append(pcs)
+
+                """
+                sh_row = list()
+                sh_row.append(pc.name)
+                sh_row.append(pc.description)
+                self.subheadings.append(sh_row)
+                sh_p_rows = list()
+                for p in prods:
+                    p_row = list()
+                    p_row.append(p.name)
+                    p_row.append(p.description)
+                    if p.presumed_price:
+                        p_row.append("{} €".format(format(p.presumed_price, '.2f')))
+                    else:
+                        p_row.append("")
+                    p_row.append(p.unit.abbr)
+                    # further ones
+                    sh_p_rows.append(p_row)
+                self.rows.append(sh_p_rows)
+                """
+
+class ProductCategorySubtable:
+    def __init__(self, objective, account_id, product_category_id):
+        self.objective = objective
+        self.account_id = account_id
+        self.product_category = ProductCategory.objects.get(id=product_category_id)
+        self.heading = self.product_category.name
+        self.subheading = self.product_category.description
+        self.rows = list()
+        self.generate()
+
+    def generate(self):
+        prods = Product.objects.filter(category=self.product_category)
+        for p in prods:
+            row = list()
+            row.append(p.id)
+            row.append(p.name)
+            row.append(p.description)
+            if p.presumed_price:
+                row.append("{} €".format(format(p.presumed_price, '.2f')))
+            else:
+                row.append("")
+            row.append(p.unit.abbr)
+            try:
+                ce = ConsumptionEstimation.objects.get(account=self.account_id, consumable=p)
+                row.append(format(ce.amount, '.3f'))
+                if ce.consumable.presumed_price:
+                    print(ce.consumable.name)
+                    pres_value = ce.amount * ce.consumable.presumed_price
+                    pv = "{} €".format(format(pres_value, '.2f'))
+                else:
+                    pv = ''
+                #print(pres_value)
+                row.append(pv)
+            except ConsumptionEstimation.DoesNotExist:
+                row.append("")
+                row.append("")
+            # further ones
+            self.rows.append(row)
+
+            """
+                row = list()
+                row.append(pc.name)
+                row.append(pc.description)
+                self.rows.append(row)
+                for prod in prods:
+                    row = list()
+                    row.append(prod.name)
+                    row.append(prod.description)
+                    if prod.presumed_price:
+                        row.append("{} €".format(format(prod.presumed_price, '.2f')))
+                    else:
+                        row.append("")
+                    row.append(prod.unit.abbr)
+                    # further ones
+                    self.rows.append(row)
+            """

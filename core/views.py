@@ -6,7 +6,7 @@ from django.template import loader
 from .forms import TransactionEntryForm
 from .models import *
 from .tables import *
-from .serializers import BatchSerializer
+from .serializers import *
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -239,7 +239,7 @@ def enter_new_transaction(request):
                     if t_type.id == 11:
                         t = Recovery(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
                     t.save()
-                    t.perform(participating_accounts=t_participating_accounts)
+                    t.perform(transaction_type_id=t_type.id, participating_accounts=t_participating_accounts)
 
 def create_account(request):
     if request.method == 'POST':
@@ -472,6 +472,14 @@ def batches(request):
     #        serializer.save()
     #        return Response(serializer.data, status=status.HTTP_201_CREATED)
     #    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+def currencies(request):
+    if request.method == 'GET':
+        request_id=request.GET.get('id', 1)
+        currency = Currency.objects.get(pk=int(request_id))
+        serializer = CurrencySerializer(currency, many=False)
+        return Response(serializer.data)
 
 class BatchViewSet(viewsets.ModelViewSet):
     queryset = Batch.objects.all()

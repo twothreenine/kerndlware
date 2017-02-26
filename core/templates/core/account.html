@@ -1,6 +1,44 @@
 {% extends "core/base.html" %}
 {% block title %}Your transactions{% endblock %}
 {% block style %}
+  div.row {
+
+  }
+  div.transaction_id {
+    display: inline-block;
+    width: 0%;
+    margin-left: 1em;
+  }
+  div.transaction_date {
+    display: inline-block;
+    width: 6%;
+    margin-left: 1em;
+  }
+  div.transaction_matter {
+    display: inline-block;
+    width: 44%;
+    margin-left: 1em;
+  }
+  div.transaction_entry_details {
+    display: inline-block;
+    width: 21%;
+    margin-left: 1em;
+  }
+  div.transaction_value {
+    display: inline-block;
+    width: 5%;
+    margin-left: 1em;
+  }
+  div.transaction_balance {
+    display: inline-block;
+    width: 5%;
+    margin-left: 1em;
+  }
+  div.transaction_comment {
+    display: inline-block;
+    width: 8%;
+    margin-left: 1em;
+  }
   #transactions > tbody { display: block;
     overflow-y: auto;    /* Trigger vertical scroll    */
     overflow-x: hidden;  /* Hide the horizontal scroll */
@@ -112,6 +150,42 @@
   </div>
 </div>
 
+<!--
+<div class="panel-group">
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <div class ="transaction_id">ID</div>
+      <div class ="transaction_date">Date</div>
+      <div class ="transaction_matter">Matter</div>
+      <div class ="transaction_entry_details">Entry details</div>
+      <div class ="transaction_value">Value</div>
+      <div class ="transaction_balance">Balance</div>
+      <div class ="transaction_comment">Comment</div>
+    </div>
+  </div>
+  <div class="panel panel-default" id="transactions">
+    <div class="panel-body">
+      {% for row in account_table.rows %}
+        <p style="background-color: {{ row.0 }}">
+          <div class ="transaction_id">{{ row.2 }}</div>
+          <div class ="transaction_date">{{ row.3 }}</div>
+          <div class ="transaction_matter">{{ row.4 }}{% if row.1 == True %}. <a data-toggle="collapse" href="#details{{ row.2 }}">Show details</a>{% endif %}</div>
+            {% if row.1 == True %}
+              <table id="details{{ row.2 }}" class="collapse">
+                test
+              </table>
+            {% endif %}
+          <div class ="transaction_entry_details">{{ row.5 }}</div>
+          <div class ="transaction_value">{{ row.6 }}</div>
+          <div class ="transaction_balance">{{ row.7 }}</div>
+          <div class ="transaction_comment">{{ row.8 }}</div>
+        </p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+-->
+
 <table class="table" id="transactions"> <!-- class="table table-condensed"  should make it more compact? -->
   <thead>
     <th>Tr No</th>
@@ -124,14 +198,50 @@
   </thead>
   <tbody>
     {% for row in account_table.rows %}
-      <tr class="{{ row.2|lower }}"> <!-- if transactions.objects.get(pk=int(row.0)).value < 0 }}"negative"  else  "positive" --> 
-        {% for column in row %}
-          <td> {{ column }} </td>
-        {% endfor %}
+      <tr style="background-color: {{ row.0 }}"> <!-- class="{{ row.2|lower }} if transactions.objects.get(pk=int(row.0)).value < 0 }}"negative"  else  "positive" -->
+        <td> {{ row.2 }} </td>
+        <td> {{ row.3 }} </td>
+        <td> {{ row.4 }} {% if row.1 == True %} <a data-toggle="modal" href="#details{{ row.2 }}">{{ row.5 }}</a>
+          <div id="details{{ row.2 }}" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+
+              <!-- Modal content-->
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal">&times;</button>
+                  <h4 class="modal-title">Details for transaction {{ row.2 }} - {{ row.7 }}</h4>
+                </div>
+                <div class="modal-body">
+                  <table class"table">
+                    <thead></thead>
+                    <tbody>
+                      {% for drow in row.12.rows %}
+                        <tr>
+                          {% for column in drow %}
+                            <td>{{ column }}</td>
+                          {% endfor %}
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          {{ row.6 }}{% endif %}</td>
+        <td> {{ row.8 }} </td>
+        <td> {{ row.9 }} </td>
+        <td> {{ row.10 }} </td>
+        <td> {{ row.11 }} </td>
       </tr>
     {% endfor %}
   </tbody>
 </table>
+
 
 <script>
   function show_fields() {
@@ -204,7 +314,7 @@
   <form id="transaction_entry_form" action="/account" method="POST">
     {% csrf_token %}
     <input type="hidden" name="form_name" value="transaction_entry_form">
-    <div class="panel-heading">Enter new transaction</div>
+    <div class="panel-heading">Enter new transaction <input type="reset" value="Clear fields"/></div>
     <div class="panel-body">
       <div>
         <label for="entered_by">Type</label>
@@ -230,13 +340,13 @@
       </div>
       <div id="batch_fields">
         <label for="batch_no">Batch</label>
-        <input type="number" name="batch_no" min="1" placeholder="Batch no.">
-        <input type="text" name="batch_name" readonly disabled>
+        <input type="number" name="batch_no" min="1" size="4" placeholder="Batch no." onchange="get_batch_name()" onkeyup="get_batch_name()">
+        <span name="batch_name"></span>
       </div>
       <div id="money_fields" style="display: none">
         <label for="currency">Currency, money box</label>
         <select onchange="// TODO: Felder ein- und ausblenden" name="currency" class="selectpicker">
-          <option value="" disabled selected>Select currency</option>
+          <option value="0" selected>Select currency</option>
           {% for currency in currencies %}
           <option value="{{ currency.id }}">{{ currency }}</option>
           {% endfor %}
@@ -248,9 +358,10 @@
           {% endfor %}
         </select>
       </div>
-      <div>
-        <input type="number" name="amount" step="any" placeholder="Amount"> <!-- {{ batch.unit.abbr }} bzw. {{ currency.name }} -->
-        <input type="text" name="value" readonly disabled>
+      <div id="amount_fields">
+        <label for="amount">Amount</label>
+        <input type="number" name="amount" step="any" size="5" placeholder="in unit" onchange="get_value()" onkeyup="get_value()"> <!-- {{ batch.unit.abbr }} bzw. {{ currency.name }} -->
+        <span name="value"></span>
       </div>
       <div id="participating_accounts" style="display: none">
         <label for="participating_accounts">Select participating accounts</label>
@@ -277,6 +388,7 @@
         </select>
       </div>
       <div>
+        <label for="comment">Comment</label>
         <input type="text" name="comment" placeholder="Enter comment">
       </div>
       <div>
@@ -302,5 +414,39 @@
     var transactions_height = $(window).height() - head_height - $('#transactions > thead').height() - bottom_height - $('#content').css('padding')*2 - $('#content').css('margin')*2;
     $('#transactions > tbody').css('height', transactions_height + 'px')
   });
+
+  api_url = "http://127.0.0.1:8000/batches/?format=json&id=";
+  var get_batch_name = function(e) {
+    id = $('#batch_fields input[name="batch_no"]').val()
+    $.ajax({
+      url: api_url + id
+    }).success(function(json) {
+      text = json["text"]
+      $('#batch_fields span[name="batch_name"]').html(text)
+    });
+    get_value()
+  }
+  var get_value = function(e) {
+    if ($('.selectpicker[name="currency"]').val() == "0") {
+      batch_id = $('#batch_fields input[name="batch_no"]').val()
+      $.ajax({
+        url: api_url + batch_id
+      }).success(function(json) {
+        price = json["price"]
+        value = parseFloat($('#amount_fields input[name="amount"]').val() * price).toFixed(2);
+        $('#amount_fields span[name="value"]').html(value)
+      });
+    }
+    else {
+      currency_id = parseInt($('.selectpicker[name="currency"]').val())
+      $.ajax({
+        url: "http://127.0.0.1:8000/currencies/?format=json&id=" + currency_id
+      }).success(function(json) {
+        conversion_rate = json["conversion_rate"]
+        value = parseFloat($('#amount_fields input[name="amount"]').val() * conversion_rate).toFixed(2);
+        $('#amount_fields span[name="value"]').html(value)
+      });
+    }
+  }
 </script>
 {% endblock %}

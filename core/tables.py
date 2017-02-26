@@ -25,7 +25,8 @@ class BatchTransactionTable:
             row = list()
             row.append(transaction.id)
             row.append(transaction.date)
-            row.append(transaction.matter_str(account=0, show_contents=False, show_batch=False))
+            matter, participants, share = transaction.matter_str(account=0, show_contents=False, show_batch=False)
+            row.append(matter)
             row.append(transaction.entry_details_str)
             row.append(transaction.value_str(account=0))
             row.append(transaction.batch_stock_str())
@@ -57,7 +58,8 @@ class ConsumableTransactionTable:
             row = list()
             row.append(transaction.id)
             row.append(transaction.date)
-            row.append(transaction.matter_str(account=0))
+            matter, participants, share = transaction.matter_str(account=0)
+            row.append(matter)
             row.append(transaction.entry_details_str)
             row.append(transaction.value_str(account=0))
             row.append(transaction.consumable_stock_str())
@@ -85,7 +87,8 @@ class TransactionTable:
             row = list()
             row.append(transaction.id)
             row.append(transaction.date)
-            row.append(transaction.matter_str(account=0))
+            matter, participants, share = transaction.matter_str(account=0)
+            row.append(matter + participants)
             row.append(transaction.entry_details_str)
             row.append(transaction.value_str(account=0))
             row.append(transaction.comment_str)
@@ -153,16 +156,29 @@ class AccountTable:
                 enterer_condition = False
             if tr.transaction_type in self.types and start_condition == True and end_condition == True and enterer_condition == True:
                 transactions.append(tr)
+        detailed_types = TransactionType.objects.filter(no__gte=8, no__lte=11)
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
-            row.append(transaction.id)
-            row.append(transaction.date)
-            row.append(transaction.matter_str(account=self.account_id))
-            row.append(transaction.entry_details_str)
-            row.append(transaction.value_str(account=self.account_id))
-            row.append(transaction.balance_str(account=self.account_id))
-            row.append(transaction.comment_str)
+            row.append(transaction.row_color(account=self.account_id)) # 0
+            if transaction.transaction_type in detailed_types:
+                show_details = True
+            else:
+                show_details = False
+            row.append(show_details) # 1
+            row.append(transaction.id) # 2
+            row.append(transaction.date) # 3
+            matter, participants, share = transaction.matter_str(account=self.account_id)
+            row.append(matter) # 4
+            row.append(participants) # 5
+            row.append(share) # 6
+            row.append(transaction.transaction_type) # 7
+            row.append(transaction.entry_details_str) # 8
+            row.append(transaction.value_str(account=self.account_id)) # 9
+            row.append(transaction.balance_str(account=self.account_id)) # 10
+            row.append(transaction.comment_str) # 11
+            if show_details:
+                row.append(TrDetailsTable(transaction=transaction)) # 12
             self.rows.append(row)
 
     # def get(self, row_index, column_index):
@@ -174,30 +190,32 @@ class AccountTable:
 class TrDetailsTable:
 # Creates a table to show details to a transaction, such as the ID and, in case of cost sharing etc., the individual shares
     def __init__(self, transaction):
-        transaction = transaction
+        self.transaction = transaction
         self.rows = list()
         self.generate()
 
     def generate(self):
-        shares = sorted(Charge.objects.filter(transaction=transaction), key=lambda t: t.transaction.id).remove()
-        row = list()
-        row.append("Tr No. " + transaction.id)
-        if CostSharing.objects.get(id=transaction.id).count() or ProceedsSharing.objects.get(id=transaction.id).count() or Donation.objects.get(id=transaction.id).count() or Recovery.objects.get(id=transaction.id).count():
-            self.rows.append(row) # Head line of the table
-            row.append("Total: " + shares.count() + " participants")
-            total_rate = 0
-            total_value = 0
-            for charge in shares:
-                total_rate += charge.account.calc_rate(date=transaction.date)
-                total_value += charge.value
-            row.append(total_rate + "x")
-            row.append(total_value + " €")
-            self.rows.append(row)
-            for i in range(0, len(shares)):
-                row.append(charge.account.name)
-                row.append(charge.account.calc_rate(date=transaction.date) + "x")
-                row.append(charge.value + " €")
-                self.rows.append(row)
+        shares = list(self.transaction.shares.all())
+        if shares:
+            if CostSharing.objects.filter(id=self.transaction.id).exists() or ProceedsSharing.objects.filter(id=self.transaction.id).exists() or Donation.objects.filter(id=self.transaction.id).exists() or Recovery.objects.filter(id=self.transaction.id).exists():         
+                total_rate = 0
+                total_value = 0
+                for charge in shares:
+                    total_rate += charge.account.calc_rate(datetime=self.transaction.date)
+                    total_value += charge.value
+                for charge in shares:
+                    row = list()
+                    row.append(charge.account.name)
+                    row.append(str(format(charge.value, '.2f')) + " €")
+                    row.append("(" + str(charge.account.calc_rate(datetime=self.transaction.date)) + "x)")
+                    if not total_value == 0:
+                        row.append(format(charge.value / total_value * 100, '.2f') + "%")
+                    self.rows.append(row)
+                final_row = list()
+                final_row.append("Total (" + str(len(shares)) + " participants)")
+                final_row.append(str(format(total_value, '.2f')) + " €")
+                final_row.append(str(total_rate) + " shares")
+                self.rows.append(final_row)
 
 class ProductCategoryTable:
     def __init__(self, objective, account_id=0):
@@ -238,6 +256,7 @@ class ProductCategorySubtable:
         self.objective = objective
         self.account_id = account_id
         self.product_category = ProductCategory.objects.get(id=product_category_id)
+        self.id = self.product_category.id
         self.heading = self.product_category.name
         self.subheading = self.product_category.description
         self.rows = list()
@@ -247,28 +266,29 @@ class ProductCategorySubtable:
         prods = Product.objects.filter(category=self.product_category)
         for p in prods:
             row = list()
-            row.append(p.id)
-            row.append(p.name)
-            row.append(p.description)
-            if p.presumed_price:
-                row.append("{} €".format(format(p.presumed_price, '.2f')))
+            row.append(p.id) # row.0
+            row.append(p.name) # row.1
+            if not p.description == "":
+                row.append(p.description) # row.2
             else:
-                row.append("")
-            row.append(p.unit.abbr)
+                row.append("") # row.2
+            if p.presumed_price:
+                row.append("{} €".format(format(p.presumed_price, '.2f'))) # row.3
+            else:
+                row.append("") # row.3
+            row.append(p.unit.abbr) # row.4
             try:
                 ce = ConsumptionEstimation.objects.get(account=self.account_id, consumable=p)
-                row.append(format(ce.amount, '.3f'))
+                row.append(format(ce.amount, '.3f')) # row.5
                 if ce.consumable.presumed_price:
-                    print(ce.consumable.name)
                     pres_value = ce.amount * ce.consumable.presumed_price
                     pv = "{} €".format(format(pres_value, '.2f'))
                 else:
                     pv = ''
-                #print(pres_value)
-                row.append(pv)
+                row.append(pv) # row.6
             except ConsumptionEstimation.DoesNotExist:
-                row.append("")
-                row.append("")
+                row.append("") # row.5
+                row.append("") # row.6
             # further ones
             self.rows.append(row)
 

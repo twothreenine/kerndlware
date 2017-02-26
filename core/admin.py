@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Account, AccPayPhase, ItemCategory, Item, Consumable, ProductCategory, Product, ConsumptionEstimation, Batch, User, Person, VirtualUser, Supplier, Unit, TransactionType, Transaction, BatchTransaction, Taking, Restitution, Inpayment, Depositation, Transfer, CostSharing, ProceedsSharing, Donation, Recovery, MoneyBox, Currency, MoneyBoxStock, Charge
+from .models import *
 
 admin.site.register(Account)
 admin.site.register(AccPayPhase)

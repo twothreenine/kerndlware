@@ -401,6 +401,14 @@ def account_settings(request):
     context = {"account" : selected_account, "users" : users}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
+def supplier(request):
+    modify_account(request)
+    template = loader.get_template('core/account_settings.html')
+    global selected_account
+    users = User.objects.all()
+    context = {"account" : selected_account, "users" : users}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
 def transactionlist(request):
     template = loader.get_template('core/transactionlist.html')
     transaction_table = TransactionTable()

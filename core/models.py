@@ -338,6 +338,9 @@ class VAT(models.Model):
     percentage = models.DecimalField(max_digits=4, decimal_places=2)
     name = models.CharField(max_length=50, blank=True)
 
+    def __str__(self):
+        return "{} ({})".format(self.percentage, self.name)
+
 class ProductAvail(models.Model):
 # Levels of availability, from none to surplus, in the storage and in general. Shows to all users vaguely in which amounts they can take the products from the storage.
 # If a product has an almost empty stock but is easy to re-order, don't change ffthe availability to "scarce". Only do this if, for example, the suppliers don't have it until the next harvest, 
@@ -825,32 +828,37 @@ class GeneralOffer(models.Model):
     # Describes a consumable offered by a supplier, but not in a specific package and with a specific price.
     consumable = models.ForeignKey('Consumable', related_name="consumable")
     distributor = models.ForeignKey('Supplier', related_name="distributor") # the supplier from whom the product is bought by the food coop
-    processor = models.ForeignKey('Supplier', related_name="processor") # the supplier from whom the product has been processed (optional; in many cases the distributor itself)
-    grower = models.ForeignKey('Supplier', related_name="grower") # the supplier from whom the product has been grown (optional; in many cases the distributor itself)
-    variety = models.CharField(max_length=50)
+    processor = models.ForeignKey('Supplier', blank=True, null=True, related_name="processor") # the supplier from whom the product has been processed (optional; in many cases the distributor itself)
+    grower = models.ForeignKey('Supplier', blank=True, null=True, related_name="grower") # the supplier from whom the product has been grown (optional; in many cases the distributor itself)
+    variety = models.CharField(max_length=50, blank=True)
     vat = models.ForeignKey('VAT', related_name="VAT")
-    distance_total = models.FloatField() # replaces the distance of the supplier
-    distance_add = models.FloatField() # will be added to the distance of the supplier
-    orderpos = models.IntegerField()
-    comment = models.TextField()
-    supply_stock = models.FloatField() # in product unit
+    distance_total = models.FloatField(blank=True, null=True) # replaces the distance of the supplier
+    distance_add = models.FloatField(blank=True, null=True) # will be added to the distance of the supplier
+    orderpos = models.IntegerField(blank=True, null=True)
+    comment = models.TextField(blank=True)
+    supply_stock = models.FloatField(blank=True, null=True) # in product unit
+
+    def __str__(self):
+        return "{} from {}".format(self.consumable.name, self.distributor.name)
 
 class Offer(models.Model):
     # Describes a specific offer of an offered consumable.
     general_offer = models.ForeignKey('GeneralOffer')
     parcel = models.FloatField() # how much g a single package or filling unit is (e.g. 25kg bag -> 25000; 1kg packages -> 1000; bulk with any amount in kg -> 1000)
     quantity = models.IntegerField() # how many parcels have to be taken at once
-    favorite = models.BooleanField()
-    official = models.PositiveSmallIntegerField() # whether the offer shall be uploaded in the online portal. 0 = not at all; 1 = without price information; 2 = completely
-    basic_price = models.FloatField(null=True, blank=True) #MoneyField; 
+    favorite = models.BooleanField(default=False)
+    official = models.PositiveSmallIntegerField(default=0) # whether the offer shall be uploaded in the online portal. 0 = not at all; 1 = without price information; 2 = completely
     total_price = models.FloatField(null=True, blank=True) #MoneyField; 
     discount = models.FloatField(null=True, blank=True) #MoneyField; 
-    available = models.BooleanField()
-    available_from = models.DateField()
-    available_until = models.DateField()
-    orderpos = models.IntegerField()
-    comment = models.TextField()
-    supply_stock = models.FloatField() # in product unit (caution, this is the stock of this offer with its specific packaging)
+    available = models.BooleanField(default=True)
+    available_from = models.DateField(null=True, blank=True)
+    available_until = models.DateField(null=True, blank=True)
+    orderpos = models.IntegerField(null=True, blank=True)
+    comment = models.TextField(blank=True)
+    supply_stock = models.FloatField(null=True, blank=True) # in product unit (caution, this is the stock of this offer with its specific packaging)
+
+    def __str__(self):
+        return "{} ({}g)".format(self.general_offer, self.parcel)
 
 class OfferRating(models.Model):
     offer = models.ForeignKey('Offer')

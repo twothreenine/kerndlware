@@ -101,6 +101,7 @@ class AccountTable:
         self.start_date = start_date
         self.end_date = end_date
         self.enterer = enterer
+        self.occuring_users = []
         self.rows = list()
         self.generate()
 
@@ -159,6 +160,8 @@ class AccountTable:
         detailed_types = TransactionType.objects.filter(no__gte=8, no__lte=11)
         for i in range(0, len(transactions)):
             transaction = transactions[i]
+            if not transaction.entered_by_user in self.occuring_users:
+                self.occuring_users.append(transaction.entered_by_user)
             row = list()
             row.append(transaction.row_color(account=self.account_id)) # 0
             if transaction.transaction_type in detailed_types:

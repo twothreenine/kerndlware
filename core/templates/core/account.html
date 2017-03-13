@@ -140,7 +140,12 @@
           <label for="enterer">Enterer</label>
           <select name="enterer" class="selectpicker" data-live-search="true">
             <option value=0>All users</option>
-            {% for user in users %}
+            <option value="" disabled>Users of this account</option>
+            {% for user in table_users_of_selected_account %}
+            <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+            {% endfor %}
+            <option value="" disabled><i>Other users</i></option>
+            {% for user in other_table_users %}
             <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
             {% endfor %}
           </select>
@@ -329,14 +334,19 @@
         <label for="entered_by">Entering user</label>
         <select name="entered_by" class="selectpicker" data-live-search="true" required="true">
           <option value="" disabled selected>Select user</option>
-          {% for user in users %}
-          <option value="{{ user.id }}">{{ user }}</option>
+          <option value="" disabled>Users of this account</option>
+          {% for user in users_of_selected_account %}
+          <option value="{{ user.id }}" {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
+          {% endfor %}
+          <option value="" disabled>Recent other users</option>
+          {% for user in recent_other_users %}
+          <option value="{{ user.id }}" {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
         <label for="date">Date of transaction</label>
-        <input type="date" name="date" placeholder="Select date" required="true" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-today-highlight="true" >
+        <input type="date" name="date" placeholder="Select date" required="true" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-today-highlight="true" value="{{ default_date_of_new_transaction }}">
       </div>
       <div id="batch_fields">
         <label for="batch_no">Batch</label>

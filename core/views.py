@@ -29,6 +29,11 @@ if Consumable.objects.filter(pk=1).count():
 else:
     selected_consumable_in_consumabletransactiontable = Consumable(name="Test")
     selected_consumable_in_consumabletransactiontable.save()
+
+# General
+recent_users = list(User.objects.all())
+
+# participate/transactions list filter
 selected_types_in_account_transactions = TransactionType.objects.all()
 start_date_in_account_transactions = models.DateField(blank=True, null=True)
 start_date_in_account_transactions = None # datetime.datetime.strptime('2014-01-01' , '%Y-%m-%d')
@@ -36,6 +41,12 @@ end_date_in_account_transactions = models.DateField(blank=True, null=True)
 end_date_in_account_transactions = None
 enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
 enterer_in_account_transactions = None
+
+# participate/transactions entry form
+default_enterer_of_new_transaction = models.ForeignKey('User', blank=True, null=True)
+default_enterer_of_new_transaction = None
+default_date_of_new_transaction = models.CharField()
+default_date_of_new_transaction = ""
 
 if not TransactionType.objects.all():
     """
@@ -164,9 +175,16 @@ def enter_new_transaction(request):
         entered_by = request.POST.get("entered_by")
         if entered_by:
             t_enterer = User.objects.get(pk=int(entered_by))
+            global default_enterer_of_new_transaction
+            default_enterer_of_new_transaction = t_enterer
+            global recent_users
+            i = recent_users.index(t_enterer)
+            recent_users.insert(0, recent_users.pop(i))
         date = request.POST.get("date")
         if date:
             t_date = datetime.datetime.strptime(date , '%Y-%m-%d').date()
+            global default_date_of_new_transaction
+            default_date_of_new_transaction = date
         amount = request.POST.get("amount")
         if amount:
             t_amount = float(amount)
@@ -336,19 +354,48 @@ def account(request):
     else:
         entry_form = TransactionEntryForm()
     entry_types = TransactionType.objects.filter(is_entry_type=True)
-    users = User.objects.all()
+
+    # users_of_selected_account = selected_account.users.all # list(selected_account.users.all()) ??
+    global recent_users
+    users_of_selected_account = []
+    recent_other_users = []
+    for user in recent_users:
+        if user.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to user
+            users_of_selected_account.append(user)
+        else:
+            recent_other_users.append(user)
+
+    table_users_of_selected_account = []
+    other_table_users = []
+    for user in account_table.occuring_users:
+        if user.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to user
+            table_users_of_selected_account.append(user)
+        else:
+            other_table_users.append(user)
+    """
+    for user in list(selected_account.users.all()):
+        users_of_selected_account.append(user)
+        i = recent_other_users.index(user)
+        # recent_other_users.pop(i)
+        print(recent_users)
+    """
+
     batches = Batch.objects.all()
     currencies = Currency.objects.all()
     money_boxes = MoneyBox.objects.all()
     accounts = Account.objects.all()
     accounts_except_itself = Account.objects.exclude(id=selected_account.id)
+    global default_date_of_new_transaction
+    global default_enterer_of_new_transaction
     context = {
         "account_table" : account_table, "deposit" : deposit,
         "taken" : taken, "entry_form" : entry_form, "entry_types" : entry_types,
-        "users" : users, "currencies" : currencies, "money_boxes" : money_boxes,
+        "currencies" : currencies, "money_boxes" : money_boxes,
         "batches" : batches, "transaction_types" : transaction_types, "selected_type_ids" : selected_type_ids, 
         "start_date" : start_date, "end_date" : end_date, "enterer_in_account_transactions" : enterer_in_account_transactions,
-        "accounts_except_itself" : accounts_except_itself, "accounts" : accounts, 
+        "accounts_except_itself" : accounts_except_itself, "accounts" : accounts, "users_of_selected_account" : users_of_selected_account, "recent_other_users" : recent_other_users,
+        "table_users_of_selected_account" : table_users_of_selected_account, "other_table_users" : other_table_users, 
+        "default_date_of_new_transaction" : default_date_of_new_transaction, "default_enterer_of_new_transaction" : default_enterer_of_new_transaction, 
     }
     return HttpResponse(template.render({**g_context, **context}, request))
 

@@ -1,0 +1,29 @@
+2	05.12.14	1	04	23,333			0002	Greta Röggla	05.12.14	1	Kautioneinzahlung			0	0	14	4	Einkorn Körner	kg	Neidhardt	3,00 €	23.333 g	70,00 €	70,00 €			1		Leo
+10			00	50,000			0010	Stephan Pilipp	05.12.14	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €	50,00 €			1		Leo
+4			00	60,000			0004	Schorsch Schwaiger	05.12.14	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		60,00 €	60,00 €			1		Leo
+5	13.12.14		08	13,000			0005	Leo Ostler	13.12.14	1	Kautioneinzahlung			0	0	22	8	Waldstaudenroggen Körner	kg	Küchle	2,14 €	13.000 g	27,82 €	27,82 €			1		Leo
+			05	14,500			0005	Leo Ostler	13.12.14	1	Kautioneinzahlung			0	0	41	5	Tellerlinsen hellbraun	kg	Lex	4,50 €	14.500 g	65,25 €	65,25 €			1		Leo
+			06	21,000			0005	Leo Ostler	13.12.14	1	Kautioneinzahlung			0	0	5	6	Purpurweizen Körner	kg	Lex	1,90 €	21.000 g	39,90 €	39,90 €			1		Leo
+			07	4,600			0005	Leo Ostler	13.12.14	1	Kautioneinzahlung			0	0	122	7	Sojamehl vollfett	kg	Lex	2,70 €	4.600 g	12,42 €	12,42 €			1		Leo
+3			09	11,900			0003	Joy Foley	13.12.14	1	Kautioneinzahlung			0	0	40	9	Belugalinsen	kg	Lex	4,50 €	11.900 g	53,55 €	53,55 €			1		Leo
+			10	14,600			0003	Joy Foley	13.12.14	1	Kautioneinzahlung			0	0	80	10	Perldinkel Oberkulmer Rotkorn	kg	Lex	3,30 €	14.600 g	48,18 €	48,18 €			1		Leo
+8			00	50,000			0008	Enrico Ulivieri	13.12.14	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €	50,00 €			1		Leo
+4	19.12.14		00	80,000			0004	Schorsch Schwaiger	19.12.14	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		80,00 €	80,00 €			1		Leo
+5				100,000			0005	Leo Ostler	19.12.14	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		100,00 €	100,00 €			1		Leo
+20	22.12.14			100,000			0020	Richard Ostler	22.12.14	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		100,00 €	100,00 €			1		Leo
+7	02.01.15			100,000			0007	Florian Wegerer	02.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		100,00 €	100,00 €			1		Leo
+21	07.01.15			100,000			0021	Verena Schröpel	07.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		100,00 €	100,00 €			1		Leo
+22	09.01.15			100,000			0022	Andreas Schmied	09.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		100,00 €	100,00 €			1		Flo
+6				100,000			0006	Sebastian Lechner	09.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		100,00 €	100,00 €			1		Flo
+18				50,000			0018	Natalie Friedrich	09.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €	50,00 €			1		Flo
+14				50,000			0014	Harry Kleiner	09.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €	50,00 €			1		Flo
+15				70,000			0015	Julika Zimmermann	09.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		70,00 €	70,00 €			1		Flo
+17				50,000			0017	Matthias	09.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €	50,00 €			1		Flo
+19	23.01.15			50,000			0019	Ramona Krickan	23.01.15	1	Kautioneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €	50,00 €			1		Joy
+2	05.12.14	2	11	14,500			0002	Greta Röggla	05.12.14	2	Guthabeneinzahlung			0	0	4	11	Weizen Körner (Capo)	kg	Brandmair	1,00 €	14.500 g	14,50 €		14,50 €		1		Leo
+			12	20,000			0002	Greta Röggla	05.12.14	2	Guthabeneinzahlung			0	0	20	12	Roggen Körner (Danko)	kg	Brandmair	1,20 €	20.000 g	24,00 €		24,00 €		1		Leo
+10	20.12.14		00	20,000			0010	Stephan Pilipp	20.12.14	2	Guthabeneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		20,00 €		20,00 €		1		Leo
+3	22.12.14			50,000			0003	Joy Foley	22.12.14	2	Guthabeneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €		50,00 €		1		Leo
+2				70,000			0002	Greta Röggla	22.12.14	2	Guthabeneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		70,00 €		70,00 €		1		Leo
+5				50,000			0005	Leo Ostler	22.12.14	2	Guthabeneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €		50,00 €		1		Leo
+4				50,000			0004	Schorsch Schwaiger	22.12.14	2	Guthabeneinzahlung			0	0	0	0	Geld (EUR)	€		1,00 €		50,00 €		50,00 €		1		Leo

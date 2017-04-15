@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
-import sys
-
-sys.path.append('.')
-print(sys.path)
 
 import csv
 import datetime
 from core import models
 
+print('hello')
 
-
-with open('transactions.csv', newline='', encoding='utf-8') as csvfile:
+with open('import_scripts/transactions.csv', newline='', encoding='utf-8') as csvfile:
     reader = csv.reader(csvfile, delimiter='\t')
     for index,row in enumerate(reader):
         ttype = row[10]

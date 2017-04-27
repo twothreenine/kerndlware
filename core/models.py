@@ -14,6 +14,17 @@ class Currency(models.Model):
     description = models.TextField(blank=True)
     comment = models.TextField(blank=True)
 
+    def __init__(self, name, conversion_rate=1, full_name='', description='', comment=''):
+        self.name = name
+        self.conversion_rate = conversion_rate
+        self.full_name = full_name
+        self.description = description
+        self.comment = comment
+        self.save()
+        for mb in MoneyBox.objects.all():
+            mbs = MoneyBoxStock(money_box=mb, currency=self)
+            mbs.save()
+
     def __str__(self):
         return "{} ({})".format(self.name, self.full_name)
         
@@ -52,6 +63,7 @@ class Account(models.Model):
     deposit = models.FloatField(default=0) #MoneyField; 
     balance = models.FloatField(default=0) #MoneyField; 
     taken = models.FloatField(default=0)
+    original_id = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         rate = self.calc_rate(datetime=datetime.datetime.now())
@@ -162,7 +174,7 @@ class Account(models.Model):
         self.save()
 
 class AccPayPhase(models.Model):
-    account = models.ManyToManyField('Account')
+    account = models.ForeignKey('Account', blank=True, null=True) # former ManyToManyField
     start = models.DateField(blank=True, null=True) # null means the phase has no minimum date
     end = models.DateField(blank=True, null=True) # null means the phase has no maximum date (use null here for a current phase without any end given yet)
     rate = models.FloatField(default=1)
@@ -174,16 +186,16 @@ class AccPayPhase(models.Model):
         else:
             start = 'from ' + str(self.start) + ' on'
         if self.end == None:
-            end = 'forever'
+            end = 'to forever'
         else:
             end = 'to ' + str(self.end)
         if self.start == None and self.end == None:
             start = 'always'
             end = ''
-        account_names = ''
-        for account in self.account.all():
-            account_names += str(account.name) + ', ' # TODO: don't put comma after last name
-        return "{}: {}x {} {}".format(account_names, self.rate, start, end)
+        # for acc in self.account.all():
+        #     account_names += str(acc.name) + ', ' # TODO: don't put comma after last name
+        account_name = self.account.name
+        return "{}: {}x {} {}".format(account_name, self.rate, start, end)
 
 class Engagement(models.Model):
     person = models.ForeignKey('Person')
@@ -199,6 +211,14 @@ class MoneyBox(models.Model):
     #payout_percentage_fee = models.FloatField(default=0)
 
     # TODO: Methode zum Berechnen des stock_value
+
+    def __init__(self, name, stock_value=0):
+        self.name = name
+        self.stock_name = stock_name
+        self.save()
+        for c in Currency.objects.all():
+            mbs = MoneyBoxStock(money_box=self, currency=c)
+            mbs.save()
 
     def __str__(self):
         return "{}".format(self.name)
@@ -310,7 +330,7 @@ class Supplier(models.Model):
     delivery_cost_gen = models.FloatField(null=True, blank=True) #MoneyField; 
     delivery_cost_per_unit = models.FloatField(null=True, blank=True) #MoneyField; 
     unit_for_delivery_cost = models.FloatField(null=True, blank=True) # in kg
-    min_interval = models.FloatField(null=True, blank=True) # minimum interval between orders from this supplier in months
+    min_interval = models.FloatField(null=True, blank=True) # minimum interval between orders from this supplier in days
     description = models.TextField(blank=True)
     streetname = models.CharField(max_length=100, blank=True)
     streetnumber = models.SmallIntegerField(null=True, blank=True)
@@ -440,6 +460,7 @@ class Consumable(Item):
     on_order = models.FloatField(default=0) # amount of this product on order
     planning = models.FloatField(default=0) # amount of this product in orders in planning stage
     #availability = models.ForeignKey('ProductAvail') # TODO: Make enum
+    # original_id = models.IntegerField(blank=True, null=True)
 
     def add_stock(self, amount):
         self.stock += amount
@@ -490,7 +511,7 @@ class ProductCategory(ItemCategory):
 class Product(Consumable):
     category = models.ForeignKey('ProductCategory', blank=True, null=True)
     density = models.FloatField(blank=True, null=True) # kg/l
-    storability = models.DurationField(blank=True, null=True)
+    storability = models.FloatField(blank=True, null=True) # in days
     usual_taking_min = models.FloatField(blank=True, null=True) # in which amounts the product is usually taken at once
     usual_taking_max = models.FloatField(blank=True, null=True) # in which amounts the product is usually taken at once
     storage_temperature_min = models.FloatField(blank=True, null=True)
@@ -516,6 +537,8 @@ class Product(Consumable):
     # sc_intolerable = models.CommaSeparatedIntegerField(max_length=50, blank=True, null=True) # list of intolerable storage conditions
     lossfactor = PercentField(default=0) # presumed lossfactor per month in % for this product (e.g. 3 => it is presumed to lose 3% of the stock every month of storage)
     official = models.PositiveSmallIntegerField(blank=True, null=True) # whether the product shall be uploaded in the online portal. 0 = not at all; 1 = without strage conditions; 2 = completely
+    original_id = models.IntegerField(blank=True, null=True)
+
 
     def __str__(self):
         return "({}) {}".format(self.id, self.name)
@@ -577,6 +600,7 @@ class Batch(models.Model):
     taken = models.FloatField(default=0)
     parcel_approx = models.FloatField(default=0)
     special_density = models.FloatField(default=0)
+    original_id = models.IntegerField(blank=True, null=True)
 
     def add_stock(self, amount):
         self.stock += amount
@@ -595,10 +619,12 @@ class Batch(models.Model):
         return "{} ({} €/{})".format(self.name, format(self.price, '.2f'), self.unit.abbr) # , self.supplier, self.purchase_date
 
     def __str__(self):
-        if not self.unit.contents == '':
-            cont = " ({} {})".format(self.unit.contents, self.unit.abbr)
-        else:
-            cont = ""
+        cont = ""
+        try:
+            if not self.unit.contents == '':
+                cont = " ({} {})".format(self.unit.contents, self.unit.abbr)
+        except AttributeError:
+            pass
         return "B{} - {}{} by {} from {}".format(str(self.id), self.name, cont, self.supplier, self.purchase_date)
 
     @property
@@ -1334,6 +1360,7 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
     #         return "sent by {}".format(self.originator_account.name)
     #     else:
     #         return " "
+
 
 class ShareTransaction(Transaction):
     participating_accounts = models.ManyToManyField('Account')

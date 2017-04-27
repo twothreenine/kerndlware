@@ -1,0 +1,350 @@
+0	0	Zusätzliche Kaution		einmalig, optional	1,00 €	€								1
+0	1	Hartweizen Körner	für selbstgemachte Teigwaren	auch zum Mahlen		kg				25				1000
+0	2	Hartweizen X		auch zum Mahlen		kg				25				1000
+1	3	Khorasan-Weizen Körner	hartweizenähnliche Urweizensorte	auch zum Mahlen	2,30 €	kg				25				1000
+1	4	Weizen Körner	hohe Backfähigkeit	auch zum Mahlen	1,00 €	kg				25				1000
+1	5	Purpurweizen Körner	nat. Mutant, angebl. weizenallergenfrei	auch zum Mahlen	1,90 €	kg				25				1000
+0	6	Weizen X		auch zum Mahlen		kg				25				1000
+0	7	Weizen Y		auch zum Mahlen		kg				25				1000
+1	8	Dinkel Oberkulmer Rotkorn Körner	reine Dinkelsorte, klassisches Biogetreide	auch zum Mahlen	1,80 €	kg				25				1000
+0	9	Dinkel X Körner		auch zum Mahlen		kg				25				1000
+0	10	Dinkel Y Körner		auch zum Mahlen		kg				25				1000
+0	11	Grünkern Körner	holzgedarrter Dinkel	auch zum Mahlen	4,00 €	kg				25				1000
+1	12	Emmer Körner	Dinkel-Vorfahre, hartweizenähnlich	auch zum Mahlen, u.a. für Teigwaren	3,00 €	kg				25				1000
+0	13	Emmer X Körner		auch zum Mahlen		kg				25				1000
+1	14	Einkorn Körner	Urahne des Weizens, kleinkörnig	auch zum Mahlen, sehr weicher Kleber	3,00 €	kg				25				1000
+0	15	Einkorn Körner Kochqualität	weniger Klebergehalt/-qualität	vermutl. günstiger, evtl. verfügbar		kg				25				1000
+0	16	Einkorn Körner gesamt		auch zum Mahlen		kg				25				1000
+0	17	Weizengetr. X		auch zum Mahlen		kg				25				1000
+0	18	Weizengetr. Y		auch zum Mahlen		kg				25				1000
+0	19	Weizengetr. Z		auch zum Mahlen		kg				25				1000
+1	20	Roggen Körner	gewöhnliche Sorte	auch zum Mahlen	1,00 €	kg				25				1000
+1	21	Lichtkornroggen Körner	besonders mild	auch zum Mahlen	1,30 €	kg				25				1000
+1	22	Waldstaudenroggen Körner	Urroggen, herzhaft	auch zum Mahlen	1,70 €	kg				25				1000
+0	23	Roggen X Körner		auch zum Mahlen		kg				25				1000
+1	24	Gerste Körner	wahrschl. Nacktgerste	auch zum Mahlen	1,80 €	kg				25				1000
+0	25	Gerste X Körner		auch zum Mahlen		kg				25				1000
+1	26	Hafer Körner	wahrschl. Nackthafer	auch zum Flockenquetschen und Mahlen	1,80 €	kg				25				1000
+0	27	Hafer X Körner		auch zum Flockenquetschen und Mahlen		kg				25				1000
+0	28	Glutengetr. X		auch zum Mahlen		kg				25				1000
+0	29	Glutengetr. Y		auch zum Mahlen		kg				25				1000
+1	30	Speisemais Körner rot	samenfeste österreichische Landsorte	auch zum Mahlen (u.a. Polenta)	1,60 €	kg				25				1000
+0	31	Speisemais Körner gelb		auch zum Mahlen	1,20 €	kg				25				1000
+1	32	Braunhirse	sehr mineralstoffreich	auch zum Mahlen	3,40 €	kg				25				1000
+1	33	Speisehirse	Gold- oder Rispenhirse (gelb, grobkörnig)	auch zum Mahlen	3,20 €	kg				25				1000
+0	34	Hirse X		auch zum Mahlen		kg				25				1000
+1	35	Buchweizen	als Mehl sehr gut bindend, glutenfrei	auch zum Mahlen	3,40 €	kg				25				1000
+1	36	Amarant		auch zum Mahlen	5,80 €	kg				25				1000
+0	37	Quinoa		evtl. verfügbar; auch zum Mahlen		kg				25				1000
+0	38	Pseudogetr. X		auch zum Mahlen		kg				25				1000
+0	39	Pseudogetr. Y		auch zum Mahlen		kg				25				1000
+1	40	Belugalinsen	schwarz, klein, 30 Min. ohne Einweichen	auch zum Mahlen	4,60 €	kg				25				1000
+1	41	Tellerlinsen hellbraun	ähnl. Braunen Teller-Linsen, 30 Min. ohne Einweichen	auch zum Mahlen	4,50 €	kg				25				1000
+0	42	Gelbe Linsen (geschält)		auch zum Mahlen		kg				25				1000
+1	43	Grüne Delikatess-Linsen du Puy	30 Min. ohne Einweichen, evtl. verfügbar	auch zum Mahlen	4,50 €	kg				25				1000
+1	44	Alblinse I »Die Große«	traditionelle Sorte von der Schwäbischen Alb	auch zum Mahlen		kg				25				1000
+0	45	Alblinse II »Die Kleine«	traditionelle Sorte von der Schwäbischen Alb	auch zum Mahlen		kg				25				1000
+0	46	Linsen Z		auch zum Mahlen		kg				25				1000
+1	47	Erbsen grün	eventuell verfügbar	auch zum Mahlen		kg				25				1000
+0	48	Erbsen Y		auch zum Mahlen		kg				25				1000
+1	49	Borlottibohnen	ähnl. den Wachtelbohnen		4,00 €	kg				25				1000
+0	50	Bohnen 2				kg				25				1000
+0	51	Bohnen 3				kg				25				1000
+0	52	Bohnen 4				kg				25				1000
+1	53	Sojabohnen ungeschält	mit dünner Haut		2,00 €	kg				25				1000
+0	54	Sojabohnen geschält	milder im Geschmack, wichtig für Sojamilch			kg				25				1000
+0	55	Sojabohnen split	Haut löst sich beim Einweichen ab		2,00 €	kg				25				1000
+0	56	Hülsenfrucht X				kg				25				1000
+0	57	Hülsenfrucht Y				kg				25				1000
+1	58	Sonnenblumenkerne			5,00 €	kg				25				1000
+0	59	Sonnenblumenkerne X				kg				25				1000
+1	60	Leinsamen			3,00 €	kg				25				1000
+0	61	Leinsamen X				kg				25				1000
+1	62	Hanfsamen ungeschält			8,50 €	kg				20				1000
+1	63	Hanfsamen geschält			20,00 €	kg				k/A				1000
+0	64	Hanfsamen X				kg				25				1000
+1	65	Hanfsamenschalen			3,00 €	kg				25				1000
+1	66	Blaumohn				kg				25				1000
+0	67	Ölsaat Y				kg				25				1000
+0	68	Ölsaat Z				kg				25				1000
+1	69	Kürbiskerne		grob geschätzter Preis	11,00 €	kg				k/A				1000
+0	70	Kürbiskerne X				kg				25				1000
+1	71	Haselnusskerne			10,00 €	kg				25				1000
+0	72	Haselnuss X				kg				25				1000
+1	73	Haselnüsse in der Schale			6,00 €	kg				25				1000
+0	74	Walnusskerne				kg								1000
+1	75	Walnüsse in der Schale		Preis noch unbekannt		kg				k/A				1000
+0	76	Nüsse X				kg								1000
+0	77	Nüsse Y				kg								1000
+0	78	Nüsse Z				kg								1000
+0	79	Perlweizen				kg				25				1000
+1	80	Perldinkel Oberkulmer Rotkorn	geschliffene Körner, ohne Einweichen kochbar		3,30 €	kg				25				1000
+1	81	Perlemmer	geschliffene Körner, ohne Einweichen kochbar		4,00 €	kg				25				1000
+1	82	Perleinkorn	geschliffene Körner, ohne Einweichen kochbar		4,00 €	kg				25				1000
+1	83	Perlroggen	geschliffene Körner, ohne Einweichen kochbar	geschätzter Preis	2,90 €	kg				25				1000
+0	84	Perlroggen X				kg				25				1000
+0	85	Perlroggen Y				kg				25				1000
+0	86	Perlgetreide X				kg				25				1000
+0	87	Perlgetreide Y				kg				25				1000
+0	88	Gerstengraupen				kg				25				1000
+1	89	Amarantpops			13,70 €	kg				0,8				1000
+1	90	Braunhirsepops			13,25 €	kg				0,6				1000
+0	91	Getreidepops Y				kg								1000
+1	92	Weizen Zentrofanmehl	puderfeines Vollkornmehl	Hinweis zu Mehlen: auch im Lager	2,30 €	kg				5; 25				1000
+1	93	Dinkel Zentrofanmehl (Oberkulmer Rotkorn)	puderfeines Vollkornmehl	frisch mahlbar, mit eigener Mühle;	3,00 €	kg				5; 25				1000
+0	94	Grünkern Zentrofanmehl	puderfeines Vollkornmehl			kg				5; 25				1000
+1	95	Emmer Zentrofanmehl	puderfeines Vollkornmehl	allerdings nicht so fein, nur Vollkorn	4,20 €	kg				5; 25				1000
+1	96	Einkorn Zentrofanmehl	puderfeines Vollkornmehl	(dafür bitte bei obigen Getreiden	4,20 €	kg				5; 25				1000
+1	97	Roggen Zentrofanmehl	puderfeines Vollkornmehl	»Körner« Bedarf ausfüllen)	2,30 €	kg				5; 25				1000
+0	98	Gerste Zentrofanmehl	puderfeines Vollkornmehl			kg				5; 25				1000
+0	99	Hafer Zentrofanmehl	puderfeines Vollkornmehl			kg				5; 25				1000
+0	100	Mais Zentrofanmehl	puderfeines Vollkornmehl			kg				5; 25				1000
+1	101	Braunhirse Zentrofanmehl	puderfeines Vollkornmehl		6,60 €	kg				5; 25				1000
+0	102	Speisehirse Zentrofanmehl	puderfeines Vollkornmehl			kg				5; 25				1000
+1	103	Buchweizen Zentrofanmehl	puderfeines Vollkornmehl		5,60 €	kg				5; 25				1000
+1	104	Amarant Zentrofanmehl	puderfeines Vollkornmehl		9,00 €	kg				5; 25				1000
+0	105	Quinoa Zentrofanmehl	puderfeines Vollkornmehl			kg				25				1000
+1	106	Weizenmehl Type 1050	Auszugsmehl			kg				25				1000
+1	107	Weizenmehl Type 550	Auszugsmehl		1,30 €	kg				5; 25				1000
+1	108	Weizenmehl Type 405	Auszugsmehl, hellstes Weizenmehl			kg				5; 25				1000
+1	109	Dinkelmehl Type 1050	Auszugsmehl		2,30 €	kg				5; 25				1000
+1	110	Dinkelmehl Type 812	Auszugsmehl			kg				5; 25				1000
+1	111	Dinkelmehl Type 630	Auszugsmehl, hellstes Dinkelmehl		2,40 €	kg				5; 25				1000
+0	112	Emmerauszugsmehl	Auszugsmehl			kg				5; 25				1000
+0	113	Einkornauszugsmehl	Auszugsmehl			kg				5; 25				1000
+1	114	Roggenmehl Type 1150	Auszugsmehl		1,50 €	kg				5; 25				1000
+0	115	Roggenauszugsmehl	Auszugsmehl			kg				25				1000
+0	116	Auszugsmehl X	Auszugsmehl			kg				25				1000
+0	117	Auszugsmehl Y	Auszugsmehl			kg				25				1000
+0	118	Weizenkleie				kg				5				1000
+1	119	Dinkelkleie	Oberkulmer Rotkorn		1,25 €	kg				5				1000
+0	120	Kleie X				kg				5				1000
+0	121	Kleie Y				kg				5				1000
+1	122	Sojamehl vollfett	ungetoastet, evtl. aus ungeschältem Soja		3,00 €	kg				5				1000
+0	123	Sojamehl X				kg				5				1000
+0	124	Mehl X				kg								1000
+1	125	Khorasan Spirelli			4,80 €	kg								1000
+1	126	helle Dinkel-Rilli	Oberkulmer Rotkorn, mit Steinsalz		4,20 €	kg				5				1000
+1	127	mittelhelle Dinkel Rigatoni	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
+1	128	mittelhelle Dinkel Spaghetti	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
+1	129	Vollkorn-Dinkel Spaghetti	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
+1	130	mittelhelle Dinkel Spirelli	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
+1	131	Vollkorn-Dinkel Spirelli	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
+1	132	mittelhelle Dinkel Bandnudeln	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
+1	133	mittelhelle Dinkel Wellenbandnudeln	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
+1	134	helle Dinkel Suppennudeln	Oberkulmer Rotkorn		4,20 €	kg				k/A				1000
+1	135	1050-Dinkel-Braunhirse Spirelli	Oberkulmer Rotkorn		5,80 €	kg				k/A				1000
+1	136	1050-Dinkel-Maroni Spirelli	Oberkulmer Rotkorn; ital. Maronimehl		5,80 €	kg				k/A				1000
+1	137	VK-Dinkel+Buchweizen Bandnudeln	60% Vollkorndinkel (Oberk. Rotk.), 40% Buchweizen		7,60 €	kg				k/A				1000
+1	138	mittelhelle Dinkel+Buchw. Spirelli	heller Dinkel (Oberk. Rotk.) + Buchweizen		4,80 €	kg				k/A				1000
+1	139	Vollkorn-Einkorn-Bandnudeln	mit Steinsalz		4,80 €	kg				5				1000
+1	140	Vollkorn-Einkorn Rigatoni	mit Steinsalz		4,80 €	kg				5				1000
+1	141	Vollkorn-Einkorn Spirelli	mit Steinsalz		4,80 €	kg				5				1000
+1	142	mittelhelle Dinkel+BW Bandnudeln	50% Dinkel 630 (Oberk. Rotk.) + 50% Buchweizen, mit Steinsalz		4,80 €	kg								1000
+1	143	mittelhelle Dinkel+BW Rigatoni	50% Dinkel 630 (Oberk. Rotk.) + 50% Buchweizen, mit Steinsalz		4,80 €	kg								1000
+0	144	Teigwaren a				kg								1000
+0	145	Teigwaren a				kg								1000
+0	146	Teigwaren a				kg								1000
+0	147	Teigwaren a				kg								1000
+0	148	Teigwaren a				kg								1000
+0	149	Teigwaren a				kg								1000
+0	150	Bratöl (HO-Sonnenblume)		aus ital./ungar. Saat	4,00 €	l				4,5				1000
+0	151	Bratöl X				l								1000
+1	152	Sonnenblumenöl nativ			4,50 €	l				k/A				1000
+1	153	Rapsöl nativ			6,40 €	l				k/A				1000
+1	154	Leindotteröl nativ			20,00 €	l				k/A				1000
+1	155	Sojaöl nativ			6,00 €	l				k/A				1000
+1	156	Hanföl nativ			30,00 €	l				k/A				1000
+1	157	Leinöl nativ			22,00 €	l				k/A				1000
+0	158	Leinöl X				l								1000
+0	159	Shisoöl				l								1000
+1	160	Kürbiskernöl			30,00 €	l				k/A				1000
+0	161	Traubenkernöl				l								1000
+0	162	Olivenöl nativ				l								1000
+0	163	Olivenöl X				l								1000
+0	164	Olivenöl Y				l								1000
+0	165	Öl X				l								1000
+0	166	Öl Y				l								1000
+0	167	Öl Z				l								1000
+1	168	Hanftrester	reich an wertvollem Hanf-Protein	Nebenprodukt der Ölpressung	5,00 €	kg				4				1000
+1	169	Leintrester		Nebenprodukt der Ölpressung	5,00 €	kg				4				1000
+0	170	Presskuchen a				kg								1000
+0	171	Presskuchen a				kg								1000
+0	172	Presskuchen a				kg								1000
+0	173	Presskuchen a				kg								1000
+0	174	Presskuchen a				kg								1000
+0	175	Presskuchen a				kg								1000
+0	176	Presskuchen a				kg								1000
+0	177	Presskuchen a				kg								1000
+0	178	Presskuchen a				kg								1000
+1	179	Hanfmehl teilentölt	reich an wertvollem Hanf-Protein	gem. Hanftrester, geschätzter Preis	9,00 €	kg				k/A				1000
+1	180	Leinmehl teilentölt		gem. Leintrester, geschätzter Preis	9,00 €	kg				k/A				1000
+1	181	Hanftee (getrocknete Hanfblätter)			1,50 €	10g				10				10
+0	182	Tee a				100g								100
+0	183	Tee a				100g								100
+0	184	Tee a				100g								100
+0	185	Tee a				100g								100
+0	186	Tee a				100g								100
+0	187	Tee a				100g								100
+0	188	Tee a				100g								100
+0	189	Tee a				100g								100
+0	190	Tee a				100g								100
+0	191	Tee a				100g								100
+0	192	Tee a				100g								100
+0	193	Tee a				100g								100
+0	194	Tee a				100g								100
+0	195	Tee a				100g								100
+0	196	Tee a				100g								100
+0	197	Tee a				100g								100
+0	198	Tee a				100g								100
+0	199	Tee a				100g								100
+1	200	sonstiger Tee	bitte Wünsche angeben			100g								100
+0	201	Shisoblätter rot, getrocknet			1,00 €	10g				k/A				10
+0	202	Shisoblätter grün, getrocknet			1,00 €	10g				k/A				10
+0	203	Bohnenkraut, gerebelt		geringer Bestand		10g				k/A				10
+0	204	Kräuter a				100g				k/A				100
+0	205	Kräuter a				100g				k/A				100
+0	206	Kräuter a				100g				k/A				100
+0	207	Kräuter a				100g				k/A				100
+0	208	Kräuter a				100g				k/A				100
+0	209	Kräuter a				100g				k/A				100
+0	210	Kräuter a				100g				k/A				100
+0	211	Kräuter a				100g				k/A				100
+1	212	sonstige Kräuter	bitte Wünsche angeben			100g				k/A				100
+0	213	Koriander-Samen				100g				k/A				100
+0	214	Gewürz a				100g				k/A				100
+0	215	Gewürz a				100g				k/A				100
+0	216	Gewürz a				100g				k/A				100
+0	217	Gewürz a				100g				k/A				100
+0	218	Gewürz a				100g				k/A				100
+0	219	Gewürz a				100g				k/A				100
+0	220	Gewürz a				100g				k/A				100
+0	221	Gewürz a				100g				k/A				100
+0	222	Gewürz a				100g				k/A				100
+1	223	sonstige Gewürze	bitte Wünsche angeben			100g				k/A				100
+0	224	Apfelringe gedörrt	aus Schorschs Äpfeln, Rohkostqualität	geringer Bestand		100g				k/A				100
+0	225	Apfelringe X				100g				k/A				100
+1	226	Apfelchips	knusprig		2,50 €	100g				k/A				100
+0	227	Birnen gedörrt	aus Schorschs teigigen Birnen, Rohkostqualität	sehr geringer Bestand		100g								100
+0	228	Birnen gedörrt X				100g								100
+1	229	Hutzeln (ganze Dörrbirnen)				100g								100
+0	230	Trockenobst a	bitte Wünsche angeben			100g								100
+0	231	Trockenobst a				100g								100
+0	232	Trockenobst a				100g								100
+0	233	Trockenobst a				100g								100
+0	234	Trockenobst a				100g								100
+0	235	Trockenobst a				100g								100
+0	236	Trockenobst a				100g								100
+0	237	Trockenobst a				100g								100
+0	238	Trockenobst a				100g								100
+1	239	weiteres Trockenobst	bitte Wünsche angeben			100g								100
+0	240	Apfelsaft vom Schorsch		5l Bag in Box	3,00 €	l								1000
+1	241	Apfelsaft				l								1000
+1	242	Birnensaft naturtrüb				l								1000
+1	243	Birnensaft naturklar				l				k/A				1000
+0	244	Birnensaft X				l								1000
+1	245	Sonstige Säfte	bitte Wünsche angeben			l								1000
+0	246	Fruchtsaft a				l								1000
+0	247	Fruchtsaft a				l								1000
+0	248	Fruchtsaft a				l								1000
+0	249	Fruchtsaft a				l								1000
+0	250	Fruchtsaft a				l								1000
+0	251	Fruchtsaft a				l								1000
+0	252	Fruchtsaft a				l								1000
+0	253	Fruchtsaft a				l								1000
+0	254	Fruchtsaft a				l								1000
+0	255	Fruchtsaft a				l								1000
+0	256	Fruchtsaft a				l								1000
+0	257	Fruchtsaft a				l								1000
+0	258	Fruchtsaft a				l								1000
+0	259	Fruchtsaft a				l								1000
+0	260	Fruchtsaft a				l								1000
+0	261	Fruchtsaft a				l								1000
+1	262	Sojamilch natur	aus geschälten, österr. Sojabohnen	in 0,5l-Pfandglasflasche, ungek. haltbar, gesch. Preis	2,00 €	l				3				1000
+0	263	Sojamilch gesüßt				l								1000
+0	264	Sojamilch X				l								1000
+0	265	Hafermilch				l								1000
+0	266	Hafermilch X				l								1000
+0	267	Dinkelmilch				l								1000
+0	268	Dinkelmilch X				l								1000
+0	269	Hirsemilch				l								1000
+0	270	Reismilch				l								1000
+0	271	Hanfmilch				l								1000
+0	272	Haselnussmilch				l								1000
+0	273	Mandelmilch				l								1000
+0	274	Pflanzenmilch a				l								1000
+0	275	Pflanzenmilch a				l								1000
+0	276	Pflanzenmilch a				l								1000
+0	277	Pflanzenmilch a				l								1000
+0	278	Pflanzenmilch a				l								1000
+0	279	Pflanzenmilch a				l								1000
+1	280	Tempeh natur	Infos siehe		3,90 €	200g								200
+1	281	Tempeh Knoblauch-Koriander	http://www.tempehmanufaktur.net		3,90 €	200g								200
+1	282	Tempeh Gyros	verarbeitet im Allgäu,		3,90 €	200g								200
+1	283	Tempeh Mediterran	Soja aus Bayern oder EU,		3,90 €	200g								200
+1	284	Tempeh Sommergarten	im Glas,		3,90 €	200g								200
+1	285	Tempeh Curry	ca. 6 Monate ungekühlt haltbar		3,90 €	200g								200
+0	286	Tempeh a				200g								200
+0	287	Tofu natur				400g								1
+0	288	Tofu natur Großpackung				1kg								1
+0	289	Tofu a												1
+0	290	Tofu a												1
+0	291	Tofu a												1
+1	292	sonstige Waren	bitte Wünsche angeben											1
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+0														
+														

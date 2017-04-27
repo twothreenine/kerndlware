@@ -12,79 +12,84 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import itertools
 import logging
+from django.db.utils import OperationalError
 
-if Account.objects.filter(pk=1).count():
-    selected_account = Account.objects.get(pk=1)
-else:
-    selected_account = Account(name="Test")
-    selected_account.save()
-logger = logging.getLogger(__name__)
-if Batch.objects.filter(pk=1).count():
-    selected_batch_in_batchtransactiontable = Batch.objects.get(pk=1)
-else:
-    selected_batch_in_batchtransactiontable = Batch(name="Test", price=0)
-    selected_batch_in_batchtransactiontable.save()
-if Consumable.objects.filter(pk=1).count():
-    selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=1)
-else:
-    selected_consumable_in_consumabletransactiontable = Consumable(name="Test")
-    selected_consumable_in_consumabletransactiontable.save()
+try:
+    if Account.objects.filter(pk=1).count():
+        selected_account = Account.objects.get(pk=1)
+    else:
+        selected_account = Account(name="Test")
+        selected_account.save()
+    logger = logging.getLogger(__name__)
+    if Batch.objects.filter(pk=1).count():
+        selected_batch_in_batchtransactiontable = Batch.objects.get(pk=1)
+    else:
+        selected_batch_in_batchtransactiontable = Batch(name="Test", price=0)
+        selected_batch_in_batchtransactiontable.save()
+    if Consumable.objects.filter(pk=1).count():
+        selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=1)
+    else:
+        selected_consumable_in_consumabletransactiontable = Consumable(name="Test")
+        selected_consumable_in_consumabletransactiontable.save()
 
-# General
-recent_users = list(User.objects.all())
+    # General
+    recent_users = list(User.objects.all())
 
-# participate/transactions list filter
-selected_types_in_account_transactions = TransactionType.objects.all()
-start_date_in_account_transactions = models.DateField(blank=True, null=True)
-start_date_in_account_transactions = None # datetime.datetime.strptime('2014-01-01' , '%Y-%m-%d')
-end_date_in_account_transactions = models.DateField(blank=True, null=True)
-end_date_in_account_transactions = None
-enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
-enterer_in_account_transactions = None
+    # participate/transactions list filter
+    selected_types_in_account_transactions = TransactionType.objects.all()
+    start_date_in_account_transactions = models.DateField(blank=True, null=True)
+    start_date_in_account_transactions = None # datetime.datetime.strptime('2014-01-01' , '%Y-%m-%d')
+    end_date_in_account_transactions = models.DateField(blank=True, null=True)
+    end_date_in_account_transactions = None
+    enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
+    enterer_in_account_transactions = None
 
-# participate/transactions entry form
-default_enterer_of_new_transaction = models.ForeignKey('User', blank=True, null=True)
-default_enterer_of_new_transaction = None
-default_date_of_new_transaction = models.CharField()
-default_date_of_new_transaction = ""
+    # participate/transactions entry form
+    default_enterer_of_new_transaction = models.ForeignKey('User', blank=True, null=True)
+    default_enterer_of_new_transaction = None
+    default_date_of_new_transaction = models.CharField()
+    default_date_of_new_transaction = ""
 
-if not TransactionType.objects.all():
-    """
-    1 = Taking
-    2 = Restitution
-    3 = Inpayment
-    4 = Depositation
-    5 = PayOutBalance
-    6 = PayOutDeposit
-    7 = Transfer
-    8 = CostSharing
-    9 = ProceedsSharing
-    10 = Donation
-    11 = Recovery
-    12 = Insertion (planned)
-    """
-    taking = TransactionType(name="Taking", is_entry_type=True, to_balance=True, no=1)
-    taking.save()
-    restitution = TransactionType(name="Restitution", is_entry_type=True, to_balance=True, no=2)
-    restitution.save()
-    inpayment = TransactionType(name="Inpayment", is_entry_type=True, to_balance=True, no=3)
-    inpayment.save()
-    depositation = TransactionType(name="Depositation", is_entry_type=True, to_balance=False, no=4)
-    depositation.save()
-    pay_out_balance = TransactionType(name="Balance payout", is_entry_type=False, to_balance=True, no=5)
-    pay_out_balance.save()
-    pay_out_deposit = TransactionType(name="Deposit payout", is_entry_type=False, to_balance=False, no=6)
-    pay_out_deposit.save()
-    transfer = TransactionType(name="Transfer", is_entry_type=True, to_balance=True, no=7)
-    transfer.save()
-    cost_sharing = TransactionType(name="Cost sharing", is_entry_type=True, to_balance=True, no=8)
-    cost_sharing.save()
-    proceeds_sharing = TransactionType(name="Proceeds sharing", is_entry_type=True, to_balance=True, no=9)
-    proceeds_sharing.save()
-    donation = TransactionType(name="Donation", is_entry_type=True, to_balance=True, no=10)
-    donation.save()
-    recovery = TransactionType(name="Recovery", is_entry_type=True, to_balance=True, no=11)
-    recovery.save()
+    if not TransactionType.objects.all():
+        """
+        1 = Taking
+        2 = Restitution
+        3 = Inpayment
+        4 = Depositation
+        5 = PayOutBalance
+        6 = PayOutDeposit
+        7 = Transfer
+        8 = CostSharing
+        9 = ProceedsSharing
+        10 = Donation
+        11 = Recovery
+        12 = Insertion (planned)
+        """
+        taking = TransactionType(name="Taking", is_entry_type=True, to_balance=True, no=1)
+        taking.save()
+        restitution = TransactionType(name="Restitution", is_entry_type=True, to_balance=True, no=2)
+        restitution.save()
+        inpayment = TransactionType(name="Inpayment", is_entry_type=True, to_balance=True, no=3)
+        inpayment.save()
+        depositation = TransactionType(name="Depositation", is_entry_type=True, to_balance=False, no=4)
+        depositation.save()
+        pay_out_balance = TransactionType(name="Balance payout", is_entry_type=False, to_balance=True, no=5)
+        pay_out_balance.save()
+        pay_out_deposit = TransactionType(name="Deposit payout", is_entry_type=False, to_balance=False, no=6)
+        pay_out_deposit.save()
+        transfer = TransactionType(name="Transfer", is_entry_type=True, to_balance=True, no=7)
+        transfer.save()
+        cost_sharing = TransactionType(name="Cost sharing", is_entry_type=True, to_balance=True, no=8)
+        cost_sharing.save()
+        proceeds_sharing = TransactionType(name="Proceeds sharing", is_entry_type=True, to_balance=True, no=9)
+        proceeds_sharing.save()
+        donation = TransactionType(name="Donation", is_entry_type=True, to_balance=True, no=10)
+        donation.save()
+        recovery = TransactionType(name="Recovery", is_entry_type=True, to_balance=True, no=11)
+        recovery.save()
+
+except OperationalError:
+    pass
 
 def index(request):
     template = loader.get_template('core/index.html')

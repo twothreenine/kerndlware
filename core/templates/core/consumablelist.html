@@ -16,7 +16,7 @@
           {% for consumable in consumablelist %}
             <tr>
               <td>{{ consumable.id }}</td>
-              <td>{{ consumable.name }}</td>
+              <td contenteditable="true">{{ consumable.name }}</td>
               <td>{{ consumable.stock }} {{ consumable.unit }}</td>
               <td>{{ consumable.monthly_consumption }} {{ consumable.unit }}</td>
               <td>{{ consumable.taken }} {{ consumable.unit }}</td>

@@ -299,7 +299,7 @@ def modify_account(request):
             selected_account.users.add(us)
         if not request.POST.get("new_user") == '':
             if request.POST.get("is_non_real"):
-                u = User(name=str(request.POST.get("new_user")))
+                u = VirtualUser(name=str(request.POST.get("new_user")))
             else:
                 u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
             u.save()
@@ -307,6 +307,17 @@ def modify_account(request):
             u.save()
             selected_account.users.add(u)
         selected_account.save()
+
+def modify_consumablelist(request):
+    if request.method == 'POST':
+        for consumable in Consumable.objects.all():
+            if request.POST.get("{}_active".format(consumable.id)):
+                consumable.active = True
+            else:
+                consumable.active = False            
+            consumable.name = str(request.POST.get("{}_name".format(consumable.id)))
+            consumable.unit = Unit.objects.get(pk=int(request.POST.get("{}_unit".format(consumable.id))))
+            consumable.save()
 
 def global_context(request):
     accounts = Account.objects.all()
@@ -505,6 +516,13 @@ def batchlist(request):
     context = {"batchlist" : batchlist}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
+def batchlist_modify(request):
+    template = loader.get_template('core/batchlist_modify.html')
+    batches = Batch.objects.all()
+    batchlist = sorted(list(batches), key=lambda t: t.id)
+    context = {"batchlist" : batchlist}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
 def itemlist(request):
     template = loader.get_template('core/itemlist.html')
     items = Item.objects.all()
@@ -517,6 +535,16 @@ def consumablelist(request):
     consumables = Consumable.objects.all()
     consumablelist = sorted(list(consumables), key=lambda t: t.id)
     context = {"consumablelist" : consumablelist}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def consumablelist_modify(request):
+    if request.method == 'POST':
+        modify_consumablelist(request)
+    template = loader.get_template('core/consumablelist_modify.html')
+    consumables = Consumable.objects.all()
+    consumablelist = sorted(list(consumables), key=lambda t: t.id)
+    units = Unit.objects.all()
+    context = {"consumablelist" : consumablelist, "units" : units}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 @api_view(['GET', 'POST'])

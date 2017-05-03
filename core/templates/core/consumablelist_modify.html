@@ -1,0 +1,31 @@
+{% extends "core/base.html" %}
+{% block title %}Modify list of consumables{% endblock %}
+{% block heading %}Modify list of consumables{% endblock %}
+{% block content %}
+<form id="modify_consumablelist" action="/consumablelist_modify" method="POST">
+{% csrf_token %}
+<input type="submit" value="Save" />
+  <table class="table">
+    <thead>
+      <th>ID</th>
+      <th>active</th>
+      <th>Name</th>
+      <th>Unit</th>
+    </thead>
+    <tbody>
+    {% for consumable in consumablelist %}
+      <tr>
+        <td>{{ consumable.id }}</td>
+        <td><input type="checkbox" name="{{ consumable.id }}_active" value="active" {% if consumable.active == True %}checked{% endif %}></td>
+        <td><input type="text" name="{{ consumable.id }}_name" placeholder="Name" required="true" value="{{ consumable.name }}" size="60"></td>
+        <td><select name="{{ consumable.id }}_unit" class="selectpicker" data-actions-box="true" data-live-search="true">
+          {% for unit in units %}
+            <option value="{{ unit.id }}" {% if unit == consumable.unit %}selected{% endif %}>{{ unit }}</option>
+          {% endfor %}
+        </select></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</form>
+{% endblock %}

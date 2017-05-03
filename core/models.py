@@ -60,6 +60,7 @@ class VirtualUser(User):
 class Account(models.Model):
     name = models.CharField(max_length=50, default="")
     users = models.ManyToManyField('User', blank=True)
+    active = models.BooleanField(default=True)
     deposit = models.FloatField(default=0) #MoneyField; 
     balance = models.FloatField(default=0) #MoneyField; 
     taken = models.FloatField(default=0)

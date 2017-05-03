@@ -37,6 +37,7 @@ urlpatterns = [
     url(r'^batchlist$', views.batchlist),
     url(r'^itemlist$', views.itemlist),
     url(r'^consumablelist$', views.consumablelist),
+    url(r'^consumablelist_modify$', views.consumablelist_modify),
     url(r'^batches/', views.batches),
     url(r'^currencies/', views.currencies),
     url(r'^admin/', admin.site.urls),

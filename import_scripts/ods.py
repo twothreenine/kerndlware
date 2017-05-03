@@ -63,15 +63,20 @@ def import_suppliers():
                 s = models.Supplier(name=name, min_interval=min_interval)
                 s.save()
 
-def import_accounts():
+def import_accounts(create_users=True):
     with open('import_scripts/accounts.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
         for index,row in enumerate(reader):
             if not row[0] == '':
                 original_id = int(row[0])
                 name = row[2]
-                a = models.Account(name=name, original_id=original_id)
+                if row[4] == '':
+                    active = True
+                else:
+                    active = False
+                a = models.Account(name=name, original_id=original_id, active=active)
                 a.save()
+                comment = row[7]
                 if not row[3] == '':
                     rate = int(row[3])
                     if row[5]:
@@ -82,9 +87,23 @@ def import_accounts():
                         end_date = datetime.datetime.strptime(row[6], '%d.%m.%y') # must end at first day of the next month, unless the date is on the 1st, then on this date
                     else:
                         end_date = None
-                    comment = row[7]
                     ap = models.AccPayPhase(account=a, start=start_date, end=end_date, rate=rate, comment=comment)
                     ap.save()
+                if create_users == True:
+                    if original_id == 1 or original_id == 52: # specifically for our database with Spontankäufer and Spendenkonto
+                        u = models.VirtualUser(name=name, active=active, comment=comment)
+                        u.save()
+                    else:
+                        u = models.Person(name=name, active=active, comment=comment)
+                        u.save()
+                        n = re.search('(.+ ?.+) (.+)', name) # improve regex code: if there is only one word, group 2 shall be empty (first name only)
+                        if n:
+                            u.first_name = n.group(1)
+                            u.last_name = n.group(2)
+                    u.accounts.add(a)
+                    u.save()
+                    a.users.add(u)
+                    a.save()
 
 def import_batches(owner_id=None):
     with open('import_scripts/batches.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:

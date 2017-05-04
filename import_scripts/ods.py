@@ -38,7 +38,47 @@ def import_products(import_inactive_products=True):
                     else:
                         presumed_price = None
                     original_id = int(row[1])
-                    p = models.Product(name=name, description=description, active=active, unit=unit, presumed_price=presumed_price, original_id=original_id)
+                    category_name = ''
+                    
+                    if original_id >= 1 and original_id <= 29:
+                        category_name = 'Getreide (glutenhaltig)'
+                    if original_id >= 30 and original_id <= 39:
+                        category_name = 'Glutenfreie (Pseudo-)Getreide'
+                    if original_id >= 40 and original_id <= 57:
+                        category_name = 'Hülsenfrüchte'
+                    if original_id >= 58 and original_id <= 70:
+                        category_name = 'Ölsaaten'
+                    if original_id >= 71 and original_id <= 78:
+                        category_name = 'Nüsse'
+                    if original_id >= 79 and original_id <= 91:
+                        category_name = 'Getreideprodukte'
+                    if original_id >= 92 and original_id <= 125:
+                        category_name = 'Mehle und Mühlenprodukte'
+                    if original_id >= 126 and original_id <= 149:
+                        category_name = 'Nudeln'
+                    if original_id >= 150 and original_id <= 167:
+                        category_name = 'Speiseöle'
+                    if original_id >= 168 and original_id <= 180:
+                        category_name = 'Ölsaatenprodukte'
+                    if original_id >= 181 and original_id <= 223:
+                        category_name = 'Tee, Kräuter & Gewürze'
+                    if original_id >= 224 and original_id <= 239:
+                        category_name = 'Trockenobst'
+                    if original_id >= 240 and original_id <= 261:
+                        category_name = 'Säfte'
+                    if original_id >= 262 and original_id <= 291:
+                        category_name = 'Sojaprodukte'
+                    if original_id >= 292 and original_id <= 350:
+                        category_name = 'Sonstige'
+
+                    cat = models.ProductCategory.objects.filter(name=category_name)
+                    if cat.count():
+                        category = cat[0]
+                    else:
+                        category = models.ProductCategory(name=category_name)
+                        category.save()
+
+                    p = models.Product(name=name, description=description, active=active, unit=unit, presumed_price=presumed_price, category=category, original_id=original_id)
                     p.save()
     with open('import_scripts/products_extended.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')

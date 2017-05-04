@@ -223,7 +223,10 @@ class TrDetailsTable:
 class ProductCategoryTable:
     def __init__(self, objective, account_id=0):
         self.objective = objective
-        self.account_id = account_id
+        if account_id == 0:
+            self.account_id = Account.objects.all()[0].id
+        else:
+            self.account_id = account_id
         self.subtables = list()
         self.generate()
 
@@ -263,6 +266,7 @@ class ProductCategorySubtable:
         self.heading = self.product_category.name
         self.subheading = self.product_category.description
         self.rows = list()
+        self.product_stock_details = list()
         self.generate()
 
     def generate(self):
@@ -280,18 +284,27 @@ class ProductCategorySubtable:
             else:
                 row.append("") # row.3
             row.append(p.unit.abbr) # row.4
-            try:
-                ce = ConsumptionEstimation.objects.get(account=self.account_id, consumable=p)
-                row.append(format(ce.amount, '.3f')) # row.5
-                if ce.consumable.presumed_price:
-                    pres_value = ce.amount * ce.consumable.presumed_price
-                    pv = "{} €".format(format(pres_value, '.2f'))
-                else:
-                    pv = ''
-                row.append(pv) # row.6
-            except ConsumptionEstimation.DoesNotExist:
-                row.append("") # row.5
-                row.append("") # row.6
+            if self.objective == 'account consumption':
+                try:
+                    ce = ConsumptionEstimation.objects.get(account=self.account_id, consumable=p)
+                    row.append(format(ce.amount, '.3f')) # row.5
+                    if ce.consumable.presumed_price:
+                        pres_value = ce.amount * ce.consumable.presumed_price
+                        pv = "{} €".format(format(pres_value, '.2f'))
+                    else:
+                        pv = ''
+                    row.append(pv) # row.6
+                except ConsumptionEstimation.DoesNotExist:
+                    row.append("") # row.5
+                    row.append("") # row.6
+            if self.objective == 'consumablelist':
+                row.append(p.stock_str) # row 5
+                row.append(p.monthly_consumption) # row 6
+                row.append(p.taken) # row 7
+                row.append(p.on_order) # row 8
+                row.append(p.planning) # row 9
+                psd = ProductStockDetails(product_id=p.id)
+                row.append(psd) # row 10
             # further ones
             self.rows.append(row)
 
@@ -312,3 +325,35 @@ class ProductCategorySubtable:
                     # further ones
                     self.rows.append(row)
             """
+
+class ProductStockDetails:
+    def __init__(self, product_id):
+        self.product = Product.objects.get(id=product_id)
+        self.emptied_batches = list()
+        self.stock_batches = list()
+        self.on_order = list()
+        self.planned = list()
+        self.generate()
+
+    def generate(self):
+        batches = Batch.objects.filter(consumable=self.product)
+        for b in batches:
+            if b.stock == 0 or b.stock <= 0:
+                psdbd = ProductStockDetailsBatchDetails(batch_id=b.id)
+                self.emptied_batches.append(psdbd)
+            elif b.usual_taking_min and b.usual_taking_max:
+                pass
+            else:
+                self.stock_batches.append(b)
+        # orders
+
+class ProductStockDetailsBatchDetails:
+    def __init__(self, batch_id):
+        self.batch = Batch.objects.get(id=batch_id)
+        self.rows = list()
+        self.generate()
+
+    def generate(self):
+        self.rows.add(self.batch.id)
+        self.rows.add(self.batch.name)
+        self.rows.add(self.batch.supplier)

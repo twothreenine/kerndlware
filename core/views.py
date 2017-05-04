@@ -15,19 +15,33 @@ import logging
 from django.db.utils import OperationalError
 
 try:
-    if Account.objects.filter(pk=1).count():
-        selected_account = Account.objects.get(pk=1)
+
+    if not TimePeriod.objects.all():
+        day = TimePeriod(singular="day", plural="days", days=1, decimals_shown=0)
+        day.save()
+        week = TimePeriod(singular="week", plural="weeks", days=7, decimals_shown=1)
+        week.save()
+        month = TimePeriod(singular="month", plural="months", days=30.4375, decimals_shown=1)
+        month.save()
+        year = TimePeriod(singular="year", plural="years", days=365.25, decimals_shown=2)
+        year.save()
+
+    accounts = Account.objects.all()
+    if accounts:
+        selected_account = accounts[0]
     else:
         selected_account = Account(name="Test")
         selected_account.save()
     logger = logging.getLogger(__name__)
-    if Batch.objects.filter(pk=1).count():
-        selected_batch_in_batchtransactiontable = Batch.objects.get(pk=1)
+    batches = Batch.objects.all()
+    if batches.count():
+        selected_batch_in_batchtransactiontable = batches[0]
     else:
         selected_batch_in_batchtransactiontable = Batch(name="Test", price=0)
         selected_batch_in_batchtransactiontable.save()
-    if Consumable.objects.filter(pk=1).count():
-        selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=1)
+    consumables = Consumable.objects.all()
+    if consumables.count():
+        selected_consumable_in_consumabletransactiontable = consumables[0]
     else:
         selected_consumable_in_consumabletransactiontable = Consumable(name="Test")
         selected_consumable_in_consumabletransactiontable.save()
@@ -532,9 +546,10 @@ def itemlist(request):
 
 def consumablelist(request):
     template = loader.get_template('core/consumablelist.html')
-    consumables = Consumable.objects.all()
-    consumablelist = sorted(list(consumables), key=lambda t: t.id)
-    context = {"consumablelist" : consumablelist}
+    product_categories = ProductCategory.objects.all()
+    product_category_table = ProductCategoryTable(objective="consumablelist")
+    product_category_subtables = product_category_table.subtables
+    context = {"product_category_table" : product_category_table, "product_category_subtables" : product_category_subtables, "product_categories" : product_categories, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def consumablelist_modify(request):

@@ -7,6 +7,12 @@ from .fields import PercentField
 import datetime
 import itertools
 
+class TimePeriod(models.Model):
+    singular = models.CharField(max_length=30)
+    plural = models.CharField(max_length=30)
+    days = models.FloatField()
+    decimals_shown = models.IntegerField()
+
 class Currency(models.Model):
     name = models.CharField(max_length=10)
     conversion_rate = models.FloatField(default=1) # into anchor currency
@@ -487,7 +493,13 @@ class Consumable(Item):
 
     @property
     def stock_str(self):
-        return "{} {}".format(format(self.calc_stock(), '.3f'), self.unit.abbr)
+        stock = self.calc_stock()
+        if stock == 0:
+            return ""
+        elif self.unit.continuous == True:
+            return "{} {}".format(format(stock, '.3f'), self.unit.abbr)
+        else:
+            return "{}x {}".format(stock, self.unit.abbr)
 
     def calc_stock(self):
         """

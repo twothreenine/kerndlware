@@ -58,6 +58,8 @@ try:
     enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
     enterer_in_account_transactions = None
 
+
+
     # participate/transactions entry form
     default_enterer_of_new_transaction = models.ForeignKey('User', blank=True, null=True)
     default_enterer_of_new_transaction = None
@@ -478,12 +480,11 @@ def account_settings(request):
     context = {"account" : selected_account, "users" : users}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
-def supplier(request):
-    modify_account(request)
-    template = loader.get_template('core/account_settings.html')
-    global selected_account
-    users = User.objects.all()
-    context = {"account" : selected_account, "users" : users}
+def suppliers(request):
+    # modify_supplier(request) # TODO
+    template = loader.get_template('core/suppliers.html')
+    supplier_table = SupplierTable()
+    context = {"supplier_table" : supplier_table }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def transactionlist(request):

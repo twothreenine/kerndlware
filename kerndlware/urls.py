@@ -29,7 +29,7 @@ urlpatterns = [
     url(r'^register$', views.register),
     url(r'^account_settings$', views.account_settings),
     url(r'^account_consumption$', views.account_consumption),
-    url(r'^supplier$', views.supplier),
+    url(r'^suppliers$', views.suppliers),
     url(r'^transactionlist$', views.transactionlist),
     url(r'^batchtransactiontable$', views.batchtransactiontable),
     url(r'^consumabletransactiontable$', views.consumabletransactiontable),

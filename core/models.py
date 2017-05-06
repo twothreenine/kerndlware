@@ -322,13 +322,13 @@ class Material(models.Model):
 class Supplier(models.Model):
     name = models.CharField(max_length=100)
     full_names = models.TextField(blank=True)
-    is_wholesale = models.BooleanField(default=False)
-    is_retailer = models.BooleanField(default=False)
-    is_processor = models.BooleanField(default=False)
-    is_grower = models.BooleanField(default=False)
-    is_device_provider = models.BooleanField(default=False)
-    is_container_provider = models.BooleanField(default=False)
-    is_packaging_provider = models.BooleanField(default=False)
+    # is_wholesale = models.BooleanField(default=False)
+    # is_retailer = models.BooleanField(default=False)
+    # is_processor = models.BooleanField(default=False)
+    # is_grower = models.BooleanField(default=False)
+    # is_device_provider = models.BooleanField(default=False)
+    # is_container_provider = models.BooleanField(default=False)
+    # is_packaging_provider = models.BooleanField(default=False)
     contact_person = models.ForeignKey('Person', blank=True, null=True)
     min_order_value = models.FloatField(null=True, blank=True) #MoneyField; 
     min_order_weight = models.FloatField(blank=True, null=True)
@@ -360,6 +360,16 @@ class Supplier(models.Model):
 
     def __str__(self):
         return "{} in {} (area)".format(self.name, self.broad_location)
+
+    def any_detail_str(self, attribute, detail=None):
+        self_attribute = eval("self."+attribute)
+        if self_attribute:
+            if detail:
+                return eval("self."+attribute+"."+detail)
+            else:
+                return self_attribute
+        else:
+            return ''
 
 class VAT(models.Model):
     percentage = models.DecimalField(max_digits=4, decimal_places=2)
@@ -880,13 +890,33 @@ class GeneralOffer(models.Model):
     def __str__(self):
         return "{} from {}".format(self.consumable.name, self.distributor.name)
 
+    def any_detail_str(self, attribute, detail=None):
+        self_attribute = eval("self."+attribute)
+        if self_attribute:
+            if detail:
+                return eval("self."+attribute+"."+detail)
+            else:
+                return self_attribute
+        else:
+            return ''
+
+    def consumable_variety_str(self):
+        variety_str = ''
+        if self.variety:
+            variety_str = " ("+str(self.variety)+')'
+        return str(self.consumable.name)+variety_str
+
+    def supply_stock_str(self):
+        if self.supply_stock:
+            return str(self.supply_stock)+" "+str(self.consumable.unit.abbr)
+
 class Offer(models.Model):
     # Describes a specific offer of an offered consumable.
     general_offer = models.ForeignKey('GeneralOffer')
     parcel = models.FloatField() # how much g a single package or filling unit is (e.g. 25kg bag -> 25000; 1kg packages -> 1000; bulk with any amount in kg -> 1000)
-    quantity = models.IntegerField() # how many parcels have to be taken at once
+    quantity = models.IntegerField(default=1) # how many parcels have to be taken at once
     favorite = models.BooleanField(default=False)
-    official = models.PositiveSmallIntegerField(default=0) # whether the offer shall be uploaded in the online portal. 0 = not at all; 1 = without price information; 2 = completely
+    # official = models.PositiveSmallIntegerField(default=0) # whether the offer shall be uploaded in the online portal. 0 = not at all; 1 = without price information; 2 = completely
     total_price = models.FloatField(null=True, blank=True) #MoneyField; 
     discount = models.FloatField(null=True, blank=True) #MoneyField; 
     available = models.BooleanField(default=True)
@@ -898,6 +928,28 @@ class Offer(models.Model):
 
     def __str__(self):
         return "{} ({}g)".format(self.general_offer, self.parcel)
+
+    def any_detail_str(self, attribute, detail=None):
+        self_attribute = eval("self."+attribute)
+        if self_attribute:
+            if detail:
+                return eval("self."+attribute+"."+detail)
+            else:
+                return self_attribute
+        else:
+            return ''
+
+    def total_price_str(self):
+        if self.total_price:
+            return str(self.total_price)+" €"
+        else:
+            return ""
+
+    def basic_price_str(self):
+        if self.total_price:
+            return format(self.total_price/self.parcel, '.2f')+" €"
+        else:
+            return ""
 
 class OfferRating(models.Model):
     offer = models.ForeignKey('Offer')

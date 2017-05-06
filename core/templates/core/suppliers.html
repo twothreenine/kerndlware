@@ -1,0 +1,128 @@
+{% extends "core/base.html" %}
+{% block title %}Suppliers{% endblock %}
+{% block heading %}Suppliers{% endblock %}
+{% block style %}
+  div.row {
+
+  }
+  div.link_modify {
+    display: inline-block;
+    width: 4%;
+    margin-left: 4em;
+  }
+  div.supplier_name {
+    display: inline-block;
+    width: 15%;
+    margin-left: 1em;
+  }
+  div.broad_location {
+    display: inline-block;
+    width: 25%;
+    margin-left: 1em;
+  }
+  div.contact_person {
+    display: inline-block;
+    width: 25%;
+    margin-left: 1em;
+  }
+
+
+  div.add_go {
+    display: inline-block;
+    width: 20%;
+    margin-left: 1em;
+  }
+
+  div.go_consumable_name {
+    display: inline-block;
+    width: 20%;
+    margin-left: 1em;
+  }
+  div.go_variety {
+    display: inline-block;
+    width: 20%;
+    margin-left: 1em;
+  }
+  div.go_supply_stock {
+    display: inline-block;
+    width: 20%;
+    margin-left: 1em;
+  }
+
+
+  div.o_parcel {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.o_total_price {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.o_basic_price {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+{% endblock %}
+{% block content %}
+
+<div class="panel-group">
+  <div><a target="_blank" href="/admin/core/supplier/add/?_popup=1">Add supplier</a></div>
+<!--
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <div>
+        <input name="save" type="submit" value="Save" />
+      </div>
+      <div>Total amount: {{ total_amount }}</div>
+      <div>Value sum: {{ total_pres_value }}</div>
+      <div><input name="reset" type="reset" value="Discard changes" /></div>
+    </div>
+  </div> -->
+  <div class ="row">
+    <div class ="supplier_name">Name</div>
+    <div class ="broad_location">Broad location</div>
+    <div class ="contact_person">Contact person</div>
+  </div>
+  {% for sst in supplier_table.subtables %}
+  <div class ="row">
+    <div class ="link_modify"><a target="_blank" href={{ sst.link_modify }}>Modify</a></div>
+    <div class ="supplier_name"><a data-toggle="collapse" href="#sst{{ sst.supplier.id }}">{{ sst.supplier.name }}</a></div>
+    <div class ="broad_location">{{ sst.broad_location }}</div>
+    <div class ="contact_person">{{ sst.contact_person }}</div>
+    <div id="sst{{ sst.supplier.id }}" class="collapse">
+      <div class ="row">
+        <div class ="broad_location">{{ sst.broad_location }}</div>
+      </div>
+      {% for ssst in sst.subsubtables %}
+      <div class ="row">
+        <div class ="link_modify"><a target="_blank" href={{ ssst.link_modify }}>Modify</a></div>
+        <div class="go_consumable_name"><a data-toggle="collapse" href="#ssst{{ ssst.general_offer.id }}">{{ ssst.consumable_variety }}</a></div>
+        <div class="go_supply_stock">{{ ssst.supply_stock }}</div>
+        <div id="ssst{{ ssst.general_offer.id }}" class="collapse">
+          {% for row in ssst.rows %}
+          <div class="row">
+            <div class="link_modify"><a target="_blank" href={{ row.4 }}>Modify</a></div>
+            <div class="o_parcel">{{ row.1 }}</div>
+            <div class="o_total_price">{{ row.2 }}</div>
+            <div class="o_basic_price">{{ row.3 }}</div>
+          </div>
+          {% endfor %}
+          <div class ="row">
+            <div class="add_go"><a target="_blank" href={{ ssst.link_add_o }}>Add offer</a></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      <div class ="row">
+        <div class="add_go"><a target="_blank" href={{ sst.link_add_go }}>Add general offer</a></div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+
+{% endblock %}

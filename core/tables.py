@@ -407,7 +407,7 @@ class SupplierSubsubtable: # ssst
         for o in Offer.objects.filter(general_offer=self.general_offer):
             row = list()
             row.append(o.id) # row.0
-            row.append(str(o.parcel)+" "+str(self.consumable.unit.abbr)) # row.1
+            row.append(o.amount_str()) # row.1
             row.append(o.total_price_str()) # row.2
             row.append(o.basic_price_str()) # row.3
             row.append("/admin/core/offer/"+str(o.id)+"/change/?_popup=1") # row.4

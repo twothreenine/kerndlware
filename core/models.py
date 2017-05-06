@@ -914,7 +914,7 @@ class Offer(models.Model):
     # Describes a specific offer of an offered consumable.
     general_offer = models.ForeignKey('GeneralOffer')
     parcel = models.FloatField() # how much g a single package or filling unit is (e.g. 25kg bag -> 25000; 1kg packages -> 1000; bulk with any amount in kg -> 1000)
-    quantity = models.IntegerField(default=1) # how many parcels have to be taken at once
+    quantity = models.IntegerField(default=1) # how many parcels the offer includes (have to be taken at once)
     favorite = models.BooleanField(default=False)
     # official = models.PositiveSmallIntegerField(default=0) # whether the offer shall be uploaded in the online portal. 0 = not at all; 1 = without price information; 2 = completely
     total_price = models.FloatField(null=True, blank=True) #MoneyField; 
@@ -939,6 +939,14 @@ class Offer(models.Model):
         else:
             return ''
 
+    def amount_str(self, details=True):
+        if self.quantity == 1:
+            return str(self.parcel)+" "+str(self.general_offer.consumable.unit.abbr)
+        elif details == False:
+            return str(self.parcel*self.quantity)+" "+str(self.general_offer.consumable.unit.abbr)
+        else:
+            return str(self.parcel*self.quantity)+" "+str(self.general_offer.consumable.unit.abbr)+" ("+str(self.quantity)+"x "+str(self.parcel)+" "+str(self.general_offer.consumable.unit.abbr)+")"
+
     def total_price_str(self):
         if self.total_price:
             return str(self.total_price)+" €"
@@ -947,7 +955,7 @@ class Offer(models.Model):
 
     def basic_price_str(self):
         if self.total_price:
-            return format(self.total_price/self.parcel, '.2f')+" €"
+            return format(self.total_price/(self.parcel*self.quantity), '.2f')+" €/"+str(self.general_offer.consumable.unit.abbr)
         else:
             return ""
 

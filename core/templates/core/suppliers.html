@@ -20,7 +20,7 @@
     width: 25%;
     margin-left: 1em;
   }
-  div.contact_person {
+  div.contact_persons {
     display: inline-block;
     width: 25%;
     margin-left: 1em;
@@ -57,12 +57,22 @@
   }
   div.o_total_price {
     display: inline-block;
-    width: 10%;
+    width: 7%;
     margin-left: 1em;
   }
   div.o_basic_price {
     display: inline-block;
-    width: 10%;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.o_packing {
+    display: inline-block;
+    width: 20%;
+    margin-left: 1em;
+  }
+  div.o_minimum_quantity {
+    display: inline-block;
+    width: 5%;
     margin-left: 1em;
   }
 {% endblock %}
@@ -82,16 +92,17 @@
     </div>
   </div> -->
   <div class ="row">
+    <div class="link_modify"></div>
     <div class ="supplier_name">Name</div>
     <div class ="broad_location">Broad location</div>
-    <div class ="contact_person">Contact person</div>
+    <div class ="contact_persons">Contact persons</div>
   </div>
   {% for sst in supplier_table.subtables %}
   <div class ="row">
     <div class ="link_modify"><a target="_blank" href={{ sst.link_modify }}>Modify</a></div>
     <div class ="supplier_name"><a data-toggle="collapse" href="#sst{{ sst.supplier.id }}">{{ sst.supplier.name }}</a></div>
     <div class ="broad_location">{{ sst.broad_location }}</div>
-    <div class ="contact_person">{{ sst.contact_person }}</div>
+    <div class ="contact_persons">{{ sst.contact_persons }}</div>
     <div id="sst{{ sst.supplier.id }}" class="collapse">
       <div class ="row">
         <div class ="broad_location">{{ sst.broad_location }}</div>
@@ -100,23 +111,28 @@
       <div class ="row">
         <div class ="link_modify"><a target="_blank" href={{ ssst.link_modify }}>Modify</a></div>
         <div class="go_consumable_name"><a data-toggle="collapse" href="#ssst{{ ssst.general_offer.id }}">{{ ssst.consumable_variety }}</a></div>
+        <div class="go_consumable_name">({{ ssst.original_name }})</div>
         <div class="go_supply_stock">{{ ssst.supply_stock }}</div>
         <div id="ssst{{ ssst.general_offer.id }}" class="collapse">
           {% for row in ssst.rows %}
           <div class="row">
             <div class="link_modify"><a target="_blank" href={{ row.4 }}>Modify</a></div>
+            <div class="o_minimum_quantity">{{ row.6 }}</div>
             <div class="o_parcel">{{ row.1 }}</div>
             <div class="o_total_price">{{ row.2 }}</div>
             <div class="o_basic_price">{{ row.3 }}</div>
+            <div class="o_packing">{{ row.5.packing }}</div>
           </div>
           {% endfor %}
           <div class ="row">
+            <div class="link_modify"></div>
             <div class="add_go"><a target="_blank" href={{ ssst.link_add_o }}>Add offer</a></div>
           </div>
         </div>
       </div>
       {% endfor %}
       <div class ="row">
+        <div class="link_modify"></div>
         <div class="add_go"><a target="_blank" href={{ sst.link_add_go }}>Add general offer</a></div>
       </div>
     </div>

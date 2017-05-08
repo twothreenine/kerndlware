@@ -4,8 +4,10 @@ import datetime
 #from djmoney.models.fields import MoneyField
 #from moneyed import Money, EUR
 from .fields import PercentField
+from .functions import *
 import datetime
 import itertools
+
 
 class TimePeriod(models.Model):
     singular = models.CharField(max_length=30)
@@ -329,7 +331,7 @@ class Supplier(models.Model):
     # is_device_provider = models.BooleanField(default=False)
     # is_container_provider = models.BooleanField(default=False)
     # is_packaging_provider = models.BooleanField(default=False)
-    contact_person = models.ForeignKey('Person', blank=True, null=True)
+    contact_persons = models.ManyToManyField('Person', blank=True)
     min_order_value = models.FloatField(null=True, blank=True) #MoneyField; 
     min_order_weight = models.FloatField(blank=True, null=True)
     max_order_weight = models.FloatField(blank=True, null=True) # maximum order weight per order in kg
@@ -359,17 +361,18 @@ class Supplier(models.Model):
     official = models.PositiveSmallIntegerField(null=True, blank=True) # whether the supplier shall be uploaded in the online portal. 0 = not at all; 1 = without cost information; 2 = completely
 
     def __str__(self):
-        return "{} in {} (area)".format(self.name, self.broad_location)
+        return "{} in {}".format(self.name, self.broad_location)
 
-    def any_detail_str(self, attribute, detail=None):
-        self_attribute = eval("self."+attribute)
-        if self_attribute:
-            if detail:
-                return eval("self."+attribute+"."+detail)
-            else:
-                return self_attribute
+    def contact_persons_str(self):
+        contact_persons = list(self.contact_persons.all())
+        if contact_persons:
+            usernames = contact_persons[0].name
+            contact_persons.pop(0)
+            for user in contact_persons:
+                usernames += ", " + user.name
+            return usernames
         else:
-            return ''
+            return ""
 
 class VAT(models.Model):
     percentage = models.DecimalField(max_digits=4, decimal_places=2)
@@ -535,6 +538,8 @@ class Product(Consumable):
     category = models.ForeignKey('ProductCategory', blank=True, null=True)
     density = models.FloatField(blank=True, null=True) # kg/l
     storability = models.FloatField(blank=True, null=True) # in days
+    season_start = models.DateField(null=True, blank=True) # use this to set a limited season, null means it is available all-season
+    season_end= models.DateField(null=True, blank=True) # use this to set a limited season, null means it is available all-season
     usual_taking_min = models.FloatField(blank=True, null=True) # in which amounts the product is usually taken at once
     usual_taking_max = models.FloatField(blank=True, null=True) # in which amounts the product is usually taken at once
     storage_temperature_min = models.FloatField(blank=True, null=True)
@@ -726,7 +731,7 @@ class Batch(models.Model):
             self.save()
         return self.consumption_evaluation
 
-class BatchStorage(models.Model):
+class BatchStorage(models.Model): # to note where different parcels of a batch are stored
     batch = models.ForeignKey('Batch')
     position = models.ForeignKey('StorageSpace')
     is_reserve = models.BooleanField(default=False) # set True if this storage space is not meant to be used for direct taking by participants (resp. for money: direct insertion)
@@ -886,19 +891,12 @@ class GeneralOffer(models.Model):
     orderpos = models.IntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)
     supply_stock = models.FloatField(blank=True, null=True) # in product unit
+    original_id = models.IntegerField(blank=True, null=True) # from import source
+    original_name = models.CharField(max_length=50, blank=True)
+    original_active = models.NullBooleanField(blank=True)
 
     def __str__(self):
         return "{} from {}".format(self.consumable.name, self.distributor.name)
-
-    def any_detail_str(self, attribute, detail=None):
-        self_attribute = eval("self."+attribute)
-        if self_attribute:
-            if detail:
-                return eval("self."+attribute+"."+detail)
-            else:
-                return self_attribute
-        else:
-            return ''
 
     def consumable_variety_str(self):
         variety_str = ''
@@ -908,56 +906,91 @@ class GeneralOffer(models.Model):
 
     def supply_stock_str(self):
         if self.supply_stock:
-            return str(self.supply_stock)+" "+str(self.consumable.unit.abbr)
+            return str(remove_zeros(self.supply_stock))+" "+str(self.consumable.unit.abbr)
+        else:
+            return ""
 
 class Offer(models.Model):
     # Describes a specific offer of an offered consumable.
     general_offer = models.ForeignKey('GeneralOffer')
-    parcel = models.FloatField() # how much g a single package or filling unit is (e.g. 25kg bag -> 25000; 1kg packages -> 1000; bulk with any amount in kg -> 1000)
-    quantity = models.IntegerField(default=1) # how many parcels the offer includes (have to be taken at once)
+    unit = models.ForeignKey('Unit')
+    parcel = models.FloatField(default=1) # how much units a single package or filling unit is (e.g. 25kg bag -> 25 if unit=kg)
+    continuous = models.BooleanField() # set True for bulk parcels, e.g. kg
+    parcels_included = models.IntegerField(default=1) # how many parcels the offer includes (have to be taken at once), e.g. 6 -> 6x 1kg
+    minimum_quantity = models.IntegerField(default=1) # e.g. 8 -> 8, 9, 10 ... are ok
+    packing = models.CharField(max_length=50, blank=True) # description of the packing e.g. paper bag, crate, euro box
     favorite = models.BooleanField(default=False)
     # official = models.PositiveSmallIntegerField(default=0) # whether the offer shall be uploaded in the online portal. 0 = not at all; 1 = without price information; 2 = completely
     total_price = models.FloatField(null=True, blank=True) #MoneyField; 
     discount = models.FloatField(null=True, blank=True) #MoneyField; 
-    available = models.BooleanField(default=True)
-    available_from = models.DateField(null=True, blank=True)
-    available_until = models.DateField(null=True, blank=True)
     orderpos = models.IntegerField(null=True, blank=True)
     comment = models.TextField(blank=True)
     supply_stock = models.FloatField(null=True, blank=True) # in product unit (caution, this is the stock of this offer with its specific packaging)
+    original_id = models.IntegerField(blank=True, null=True) # from import source
+    original_name = models.CharField(max_length=50, blank=True)
+    original_total_price = models.FloatField(null=True, blank=True) #MoneyField; 
+    original_active = models.NullBooleanField(blank=True)
 
     def __str__(self):
-        return "{} ({}g)".format(self.general_offer, self.parcel)
-
-    def any_detail_str(self, attribute, detail=None):
-        self_attribute = eval("self."+attribute)
-        if self_attribute:
-            if detail:
-                return eval("self."+attribute+"."+detail)
-            else:
-                return self_attribute
-        else:
-            return ''
+        return "{} ({} {})".format(self.general_offer, self.parcel, self.unit.abbr)
 
     def amount_str(self, details=True):
-        if self.quantity == 1:
-            return str(self.parcel)+" "+str(self.general_offer.consumable.unit.abbr)
-        elif details == False:
-            return str(self.parcel*self.quantity)+" "+str(self.general_offer.consumable.unit.abbr)
+        amount = str(remove_zeros(self.amount()))
+        if self.continuous == True:
+            if self.amount() == 1:
+                amount = ""
+            else:
+                amount = amount+" "
+            return amount+self.unit.abbr+" in bulk"
         else:
-            return str(self.parcel*self.quantity)+" "+str(self.general_offer.consumable.unit.abbr)+" ("+str(self.quantity)+"x "+str(self.parcel)+" "+str(self.general_offer.consumable.unit.abbr)+")"
+            if self.parcels_included == 1 or details == False:
+                details_str = ""
+            else:
+                details_str = " ("+str(self.parcels_included)+"x "+str(remove_zeros(self.parcel))+" "+self.unit.abbr+")"
+            return amount+" "+self.unit.abbr+details_str
+
+    def amount(self):
+        return self.parcel*self.parcels_included
+
+    def minimum_amount(self):
+        return self.parcel*self.parcels_included*self.minimum_quantity
+
+    def unit_str(self):
+        if self.parcel == 1:
+            return str(self.unit.abbr)
+        else:
+            return str(remove_zeros(self.parcel))+str(self.unit.abbr)
+
+    def minimum_quantity_str(self):
+        if self.minimum_quantity == 1:
+            return ""
+        else:
+            if self.continuous == True:
+                x = " "+self.unit.abbr
+            else:
+                x = "x"
+            return "from "+str(self.minimum_quantity)+x
 
     def total_price_str(self):
         if self.total_price:
-            return str(self.total_price)+" €"
+            return format(self.total_price, '.2f')+" €"
         else:
             return ""
 
     def basic_price_str(self):
         if self.total_price:
-            return format(self.total_price/(self.parcel*self.quantity), '.2f')+" €/"+str(self.general_offer.consumable.unit.abbr)
+            return format(self.total_price/(self.parcel*self.parcels_included), '.2f')+" €/"+str(self.general_offer.consumable.unit.abbr)
         else:
             return ""
+
+class OfferAvailability(models.Model):
+    general_offers = models.ManyToManyField('GeneralOffer')
+    available = models.BooleanField(default=True) # use this to deactivate an offer immediately
+    start = models.DateField(null=True, blank=True) # null means it is already available
+    end = models.DateField(null=True, blank=True) # null means there is no deadline known
+    season_start = models.DateField(null=True, blank=True) # use this to set a limited season, null means it is available all-season
+    season_end= models.DateField(null=True, blank=True) # use this to set a limited season, null means it is available all-season
+    comment = models.TextField(blank=True)
 
 class OfferRating(models.Model):
     offer = models.ForeignKey('Offer')

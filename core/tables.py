@@ -5,6 +5,7 @@ from .fields import PercentField
 import datetime
 import itertools
 from .models import *
+from .functions import *
 
 class BatchTransactionTable:
     def __init__(self, batch_id):
@@ -369,19 +370,12 @@ class SupplierTable:
         for supplier in Supplier.objects.all():
             sst = SupplierSubtable(supplier=supplier)
             self.subtables.append(sst)
-            # row = list()
-            # row.append(supplier.id)
-            # row.append(supplier.name) # row 1
-            # row.append(supplier.any_detail_str(attribute='broad_location')) # row 2
-            # row.append(supplier.any_detail_str(attribute='contact_person', detail='name')) # row 3
-            # row.append("/admin/core/supplier/"+str(supplier.id)+"/change/?_popup=1") # row 4
-            # self.rows.append(row)
 
 class SupplierSubtable:
     def __init__(self, supplier):
         self.supplier = supplier
-        self.broad_location = self.supplier.any_detail_str(attribute='broad_location')
-        self.contact_person = self.supplier.any_detail_str(attribute='contact_person', detail='name')
+        self.broad_location = any_detail_str(object=supplier, attribute='broad_location')
+        self.contact_persons = supplier.contact_persons_str()
         self.link_modify = "/admin/core/supplier/"+str(supplier.id)+"/change/?_popup=1"
         self.link_add_go = "/admin/core/generaloffer/add/?distributor="+str(supplier.id)+"&_popup=1"
         self.subsubtables = list()
@@ -397,6 +391,7 @@ class SupplierSubsubtable: # ssst
         self.general_offer = general_offer
         self.consumable = general_offer.consumable
         self.consumable_variety = general_offer.consumable_variety_str()
+        self.original_name = any_detail_str(object=general_offer, attribute='original_name')
         self.supply_stock = general_offer.supply_stock_str()
         self.link_modify = "/admin/core/generaloffer/"+str(general_offer.id)+"/change/?_popup=1"
         self.link_add_o = "/admin/core/offer/add/?general_offer="+str(general_offer.id)+"&_popup=1"
@@ -404,11 +399,13 @@ class SupplierSubsubtable: # ssst
         self.generate()
 
     def generate(self):
-        for o in Offer.objects.filter(general_offer=self.general_offer):
+        for o in sorted(Offer.objects.filter(general_offer=self.general_offer), key=lambda t: (t.minimum_amount(), t.id), reverse=True):
             row = list()
             row.append(o.id) # row.0
             row.append(o.amount_str()) # row.1
             row.append(o.total_price_str()) # row.2
             row.append(o.basic_price_str()) # row.3
             row.append("/admin/core/offer/"+str(o.id)+"/change/?_popup=1") # row.4
+            row.append(o) # row.5
+            row.append(o.minimum_quantity_str())
             self.rows.append(row)

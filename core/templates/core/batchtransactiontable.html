@@ -32,9 +32,9 @@
 <tbody>
 <td><form id="batch_selection_form" action="/batchtransactiontable" method="POST">
   {% csrf_token %}
-  <select onchange="document.getElementById('batch_selection_form').submit();" name="batch_id" class="selectpicker" data-live-search="true">
+  <select onchange="document.getElementById('batch_selection_form').submit();" name="batch_no" class="selectpicker" data-live-search="true">
     {% for batch in batches %}
-    <option value="{{ batch.id }}" {% if batch.id == selected_batch_in_batchtransactiontable.id %}selected{% endif %}>{{ batch }}</option>
+    <option value="{{ batch.no }}" {% if batch.no == selected_batch_in_batchtransactiontable.no %}selected{% endif %}>{{ batch }}</option>
     {% endfor %}
   </select> {{ stock }}
 </form></td>

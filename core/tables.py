@@ -8,14 +8,14 @@ from .models import *
 from .functions import *
 
 class BatchTransactionTable:
-    def __init__(self, batch_id):
-        self.batch_id = batch_id
+    def __init__(self, batch_no):
+        self.batch_no = batch_no
         self.rows = list()
         self.generate()
 
     def generate(self):
-        takings = Taking.objects.filter(batch=self.batch_id)
-        restitutions = Restitution.objects.filter(batch=self.batch_id)
+        takings = Taking.objects.filter(batch=self.batch_no)
+        restitutions = Restitution.objects.filter(batch=self.batch_no)
         # cost_sharings = CostSharing.objects.all()
         # proceeds_sharings = ProceedsSharing.objects.all()
         # donations = Donation.objects.all()
@@ -340,7 +340,7 @@ class ProductStockDetails:
         batches = Batch.objects.filter(consumable=self.product)
         for b in batches:
             if b.stock == 0 or b.stock <= 0:
-                psdbd = ProductStockDetailsBatchDetails(batch_id=b.id)
+                psdbd = ProductStockDetailsBatchDetails(batch_no=b.no)
                 self.emptied_batches.append(psdbd)
             elif b.usual_taking_min and b.usual_taking_max:
                 pass
@@ -349,13 +349,13 @@ class ProductStockDetails:
         # orders
 
 class ProductStockDetailsBatchDetails:
-    def __init__(self, batch_id):
-        self.batch = Batch.objects.get(id=batch_id)
+    def __init__(self, batch_no):
+        self.batch = Batch.objects.get(no=batch_no)
         self.rows = list()
         self.generate()
 
     def generate(self):
-        self.rows.add(self.batch.id)
+        self.rows.add(self.batch.no)
         self.rows.add(self.batch.name)
         self.rows.add(self.batch.supplier)
 

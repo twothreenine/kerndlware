@@ -22,16 +22,14 @@ class Currency(models.Model):
     description = models.TextField(blank=True)
     comment = models.TextField(blank=True)
 
-    def __init__(self, name, conversion_rate=1, full_name='', description='', comment=''):
-        self.name = name
-        self.conversion_rate = conversion_rate
-        self.full_name = full_name
-        self.description = description
-        self.comment = comment
+    @classmethod
+    def create(name, conversion_rate=1, full_name='', description='', comment=''):
+        self = Currency(name=name, conversion_rate=conversion_rate, full_name=full_name, description=description, comment=comment)
         self.save()
         for mb in MoneyBox.objects.all():
             mbs = MoneyBoxStock(money_box=mb, currency=self)
             mbs.save()
+        return self
 
     def __str__(self):
         return "{} ({})".format(self.name, self.full_name)
@@ -221,13 +219,14 @@ class MoneyBox(models.Model):
 
     # TODO: Methode zum Berechnen des stock_value
 
-    def __init__(self, name, stock_value=0):
-        self.name = name
-        self.stock_name = stock_name
+    @classmethod
+    def create(self, name, stock_value=0):
+        self = MoneyBox(name=name, stock_value=stock_value)
         self.save()
         for c in Currency.objects.all():
             mbs = MoneyBoxStock(money_box=self, currency=c)
             mbs.save()
+        return self
 
     def __str__(self):
         return "{}".format(self.name)
@@ -609,6 +608,7 @@ class Instalment(models.Model):
     amount = models.FloatField(default=0) #MoneyField; 
 
 class Batch(models.Model):
+    no = models.IntegerField()
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     comment = models.TextField(blank=True)
@@ -628,7 +628,7 @@ class Batch(models.Model):
     taken = models.FloatField(default=0)
     parcel_approx = models.FloatField(default=0)
     special_density = models.FloatField(default=0)
-    original_id = models.IntegerField(blank=True, null=True)
+    original_no = models.IntegerField(blank=True, null=True)
 
     def add_stock(self, amount):
         self.stock += amount
@@ -653,7 +653,7 @@ class Batch(models.Model):
                 cont = " ({} {})".format(self.unit.contents, self.unit.abbr)
         except AttributeError:
             pass
-        return "B{} - {}{} by {} from {}".format(str(self.id), self.name, cont, self.supplier, self.purchase_date)
+        return "B{} - {}{} by {} from {}".format(str(self.no), self.name, cont, self.supplier, self.purchase_date)
 
     @property
     def stock_str(self):
@@ -1131,7 +1131,7 @@ class Taking(BatchTransaction): # taking of goods from balance
         else:
             originator = "You"
         if show_batch == True:
-            batch = " from batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+            batch = " from batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
         else:
             batch = ""
         # if self.batch.unit.continuous == False and not self.amount == 1:
@@ -1149,12 +1149,12 @@ class Taking(BatchTransaction): # taking of goods from balance
     #     return "{} {} from".format(self.amount, self.batch.unit.abbr)
 
     # def matter_str(self, account):
-    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
 
     def perform(self):
         self.transaction_type = TransactionType.objects.get(no=1)
         self.save()
-        batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+        batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
         batch.subtract_stock(self.amount)
         batch.add_taken(self.amount)
         batch.save()
@@ -1187,7 +1187,7 @@ class Taking(BatchTransaction): # taking of goods from balance
         return self.batch.consumable.unit.display(stock)
 
     # def unperform(self): # TODO
-    #     batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+    #     batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
     #     batch.add_stock(self.amount)
     #     batch.subtract_taken(self.amount)
     #     batch.save()
@@ -1215,7 +1215,7 @@ class Restitution(BatchTransaction): # return goods to the storage
 
     def perform(self): # not tested yet
         self.transaction_type = TransactionType.objects.get(no=2)
-        batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+        batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
         batch.add_stock(self.amount)
         batch.subtract_taken(self.amount)
         batch.save()
@@ -1233,7 +1233,7 @@ class Restitution(BatchTransaction): # return goods to the storage
         else:
             originator = "You"
         if show_batch == True:
-            batch = " to batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+            batch = " to batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
         else:
             batch = ""
         return "{} restituted {}{}".format(originator, self.batch.unit.display(self.amount, show_contents), batch), "", ""
@@ -1247,7 +1247,7 @@ class Restitution(BatchTransaction): # return goods to the storage
     #     return "{} {} from".format(self.amount, self.batch.unit.abbr)
 
     # def matter_str(self, account):
-    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.id, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit.abbr)
+    #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit.abbr)
 
     def batch_stock_str(self):
         stock = 0
@@ -1328,7 +1328,7 @@ class Depositation(Transaction): # insertion of money to deposit
     confirmation_comment = models.TextField(blank=True)
 
     def __str__(self):
-        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name), ""
+        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
 
     @property
     def type(self):
@@ -1381,8 +1381,16 @@ class PayOutBalance(Transaction):
     currency = models.ForeignKey('Currency')
     money_box = models.ForeignKey('MoneyBox')
 
-    # perform
-    # self.transaction_type = TransactionType.objects.get(no=5)
+    def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=5)
+        self.save()
+        self.value = self.amount * self.currency.conversion_rate * (-1)
+        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
+        moneyboxstock.payout(self.amount)
+        moneyboxstock.save()
+        self.save()
+        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
+        charge.save()
 
     @property
     def type(self):
@@ -1395,8 +1403,16 @@ class PayOutDeposit(Transaction):
     currency = models.ForeignKey('Currency')
     money_box = models.ForeignKey('MoneyBox')
 
-    # perform
-    # self.transaction_type = TransactionType.objects.get(no=6)
+    def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=6)
+        self.save()
+        self.value = self.amount * self.currency.conversion_rate * (-1)
+        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
+        moneyboxstock.payout(self.amount)
+        moneyboxstock.save()
+        self.save()
+        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=False, date=self.date)
+        charge.save()
 
     @property
     def type(self):
@@ -1422,7 +1438,7 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
         # if not self.currency == None:
         #     self.value = self.amount * self.currency.conversion_rate
         # else:
-        #     batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+        #     batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
         #     self.value = self.amount * batch.price
         self.save()
         cs = Charge(transaction=self, account=self.originator_account, value=self.amount*(-1), to_balance=True, date=self.date) # self.amount could be replaced by self.value if calculated per batch or currency
@@ -1482,7 +1498,7 @@ class ShareTransaction(Transaction):
         if not currency == None:
             self.value = self.amount * currency.conversion_rate
         else:
-            batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+            batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
             self.value = self.amount * batch.price
         sum_of_rates = 0
         for account in participating_accounts: # self.participating_accounts.all()
@@ -1620,7 +1636,7 @@ class Donation(ShareTransaction):
     #     if not currency == None:
     #         self.value = self.amount * currency.conversion_rate
     #     else:
-    #         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+    #         batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
     #         self.value = self.amount * batch.price
     #     sum_of_rates = 0
     #     for account in participating_accounts: # self.participating_accounts.all()
@@ -1674,7 +1690,7 @@ class Recovery(ShareTransaction): # donation backwards
     #     if not currency == None:
     #         self.value = self.amount * currency.conversion_rate
     #     else:
-    #         batch = Batch.objects.get(pk=self.batch.id) # type(transaction.batch) == Batch
+    #         batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
     #         self.value = self.amount * batch.price
     #     sum_of_rates = 0
     #     for account in participating_accounts: # self.participating_accounts.all()

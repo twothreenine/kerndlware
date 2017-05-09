@@ -1,5 +1,6 @@
 from django.db import models
 from decimal import Decimal
+import math
 
 
 def remove_zeros(f):
@@ -15,3 +16,13 @@ def any_detail_str(object, attribute, detail=None, multiple=False):
             return self_attribute
     else:
         return ''
+
+def round_off(number, ndigits=0):
+    return math.floor(number*10**ndigits)/(10**ndigits)
+
+def round_up(number, ndigits=0):
+    return math.ceil(number*10**ndigits)/(10**ndigits)
+
+def round_up_decpower(number):
+    ndigits = (-1)*math.ceil(math.log10(number))
+    return math.ceil(number*10**ndigits)/(10**ndigits)

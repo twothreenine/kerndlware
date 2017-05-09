@@ -117,7 +117,7 @@ def index(request):
         # check whether it's valid:
         if form.is_valid():
             taking = form.save(commit=False)
-            taking.batch = Batch.objects.get(pk=int(form.cleaned_data["batch_no"]))
+            taking.batch = Batch.objects.get(no=int(form.cleaned_data["batch_no"]))
             taking.perform()
             return HttpResponseRedirect('/')
 
@@ -139,11 +139,11 @@ def select_account(request):
 
 def select_batch_for_batchtransactiontable(request):
     if request.method == 'POST':
-        batch_id = request.POST.get("batch_id")
-        if batch_id:
-            batch_id = int(batch_id)
+        batch_no = request.POST.get("batch_no")
+        if batch_no:
+            batch_no = int(batch_no)
             global selected_batch_in_batchtransactiontable
-            selected_batch_in_batchtransactiontable = Batch.objects.get(pk=batch_id)
+            selected_batch_in_batchtransactiontable = Batch.objects.get(no=batch_no)
 
 def select_consumable_for_consumabletransactiontable(request):
     if request.method == 'POST':
@@ -219,14 +219,14 @@ def enter_new_transaction(request):
             if t_type.id == 1: # taking
                 batch_no = request.POST.get("batch_no")
                 if batch_no:
-                    t_batch = Batch.objects.get(pk=int(batch_no))
+                    t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
                     t = Taking(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.perform()
             elif t_type.id == 2: # restitution
                 batch_no = request.POST.get("batch_no")
                 if batch_no:
-                    t_batch = Batch.objects.get(pk=int(batch_no))
+                    t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
                     t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.perform()
@@ -496,7 +496,7 @@ def transactionlist(request):
 def batchtransactiontable(request):
     select_batch_for_batchtransactiontable(request)
     global selected_batch_in_batchtransactiontable
-    batch_transaction_table = BatchTransactionTable(selected_batch_in_batchtransactiontable.id)
+    batch_transaction_table = BatchTransactionTable(selected_batch_in_batchtransactiontable.no)
     batches = Batch.objects.all()
     stock = selected_batch_in_batchtransactiontable.unit.display(selected_batch_in_batchtransactiontable.calc_stock(), show_contents=False)
     price = selected_batch_in_batchtransactiontable.price_str_long()
@@ -527,14 +527,14 @@ def accountlist(request):
 def batchlist(request):
     template = loader.get_template('core/batchlist.html')
     batches = Batch.objects.all()
-    batchlist = sorted(list(batches), key=lambda t: t.id)
+    batchlist = sorted(list(batches), key=lambda t: t.no)
     context = {"batchlist" : batchlist}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def batchlist_modify(request):
     template = loader.get_template('core/batchlist_modify.html')
     batches = Batch.objects.all()
-    batchlist = sorted(list(batches), key=lambda t: t.id)
+    batchlist = sorted(list(batches), key=lambda t: t.no)
     context = {"batchlist" : batchlist}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
@@ -566,8 +566,8 @@ def consumablelist_modify(request):
 @api_view(['GET', 'POST'])
 def batches(request):
     if request.method == 'GET':
-        request_id=request.GET.get('id', 1)
-        batch = Batch.objects.get(pk=int(request_id))
+        request_no=request.GET.get('no', 1)
+        batch = Batch.objects.get(no=int(request_no))
         serializer = BatchSerializer(batch, many=False)
         return Response(serializer.data)
     # elif request.method == 'POST':

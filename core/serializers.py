@@ -4,7 +4,7 @@ from rest_framework import serializers
 class BatchSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Batch
-        fields = ('id', 'text', 'price')
+        fields = ('no', 'text', 'price')
     # = serializers.Field(source='popularity')
 
 class CurrencySerializer(serializers.HyperlinkedModelSerializer):

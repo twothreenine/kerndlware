@@ -3,6 +3,9 @@
 import csv
 import datetime
 from core import models
+import re
+from math import log10
+from core.functions import round_up_decpower
 
 """
 Questions:
@@ -151,6 +154,7 @@ def import_batches(owner_id=None):
         for index,row in enumerate(reader):
             if not row[11] == '' and not row[13] == '':
                 name = row[12]
+                print(name)
                 comment = row[10]
                 product = models.Product.objects.get(original_id=int(row[1]))
                 try:
@@ -175,18 +179,26 @@ def import_batches(owner_id=None):
                 special_density = 0
                 if not row[5] == '':
                     special_density = float(row[5])
-                original_id = int(row[11])
+                original_no = int(row[11])
                 owner = None
                 if not owner_id == None:
                     owner = models.Account.objects.get(pk=owner_id)
-                b = models.Batch(name=name, comment=comment, consumable=product, supplier=supplier, unit=unit, price=price, production_date=production_date, date_of_expiry=date_of_expiry, special_density=special_density, original_id=original_id)
+                # occupied_nos = list()
+                # for eb in models.Batch.objects.all():
+                #     occupied_nos.append(eb.no)
+                no = original_no
+                # batches_count = round_up_decpower(sum(1 for line in csvfile) + models.Batch.objects.all().count())
+                # if no in occupied_nos:
+                #     no += batches_count
+                b = models.Batch(no=no, name=name, comment=comment, consumable=product, supplier=supplier, unit=unit, price=price, production_date=production_date, date_of_expiry=date_of_expiry, special_density=special_density, original_no=original_no)
                 b.save()
+                print(b)
 
 def import_transactions(user_id, currency1_id=1, money_box_id=1):
     with open('import_scripts/transactions.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
         for index,row in enumerate(reader):
-            original_ttype = int(row[10])
+            original_ttype = int(row[10]) # set possibility for row[10] to be '', otherwise ValueError: invalid literal for int() with base 10: ''
             if not row[7] == '' and original_ttype >= 1 and original_ttype <= 10 and not original_ttype == 9:
                 originator_account = models.Account.objects.get(original_id=int(row[7]))
                 user = models.User.objects.get(pk=user_id)
@@ -230,13 +242,13 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                     ttype = 7
 
                 if ttype == 1: # taking
-                    batch = models.Batch.objects.get(original_id=original_batch)
+                    batch = models.Batch.objects.get(original_no=original_batch)
                     t = models.Taking(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, batch=batch)
                     t.save()
                     t.perform()
 
                 if ttype == 2: # Restitution (currently not in use)
-                    batch = models.Batch.objects.get(original_id=original_batch)
+                    batch = models.Batch.objects.get(original_no=original_batch)
                     t = models.Restitution(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, batch=batch)
                     t.save()
                     t.perform()
@@ -258,14 +270,14 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                 if ttype == 5: # PayOutBalance
                     currency = models.Currency.objects.get(pk=currency1_id)
                     money_box = models.MoneyBox.objects.get(pk=money_box_id)
-                    t = models.PayOutBalance(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box, confirmed_by=user, confirmation_comment="imported automatically")
+                    t = models.PayOutBalance(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box)
                     t.save()
                     t.perform()
 
                 if ttype == 6: # PayOutDeposit
                     currency = models.Currency.objects.get(pk=currency1_id)
                     money_box = models.MoneyBox.objects.get(pk=money_box_id)
-                    t = models.PayOutDeposit(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box, confirmed_by=user, confirmation_comment="imported automatically")
+                    t = models.PayOutDeposit(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box)
                     t.save()
                     t.perform()
 
@@ -299,7 +311,10 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                     t.save()
                     t.perform(transaction_type_id=11, participating_accounts=participating_accounts)
 
-                # to be implemented: ttype 12, 40, 60
+                # to be implemented:
+                # ttype 12 (inpayment by insertion of goods)
+                # ttype 40 (depositation by insertion of goods)
+                # ttype 60 (payout of deposit as goods)
 
             
 

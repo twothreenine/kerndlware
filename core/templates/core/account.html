@@ -425,11 +425,11 @@
     $('#transactions > tbody').css('height', transactions_height + 'px')
   });
 
-  api_url = "http://127.0.0.1:8000/batches/?format=json&id=";
+  api_url = "http://127.0.0.1:8000/batches/?format=json&no=";
   var get_batch_name = function(e) {
-    id = $('#batch_fields input[name="batch_no"]').val()
+    no = $('#batch_fields input[name="batch_no"]').val()
     $.ajax({
-      url: api_url + id
+      url: api_url + no
     }).success(function(json) {
       text = json["text"]
       $('#batch_fields span[name="batch_name"]').html(text)
@@ -438,9 +438,9 @@
   }
   var get_value = function(e) {
     if ($('.selectpicker[name="currency"]').val() == "0") {
-      batch_id = $('#batch_fields input[name="batch_no"]').val()
+      batch_no = $('#batch_fields input[name="batch_no"]').val()
       $.ajax({
-        url: api_url + batch_id
+        url: api_url + batch_no
       }).success(function(json) {
         price = json["price"]
         value = parseFloat($('#amount_fields input[name="amount"]').val() * price).toFixed(2);

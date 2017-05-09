@@ -4,7 +4,7 @@
 {% block content %}
   <table class="table">
     <thead>
-      <th>ID</th>
+      <th>No.</th>
       <th>Name</th>
       <th>Consumable</th>
       <th>Supplier</th>
@@ -23,7 +23,7 @@
     <tbody>
     {% for batch in batchlist %}
       <tr>
-        <td>{{ batch.id }}</td>
+        <td>{{ batch.no }}</td>
         <td>{{ batch.name }}</td>
         <td>{{ batch.consumable }}</td>
         <td>{{ batch.supplier.name }}</td>

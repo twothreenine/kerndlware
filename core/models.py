@@ -446,14 +446,14 @@ class Unit(models.Model):
             else:
                 return "{} {}{}".format(format(amount, '.0f'), self.abbr, cont)
 
-    def unit_weight(self, batch_or_consumable):
-        """
-        Returns a string specifying the contents of the unit. Works both for batch and for consumable, since they both have unit as foreign key.
-        """
-        if batch_or_consumable.unit.contents == '':
-            return "1 {} contains {} gr".format(batch_or_consumable.unit.abbr, batch_or_consumable.unit.weight)
-        else:
-            return "1 {} contains {} ({} gr)".format(batch_or_consumable.unit.abbr, batch_or_consumable.unit.contents, batch_or_consumable.unit.weight)
+    # def unit_weight(self, batch_or_consumable):
+    #     """
+    #     Returns a string specifying the contents of the unit. Works both for batch and for consumable, since they both have unit as foreign key.
+    #     """
+    #     if batch_or_consumable.unit.contents == '':
+    #         return "1 {} contains {} gr".format(batch_or_consumable.unit.abbr, batch_or_consumable.unit.weight)
+    #     else:
+    #         return "1 {} contains {} ({} gr)".format(batch_or_consumable.unit.abbr, batch_or_consumable.unit.contents, batch_or_consumable.unit.weight)
 
 class ItemCategory(models.Model):
     name = models.CharField(max_length=100)
@@ -513,6 +513,31 @@ class Consumable(Item):
         else:
             return "{}x {}".format(stock, self.unit.abbr)
 
+    def stock_str_long(self, show_contents=True):
+        """
+        Returns a string consisting of an amount, the unit (prn plural) and the contents of the unit (can be deactivated)
+        The string may be used in batch/consumable information (stock, average etc) and as transaction description.
+        Examples:  "2 bottles per 500 ml"; "1 package per 200 g"; "1.390 kg"
+        """
+        # If the unit is continuous, the contents (like "per 500 ml") won't be shown
+        amount = self.calc_stock()
+        if self.unit:
+            if self.unit.continuous == True:
+                return "{} {}".format(format(amount, '.3f'), self.unit.abbr)
+            else:
+                # If the attribute field is empty or not asked for, we won't write anything after the unit
+                if not self.unit.contents == '' and show_contents == True:
+                    cont = " per {}".format(self.unit.contents)
+                else:
+                    cont = ""
+                # If the plural attribute is empty, we'll use the abbreviation instead, better than printing nothing.
+                if not amount == 1 and not self.unit.plural == '':
+                    return "{} {}{}".format(format(amount, '.0f'), self.unit.plural, cont)
+                else:
+                    return "{} {}{}".format(format(amount, '.0f'), self.unit.abbr, cont)
+        else:
+            return "{} (no unit)".format(amount)
+
     def calc_stock(self):
         """
         Calculates the stock of a consumable. For each transaction, the unit of the batch gets divided through the unit of the consumable.
@@ -526,6 +551,18 @@ class Consumable(Item):
         for restitution in Restitution.objects.filter(batch__consumable=self):
             stock += restitution.amount * restitution.batch.unit.weight/self.unit.weight
         return stock
+
+    def unit_weight_str(self):
+        """
+        Returns a string specifying the contents of the unit.
+        """
+        if self.unit:
+            if self.unit.contents == '':
+                return "1 {} contains {} gr".format(self.unit.abbr, self.unit.weight)
+            else:
+                return "1 {} contains {} ({} gr)".format(self.unit.abbr, self.unit.contents, self.unit.weight)
+        else:
+            return "no unit"
 
 class ProductCategory(ItemCategory):
     pass
@@ -643,21 +680,66 @@ class Batch(models.Model):
         self.taken -= amount
 
     @property
+    def unit_abbr_str(self):
+        unit = ''
+        if self.unit:
+            unit = self.unit.abbr
+        return unit
+
+    def unit_weight_str(self):
+        """
+        Returns a string specifying the contents of the unit.
+        """
+        if self.unit:
+            if self.unit.contents == '':
+                return "1 {} contains {} gr".format(self.unit.abbr, self.unit.weight)
+            else:
+                return "1 {} contains {} ({} gr)".format(self.unit.abbr, self.unit.contents, self.unit.weight)
+        else:
+            return "no unit"
+
+    @property
     def text(self):
-        return "{} ({} €/{})".format(self.name, format(self.price, '.2f'), self.unit.abbr) # , self.supplier, self.purchase_date
+        # price = 
+        return "{} ({} €/{})".format(self.name, format(self.price, '.2f'), self.unit_abbr_str) # , self.supplier, self.purchase_date
 
     def __str__(self):
         cont = ""
         try:
             if not self.unit.contents == '':
-                cont = " ({} {})".format(self.unit.contents, self.unit.abbr)
+                cont = " ({} {})".format(self.unit.contents, self.unit_abbr_str)
         except AttributeError:
             pass
         return "B{} - {}{} by {} from {}".format(str(self.no), self.name, cont, self.supplier, self.purchase_date)
 
     @property
     def stock_str(self):
-        return "{} {}".format(format(self.calc_stock(), '.3f'), self.unit.abbr)
+        return "{} {}".format(format(self.calc_stock(), '.3f'), self.unit_abbr_str)
+
+    def stock_str_long(self, show_contents=True):
+        """
+        Returns a string consisting of an amount, the unit (prn plural) and the contents of the unit (can be deactivated)
+        The string may be used in batch/consumable information (stock, average etc) and as transaction description.
+        Examples:  "2 bottles per 500 ml"; "1 package per 200 g"; "1.390 kg"
+        """
+        # If the unit is continuous, the contents (like "per 500 ml") won't be shown
+        amount = self.calc_stock()
+        if self.unit:
+            if self.unit.continuous == True:
+                return "{} {}".format(format(amount, '.3f'), self.unit.abbr)
+            else:
+                # If the attribute field is empty or not asked for, we won't write anything after the unit
+                if not self.unit.contents == '' and show_contents == True:
+                    cont = " per {}".format(self.unit.contents)
+                else:
+                    cont = ""
+                # If the plural attribute is empty, we'll use the abbreviation instead, better than printing nothing.
+                if not amount == 1 and not self.unit.plural == '':
+                    return "{} {}{}".format(format(amount, '.0f'), self.unit.plural, cont)
+                else:
+                    return "{} {}{}".format(format(amount, '.0f'), self.unit.abbr, cont)
+        else:
+            return "{} (no unit)".format(amount)
 
     def calc_stock(self):
         stock = 0
@@ -672,18 +754,18 @@ class Batch(models.Model):
         if self.monthly_consumption == 0:
             return "None"
         else:
-            return "{} " " {}".format(format(self.monthly_consumption, '.3f'), self.unit.abbr)
+            return "{} " " {}".format(format(self.monthly_consumption, '.3f'), self.unit_abbr_str)
 
     @property
     def taken_str(self):
-        return "{} " " {}".format(format(self.taken, '.3f'), self.unit.abbr)
+        return "{} " " {}".format(format(self.taken, '.3f'), self.unit_abbr_str)
 
     def price_str_long(self):
-        return "{} € per {}".format(format(self.price, '.2f'), self.unit.abbr)
+        return "{} € per {}".format(format(self.price, '.2f'), self.unit_abbr_str)
 
     @property
     def price_str(self):
-        return "{} €/{}".format(format(self.price,'.2f'), self.unit.abbr)
+        return "{} €/{}".format(format(self.price,'.2f'), self.unit_abbr_str)
 
     def calc_monthly_consumption(self):
         # not tried out yet
@@ -1048,7 +1130,7 @@ class Transaction(models.Model):
     transaction_type = models.ForeignKey('TransactionType', blank=True, null=True)
 
     def __str__(self):
-        return "Tr {}: Account {} on {} (entered by {})".format(self.id, self.originator_account.name, self.date, self.entered_by_user.name)
+        return "Tr {}: {} by {} on {} (entered by {})".format(self.id, self.transaction_type.name, self.originator_account.name, self.date, self.entered_by_user.name)
 
     @property
     def comment_str(self):

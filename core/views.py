@@ -498,9 +498,9 @@ def batchtransactiontable(request):
     global selected_batch_in_batchtransactiontable
     batch_transaction_table = BatchTransactionTable(selected_batch_in_batchtransactiontable.no)
     batches = Batch.objects.all()
-    stock = selected_batch_in_batchtransactiontable.unit.display(selected_batch_in_batchtransactiontable.calc_stock(), show_contents=False)
+    stock = selected_batch_in_batchtransactiontable.stock_str_long(show_contents=False)
     price = selected_batch_in_batchtransactiontable.price_str_long()
-    unit_weight = selected_batch_in_batchtransactiontable.unit.unit_weight(selected_batch_in_batchtransactiontable)
+    unit_weight = selected_batch_in_batchtransactiontable.unit_weight_str()
     template = loader.get_template('core/batchtransactiontable.html')
     context = {"batches" : batches, "stock" : stock, "batch_transaction_table" : batch_transaction_table, "selected_batch_in_batchtransactiontable" : selected_batch_in_batchtransactiontable, "unit_weight" : unit_weight, "price" : price, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
@@ -510,8 +510,8 @@ def consumabletransactiontable(request):
     global selected_consumable_in_consumabletransactiontable
     consumable_transaction_table = ConsumableTransactionTable(selected_consumable_in_consumabletransactiontable.id)
     consumables = Consumable.objects.all()
-    stock = selected_consumable_in_consumabletransactiontable.unit.display(selected_consumable_in_consumabletransactiontable.calc_stock())
-    unit_weight = selected_consumable_in_consumabletransactiontable.unit.unit_weight(selected_consumable_in_consumabletransactiontable)
+    stock = selected_consumable_in_consumabletransactiontable.stock_str_long(show_contents=False)
+    unit_weight = selected_consumable_in_consumabletransactiontable.unit_weight_str()
     template = loader.get_template('core/consumabletransactiontable.html')
     context = {"consumables" : consumables, "stock" : stock, "consumable_transaction_table" : consumable_transaction_table, "selected_consumable_in_consumabletransactiontable" : selected_consumable_in_consumabletransactiontable, "unit_weight" : unit_weight, }
     return HttpResponse(template.render({**global_context(request), **context}, request))

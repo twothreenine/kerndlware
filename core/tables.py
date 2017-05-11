@@ -9,13 +9,13 @@ from .functions import *
 
 class BatchTransactionTable:
     def __init__(self, batch_no):
-        self.batch_no = batch_no
+        self.batch = Batch.objects.get(no=batch_no)
         self.rows = list()
         self.generate()
 
     def generate(self):
-        takings = Taking.objects.filter(batch=self.batch_no)
-        restitutions = Restitution.objects.filter(batch=self.batch_no)
+        takings = Taking.objects.filter(batch=self.batch)
+        restitutions = Restitution.objects.filter(batch=self.batch)
         # cost_sharings = CostSharing.objects.all()
         # proceeds_sharings = ProceedsSharing.objects.all()
         # donations = Donation.objects.all()
@@ -355,9 +355,9 @@ class ProductStockDetailsBatchDetails:
         self.generate()
 
     def generate(self):
-        self.rows.add(self.batch.no)
-        self.rows.add(self.batch.name)
-        self.rows.add(self.batch.supplier)
+        self.rows.append(self.batch.no)
+        self.rows.append(self.batch.name)
+        self.rows.append(self.batch.supplier)
 
 
 

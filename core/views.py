@@ -161,7 +161,7 @@ def filter_account_transactions(request):
         if transaction_types:
             for t in transaction_types:
                 t = int(t)
-                tt = TransactionType.objects.get(pk=t)
+                tt = TransactionType.objects.get(no=t)
                 selected_types_in_account_transactions.append(tt)
         start_date = request.POST.get("start_date")
         global start_date_in_account_transactions
@@ -190,7 +190,7 @@ def enter_new_transaction(request):
     if request.method == 'POST':
         transaction_type = request.POST.get("type")
         if transaction_type:
-            t_type = TransactionType.objects.get(pk=int(transaction_type))
+            t_type = TransactionType.objects.get(no=int(transaction_type))
         else:
             t_type = None
         entered_by = request.POST.get("entered_by")
@@ -222,6 +222,7 @@ def enter_new_transaction(request):
                     t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
                     t = Taking(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t.save()
                     t.perform()
             elif t_type.id == 2: # restitution
                 batch_no = request.POST.get("batch_no")
@@ -229,6 +230,7 @@ def enter_new_transaction(request):
                     t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
                     t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t.save()
                     t.perform()
             elif t_type.id == 3: # inpayment
                 currency = request.POST.get("currency")
@@ -241,6 +243,7 @@ def enter_new_transaction(request):
                     t_money_box = MoneyBox.objects.get(pk=int(money_box))
                 if t_date and t_amount and t_currency and t_money_box:
                     t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+                    t.save()
                     t.perform()
             elif t_type.id == 4: # depositation
                 currency = request.POST.get("currency")
@@ -253,6 +256,7 @@ def enter_new_transaction(request):
                     t_money_box = MoneyBox.objects.get(pk=int(money_box))
                 if t_date and t_amount and t_currency and t_money_box:
                     t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+                    t.save()
                     t.perform()
             elif t_type.id == 7: # transfer
                 recipient_account = request.POST.get("recipient_account")
@@ -260,6 +264,7 @@ def enter_new_transaction(request):
                     t_recipient_account = Account.objects.get(pk=int(recipient_account))
                 if t_date and t_amount and t_recipient_account:
                     t = Transfer(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, recipient_account=t_recipient_account)
+                    t.save()
                     t.perform()
             elif t_type.id == 8 or t_type.id == 9 or t_type.id == 10 or t_type.id == 11: # cost sharing, proceeds sharing, donation, recovery
                 participating_accounts = request.POST.getlist("participating_accounts")
@@ -360,9 +365,9 @@ def account(request):
     taken = selected_account.taken_str
     transaction_types = TransactionType.objects.all()
     global selected_types_in_account_transactions
-    selected_type_ids = []
+    selected_type_nos = []
     for ttype in selected_types_in_account_transactions:
-        selected_type_ids.append(ttype.id)
+        selected_type_nos.append(ttype.no)
     global start_date_in_account_transactions
     if not start_date_in_account_transactions == None:
         start_date = start_date_in_account_transactions.strftime("%Y-%m-%d")
@@ -423,7 +428,7 @@ def account(request):
         "account_table" : account_table, "deposit" : deposit,
         "taken" : taken, "entry_form" : entry_form, "entry_types" : entry_types,
         "currencies" : currencies, "money_boxes" : money_boxes,
-        "batches" : batches, "transaction_types" : transaction_types, "selected_type_ids" : selected_type_ids, 
+        "batches" : batches, "transaction_types" : transaction_types, "selected_type_nos" : selected_type_nos, 
         "start_date" : start_date, "end_date" : end_date, "enterer_in_account_transactions" : enterer_in_account_transactions,
         "accounts_except_itself" : accounts_except_itself, "accounts" : accounts, "users_of_selected_account" : users_of_selected_account, "recent_other_users" : recent_other_users,
         "table_users_of_selected_account" : table_users_of_selected_account, "other_table_users" : other_table_users, 

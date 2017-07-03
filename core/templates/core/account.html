@@ -4,46 +4,45 @@
   div.row {
 
   }
-  div.transaction_id {
+  th.transaction_id, td.transaction_id {
     display: inline-block;
-    width: 0%;
+    width: 2%;
+  }
+  th.transaction_date, td.transaction_date {
+    display: inline-block;
+    width: 7%;
     margin-left: 1em;
   }
-  div.transaction_date {
+  th.transaction_matter, td.transaction_matter {
+    display: inline-block;
+    width: 40%;
+    margin-left: 1em;
+  }
+  th.transaction_entry_details, td.transaction_entry_details {
+    display: inline-block;
+    width: 15%;
+    margin-left: 1em;
+  }
+  th.transaction_value, td.transaction_value {
+    display: inline-block;
+    width: 5%;
+    margin-left: 1em;
+  }
+  th.transaction_balance, td.transaction_balance {
     display: inline-block;
     width: 6%;
     margin-left: 1em;
   }
-  div.transaction_matter {
+  th.transaction_comment, td.transaction_comment {
     display: inline-block;
-    width: 44%;
+    width: 11%;
     margin-left: 1em;
   }
-  div.transaction_entry_details {
-    display: inline-block;
-    width: 21%;
-    margin-left: 1em;
-  }
-  div.transaction_value {
-    display: inline-block;
-    width: 5%;
-    margin-left: 1em;
-  }
-  div.transaction_balance {
-    display: inline-block;
-    width: 5%;
-    margin-left: 1em;
-  }
-  div.transaction_comment {
-    display: inline-block;
-    width: 8%;
-    margin-left: 1em;
-  }
-  #transactions > tbody { display: block;
+  <!-- #transactions > tbody { display: block;
     overflow-y: auto;    /* Trigger vertical scroll    */
     overflow-x: hidden;  /* Hide the horizontal scroll */
   }
-  <!-- tr.positive {
+  tr.positive {
     background-color: #61a8ff;
   }
   tr.negative {
@@ -124,7 +123,7 @@
           <label for="transaction_type">Types</label>
           <select multiple="multiple" name="transaction_type" class="selectpicker" data-actions-box="true">
             {% for type in transaction_types %}
-            <option value="{{ type.id }}" {% if type.id in selected_type_ids %}selected{% endif %}>{{ type.name }}</option>
+            <option value={{ type.no }} {% if type.no in selected_type_nos %}selected{% endif %}>{{ type.name }}</option>
             {% endfor %}
           </select>
         </div>
@@ -142,11 +141,11 @@
             <option value=0>All users</option>
             <option value="" disabled>Users of this account</option>
             {% for user in table_users_of_selected_account %}
-            <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+            <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
             {% endfor %}
             <option value="" disabled><i>Other users</i></option>
             {% for user in other_table_users %}
-            <option value="{{ user.id }}" {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+            <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
             {% endfor %}
           </select>
         </div>
@@ -191,22 +190,22 @@
 </div>
 -->
 
-<table class="table" id="transactions"> <!-- class="table table-condensed"  should make it more compact? -->
+<table class="table"> <!-- id="transactions"; class="table table-condensed" should make it more compact? -->
   <thead>
-    <th>Tr No</th>
-    <th>Date</th>
-    <th>Matter</th>
-    <th>Entry details</th>
-    <th>Value</th>
-    <th>Balance</th>
-    <th>Comment</th>
+    <th class="transaction_id">Tr No</th>
+    <th class="transaction_date">Date</th>
+    <th class="transaction_matter">Matter</th>
+    <th class="transaction_entry_details">Entry details</th>
+    <th class="transaction_value">Value</th>
+    <th class="transaction_balance">Balance</th>
+    <th class="transaction_comment">Comment</th>
   </thead>
   <tbody>
     {% for row in account_table.rows %}
       <tr style="background-color: {{ row.0 }}"> <!-- class="{{ row.2|lower }} if transactions.objects.get(pk=int(row.0)).value < 0 }}"negative"  else  "positive" -->
-        <td> {{ row.2 }} </td>
-        <td> {{ row.3 }} </td>
-        <td> {{ row.4 }} {% if row.1 == True %} <a data-toggle="modal" href="#details{{ row.2 }}">{{ row.5 }}</a>
+        <td class="transaction_id"> {{ row.2 }} </td>
+        <td class="transaction_date"> {{ row.3 }} </td>
+        <td class="transaction_matter"> {{ row.4 }} {% if row.1 == True %} <a data-toggle="modal" href="#details{{ row.2 }}">{{ row.5 }}</a>
           <div id="details{{ row.2 }}" class="modal fade" role="dialog">
             <div class="modal-dialog">
 
@@ -238,10 +237,10 @@
             </div>
           </div>
           {{ row.6 }}{% endif %}</td>
-        <td> {{ row.8 }} </td>
-        <td> {{ row.9 }} </td>
-        <td> {{ row.10 }} </td>
-        <td> {{ row.11 }} </td>
+        <td class="transaction_entry_details"> {{ row.8 }} </td>
+        <td class="transaction_value"> {{ row.9 }} </td>
+        <td class="transaction_balance"> {{ row.10 }} </td>
+        <td class="transaction_comment"> {{ row.11 }} </td>
       </tr>
     {% endfor %}
   </tbody>
@@ -322,11 +321,11 @@
     <div class="panel-heading">Enter new transaction <input type="reset" value="Clear fields"/></div>
     <div class="panel-body">
       <div>
-        <label for="entered_by">Type</label>
-        <select onchange="show_fields()" name="type" class="selectpicker">
+        <label for="type">Type</label>
+        <select name="type" class="selectpicker" required="true" onchange="show_fields()">
           <option value="" disabled>Choose type for new transaction</option>
           {% for type in entry_types %}
-          <option value="{{ type.no }}">{{ type.name }}</option>
+          <option value={{ type.no }}>{{ type.name }}</option> <!-- value="{{ type.no }}" ? with or without " " ? -->
           {% endfor %}
         </select>
       </div>
@@ -336,11 +335,11 @@
           <option value="" disabled selected>Select user</option>
           <option value="" disabled>Users of this account</option>
           {% for user in users_of_selected_account %}
-          <option value="{{ user.id }}" {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
+          <option value={{ user.id }} {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
           {% endfor %}
           <option value="" disabled>Recent other users</option>
           {% for user in recent_other_users %}
-          <option value="{{ user.id }}" {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
+          <option value={{ user.id }} {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
           {% endfor %}
         </select>
       </div>

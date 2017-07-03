@@ -198,18 +198,22 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
     with open('import_scripts/transactions.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
         for index,row in enumerate(reader):
-            original_ttype = int(row[10]) # set possibility for row[10] to be '', otherwise ValueError: invalid literal for int() with base 10: ''
+            if row[10] == '': # set possibility for row[10] to be '', otherwise ValueError: invalid literal for int() with base 10: ''
+                break
+            else:
+                original_ttype = int(row[10])
             if not row[7] == '' and original_ttype >= 1 and original_ttype <= 10 and not original_ttype == 9:
                 originator_account = models.Account.objects.get(original_id=int(row[7]))
                 user = models.User.objects.get(pk=user_id)
                 date = datetime.datetime.strptime(row[9], '%d.%m.%y')
                 # entry_date = datetime.date.today()
-                amount = float(row[4].replace(',', '.'))
+                amount = abs(float(row[4].replace(',', '.')))
                 comment = row[6]
-                value = row[24]
-                if not value:
-                    value = row[25]
-                value = float(value.replace('.', '').replace(',', '.')[0:-2])
+                # value = row[24]
+                # if not value:
+                #     value = row[25]
+                # value = float(value.replace('.', '').replace(',', '.')[0:-2])
+
                 # status = models.ForeignKey('TransactionStatus', blank=True, null=True)
                 original_batch = int(row[17])
 
@@ -281,32 +285,57 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                     t.save()
                     t.perform()
 
+                if ttype > 6: # The following transaction types can only take an amount anchor currency. In the old ODS sheet they could take an amount of any batch, so we have to convert if necessary
+                    if original_batch == 0:
+                        value = amount
+                    elif original_batch > 0:
+                        value = amount * models.Batch.objects.get(original_no=original_batch).price
+                    else:
+                        value = 0
+                        print('No value on transaction from '+date.strftime())
+
                 if ttype == 7: # Transfer
                     recipient_account = models.Account.objects.get(original_id=int(row[5]))
                     t = models.Transfer(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, recipient_account=recipient_account)
                     t.save()
                     t.perform()
 
+                if ttype > 7: # For the following transaction types, we have to check if any account did not participate
+                    excepted_accounts = list()
+                    # index_below = index+1
+                    try_below = True
+                    while try_below == True:
+                        row_below = next(enumerate(reader))[1] # TODO: raises StopIteration
+                        if int(row_below[10]) == 9:
+                            excepted_accounts.append(models.Account.objects.get(original_id=int(row_below[7])))
+                            # index_below += 1
+                        else:
+                            try_below = False
+
                 if ttype == 8: # CostSharing
-                    participating_accounts = models.Account.objects.all() # tODO: minus exceptions
+                    all_accounts = models.Account.objects.all()
+                    participating_accounts = [account for account in all_accounts if account not in excepted_accounts]
                     t = models.CostSharing(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_id=8, participating_accounts=participating_accounts)
 
                 if ttype == 9: # ProceedsSharing
-                    participating_accounts = models.Account.objects.all()
+                    all_accounts = models.Account.objects.all()
+                    participating_accounts = [account for account in all_accounts if account not in excepted_accounts]
                     t = models.ProceedsSharing(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_id=9, participating_accounts=participating_accounts)
 
                 if ttype == 10: # Recovery
-                    participating_accounts = models.Account.objects.all()
+                    all_accounts = models.Account.objects.all()
+                    participating_accounts = [account for account in all_accounts and not account in excepted_accounts]
                     t = models.Recovery(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_id=10, participating_accounts=participating_accounts)
 
                 if ttype == 11: # Donation
-                    participating_accounts = models.Account.objects.all()
+                    all_accounts = models.Account.objects.all()
+                    participating_accounts = [account for account in all_accounts and not account in excepted_accounts]
                     t = models.Donation(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_id=11, participating_accounts=participating_accounts)

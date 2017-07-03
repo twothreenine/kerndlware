@@ -360,7 +360,7 @@ class Supplier(models.Model):
     official = models.PositiveSmallIntegerField(null=True, blank=True) # whether the supplier shall be uploaded in the online portal. 0 = not at all; 1 = without cost information; 2 = completely
 
     def __str__(self):
-        return "{} in {}".format(self.name, self.broad_location)
+        return "{}".format(self.name)
 
     def contact_persons_str(self):
         contact_persons = list(self.contact_persons.all())
@@ -1213,7 +1213,7 @@ class Taking(BatchTransaction): # taking of goods from balance
         else:
             originator = "You"
         if show_batch == True:
-            batch = " from batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+            batch = " from batch no. {} ({} from {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
         else:
             batch = ""
         # if self.batch.unit.continuous == False and not self.amount == 1:
@@ -1315,7 +1315,7 @@ class Restitution(BatchTransaction): # return goods to the storage
         else:
             originator = "You"
         if show_batch == True:
-            batch = " to batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", self.batch.supplier.broad_location if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+            batch = " to batch no. {} ({} from {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr) #  self.batch.supplier.broad_location if self.batch.supplier else ""
         else:
             batch = ""
         return "{} restituted {}{}".format(originator, self.batch.unit.display(self.amount, show_contents), batch), "", ""

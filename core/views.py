@@ -79,7 +79,8 @@ try:
         9 = ProceedsSharing
         10 = Donation
         11 = Recovery
-        12 = Insertion (planned)
+        12 = Credit to balance
+        13 = Credit to deposit
         """
         taking = TransactionType(name="Taking", is_entry_type=True, to_balance=True, no=1)
         taking.save()
@@ -103,6 +104,10 @@ try:
         donation.save()
         recovery = TransactionType(name="Recovery", is_entry_type=True, to_balance=True, no=11)
         recovery.save()
+        credit_to_balance = TransactionType(name="Credit to balance", is_entry_type=False, to_balance=True, no=12)
+        credit_to_balance.save()
+        credit_to_deposit = TransactionType(name="Credit to deposit", is_entry_type=False, to_balance=False, no=13)
+        credit_to_deposit.save()
 
 except OperationalError:
     pass
@@ -216,7 +221,7 @@ def enter_new_transaction(request):
             t_comment = ''
         if not t_type == None:
             global selected_account
-            if t_type.id == 1: # taking
+            if t_type.no == 1: # taking
                 batch_no = request.POST.get("batch_no")
                 if batch_no:
                     t_batch = Batch.objects.get(no=int(batch_no))
@@ -224,7 +229,7 @@ def enter_new_transaction(request):
                     t = Taking(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.save()
                     t.perform()
-            elif t_type.id == 2: # restitution
+            elif t_type.no == 2: # restitution
                 batch_no = request.POST.get("batch_no")
                 if batch_no:
                     t_batch = Batch.objects.get(no=int(batch_no))
@@ -232,7 +237,7 @@ def enter_new_transaction(request):
                     t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.save()
                     t.perform()
-            elif t_type.id == 3: # inpayment
+            elif t_type.no == 3: # inpayment
                 currency = request.POST.get("currency")
                 if currency:
                     t_currency = Currency.objects.get(pk=int(currency))
@@ -245,7 +250,7 @@ def enter_new_transaction(request):
                     t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
                     t.save()
                     t.perform()
-            elif t_type.id == 4: # depositation
+            elif t_type.no == 4: # depositation
                 currency = request.POST.get("currency")
                 if currency:
                     t_currency = Currency.objects.get(pk=int(currency))
@@ -258,7 +263,7 @@ def enter_new_transaction(request):
                     t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
                     t.save()
                     t.perform()
-            elif t_type.id == 7: # transfer
+            elif t_type.no == 7: # transfer
                 recipient_account = request.POST.get("recipient_account")
                 if recipient_account:
                     t_recipient_account = Account.objects.get(pk=int(recipient_account))
@@ -266,7 +271,7 @@ def enter_new_transaction(request):
                     t = Transfer(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, recipient_account=t_recipient_account)
                     t.save()
                     t.perform()
-            elif t_type.id == 8 or t_type.id == 9 or t_type.id == 10 or t_type.id == 11: # cost sharing, proceeds sharing, donation, recovery
+            elif t_type.no == 8 or t_type.no == 9 or t_type.no == 10 or t_type.no == 11: # cost sharing, proceeds sharing, donation, recovery
                 participating_accounts = request.POST.getlist("participating_accounts")
                 t_participating_accounts = []
                 if participating_accounts:
@@ -274,16 +279,16 @@ def enter_new_transaction(request):
                         pa = Account.objects.get(pk=int(p))
                         t_participating_accounts.append(pa)
                 if t_date and t_amount and t_participating_accounts:
-                    if t_type.id == 8:
+                    if t_type.no == 8:
                         t = CostSharing(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
-                    if t_type.id == 9:
+                    if t_type.no == 9:
                         t = ProceedsSharing(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
-                    if t_type.id == 10:
+                    if t_type.no == 10:
                         t = Donation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
-                    if t_type.id == 11:
+                    if t_type.no == 11:
                         t = Recovery(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
                     t.save()
-                    t.perform(transaction_type_id=t_type.id, participating_accounts=t_participating_accounts)
+                    t.perform(transaction_type_no=t_type.no, participating_accounts=t_participating_accounts)
 
 def create_account(request):
     if request.method == 'POST':

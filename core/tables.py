@@ -82,7 +82,9 @@ class TransactionTable:
         proceeds_sharings = ProceedsSharing.objects.all()
         donations = Donation.objects.all()
         recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
+        credits_to_balance = CreditToBalance.objects.all()
+        credits_to_deposit = CreditToDeposit.objects.all()
+        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits_to_balance, credits_to_deposit)), key=lambda t: (t.date, t.id))
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
@@ -132,8 +134,10 @@ class AccountTable:
         for rc in Recovery.objects.all():
             if rc.originator_account == acc or rc.participating_accounts.filter(pk=self.account_id).count():
                 recoveries.append(rc)
+        credits_to_balance = CreditToBalance.objects.filter(originator_account=self.account_id)
+        credits_to_deposit = CreditToDeposit.objects.filter(originator_account=self.account_id)
         # recovery = Recovery.objects.filter(originator_account=self.account_id) & Recovery.objects.filter(participating_accounts=self.account_id)
-        all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries)), key=lambda t: (t.date, t.id))
+        all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits_to_balance, credits_to_deposit)), key=lambda t: (t.date, t.id))
         transactions = []
         for tr in all_transactions:
             if self.start_date == None:
@@ -158,7 +162,7 @@ class AccountTable:
                 enterer_condition = False
             if tr.transaction_type in self.types and start_condition == True and end_condition == True and enterer_condition == True:
                 transactions.append(tr)
-        detailed_types = TransactionType.objects.filter(no__gte=8, no__lte=11)
+        detailed_types = TransactionType.objects.filter(no__gte=8, no__lte=13)
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             if not transaction.entered_by_user in self.occuring_users:
@@ -199,27 +203,31 @@ class TrDetailsTable:
         self.generate()
 
     def generate(self):
-        shares = list(self.transaction.shares.all())
-        if shares:
-            if CostSharing.objects.filter(id=self.transaction.id).exists() or ProceedsSharing.objects.filter(id=self.transaction.id).exists() or Donation.objects.filter(id=self.transaction.id).exists() or Recovery.objects.filter(id=self.transaction.id).exists():         
-                total_rate = 0
-                total_value = 0
-                for charge in shares:
-                    total_rate += charge.account.calc_rate(datetime=self.transaction.date)
-                    total_value += charge.value
-                for charge in shares:
-                    row = list()
-                    row.append(charge.account.name)
-                    row.append(str(format(charge.value, '.2f')) + " €")
-                    row.append("(" + str(charge.account.calc_rate(datetime=self.transaction.date)) + "x)")
-                    if not total_value == 0:
-                        row.append(format(charge.value / total_value * 100, '.2f') + "%")
-                    self.rows.append(row)
-                final_row = list()
-                final_row.append("Total (" + str(len(shares)) + " participants)")
-                final_row.append(str(format(total_value, '.2f')) + " €")
-                final_row.append(str(total_rate) + " shares")
-                self.rows.append(final_row)
+        if self.transaction.transaction_type.no >= 8 and self.transaction.transaction_type.no <= 11:
+            shares = list(self.transaction.shares.all())
+            if shares:
+                if CostSharing.objects.filter(id=self.transaction.id).exists() or ProceedsSharing.objects.filter(id=self.transaction.id).exists() or Donation.objects.filter(id=self.transaction.id).exists() or Recovery.objects.filter(id=self.transaction.id).exists():         
+                    total_rate = 0
+                    total_value = 0
+                    for charge in shares:
+                        total_rate += charge.account.calc_rate(datetime=self.transaction.date)
+                        total_value += charge.value
+                    for charge in shares:
+                        row = list()
+                        row.append(charge.account.name)
+                        row.append(str(format(charge.value, '.2f')) + " €")
+                        row.append("(" + str(charge.account.calc_rate(datetime=self.transaction.date)) + "x)")
+                        if not total_value == 0:
+                            row.append(format(charge.value / total_value * 100, '.2f') + "%")
+                        self.rows.append(row)
+                    final_row = list()
+                    final_row.append("Total (" + str(len(shares)) + " participants)")
+                    final_row.append(str(format(total_value, '.2f')) + " €")
+                    final_row.append(str(total_rate) + " shares")
+                    self.rows.append(final_row)
+
+        if self.transaction.transaction_type.no >= 12 and self.transaction.transaction_type.no <= 13:
+            pass
 
 class ProductCategoryTable:
     def __init__(self, objective, account_id=0):

@@ -1,0 +1,2 @@
+- Taking und andere TransactionTypes variabel für to_deposit / to_balance machen, oder Taking-deposit-Type hinzufügen
+- Im ods-Importskript umsetzen

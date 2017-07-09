@@ -311,34 +311,31 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                             # index_below += 1
                         else:
                             try_below = False
+                    all_accounts = models.Account.objects.all()
+                    participating_accounts = [account for account in all_accounts if account not in excepted_accounts]
 
                 if ttype == 8: # CostSharing
-                    all_accounts = models.Account.objects.all()
-                    participating_accounts = [account for account in all_accounts if account not in excepted_accounts]
                     t = models.CostSharing(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
-                    t.perform(transaction_type_id=8, participating_accounts=participating_accounts)
+                    t.perform(transaction_type_no=8, participating_accounts=participating_accounts)
 
                 if ttype == 9: # ProceedsSharing
-                    all_accounts = models.Account.objects.all()
-                    participating_accounts = [account for account in all_accounts if account not in excepted_accounts]
                     t = models.ProceedsSharing(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
-                    t.perform(transaction_type_id=9, participating_accounts=participating_accounts)
+                    t.perform(transaction_type_no=9, participating_accounts=participating_accounts)
 
                 if ttype == 10: # Recovery
-                    all_accounts = models.Account.objects.all()
-                    participating_accounts = [account for account in all_accounts and not account in excepted_accounts]
                     t = models.Recovery(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
-                    t.perform(transaction_type_id=10, participating_accounts=participating_accounts)
+                    t.perform(transaction_type_no=10, participating_accounts=participating_accounts)
 
                 if ttype == 11: # Donation
-                    all_accounts = models.Account.objects.all()
-                    participating_accounts = [account for account in all_accounts and not account in excepted_accounts]
                     t = models.Donation(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
                     t.save()
-                    t.perform(transaction_type_id=11, participating_accounts=participating_accounts)
+                    t.perform(transaction_type_no=11, participating_accounts=participating_accounts)
+
+                if ttype == 12: # inpayment by insertion of goods
+                    pass
 
                 # to be implemented:
                 # ttype 12 (inpayment by insertion of goods)

@@ -26,12 +26,13 @@ class BiohofLexSpider(scrapy.Spider):
             m = re.search('(.+?)(\d+)', original_id_href)
             i["offer_original_id"] = m.group(2)
             name_and_amount = e.css("h2 a::text").extract_first()
-            m = re.search('(.+?) (\d+) ?(g|kg)?', name_and_amount)
+            m = re.search('(Bio-)?(.+?) (\d+) ?(g|kg|ml|l)?', name_and_amount)         #         old:    (.+?) (\d+) ?(g|kg)?
             if m:
-                i["offer_name"] = m.group(1)
-                i["offer_unit"] = m.group(3)
+                i["offer_name"] = m.group(2)
+                i["offer_amount"] = m.group(3)
+                i["offer_unit"] = m.group(4)
             else:
-                print(name_and_amount)
+                i["offer_name"] = name_and_amount   # check
             i["offer_description"] = e.css("p::text").extract_first()
             i["offer_total_price"] = e.css("a.cart::text").extract_first()
             yield i

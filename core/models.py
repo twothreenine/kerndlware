@@ -1091,7 +1091,7 @@ class TransactionStatus(models.Model): # predefined statuses, i. a. planning, on
 class TransactionType(models.Model):
     name = models.CharField(max_length=50)
     is_entry_type = models.BooleanField()
-    to_balance = models.BooleanField()
+    # to_balance = models.BooleanField()
     no = models.PositiveSmallIntegerField(blank=True, null=True)
 
     def __str__(self):

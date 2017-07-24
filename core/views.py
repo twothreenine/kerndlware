@@ -81,7 +81,7 @@ try:
         11 = Recovery
         12 = Credit to balance
         13 = Credit to deposit
-        """
+        
         taking = TransactionType(name="Taking", is_entry_type=True, to_balance=True, no=1)
         taking.save()
         restitution = TransactionType(name="Restitution", is_entry_type=True, to_balance=True, no=2)
@@ -108,6 +108,37 @@ try:
         credit_to_balance.save()
         credit_to_deposit = TransactionType(name="Credit to deposit", is_entry_type=False, to_balance=False, no=13)
         credit_to_deposit.save()
+
+
+        1 = Taking (charged from balance or deposit)
+        2 = Restitution (credited to balance or deposit)
+        3 = Inpayment (credited to balance)
+        4 = Depositation (credited to deposit, charged from balance)
+        5 = Transcription to balance (credited to balance, charged from deposit)
+        6 = Payout (charged from balance)
+        7 = Transfer (charged from one's balance, credited to another's balance)
+        8 = Cost sharing (balance)
+        9 = Credit (credited to balance)
+        """
+
+        taking = TransactionType(name="Taking", is_entry_type=True, no=1)
+        taking.save()
+        restitution = TransactionType(name="Restitution", is_entry_type=True, no=2)
+        restitution.save()
+        inpayment = TransactionType(name="Inpayment", is_entry_type=True, no=3)
+        inpayment.save()
+        depositation = TransactionType(name="Depositation", is_entry_type=True, no=4)
+        depositation.save()
+        transcription_to_balance = TransactionType(name="Transcription to balance", is_entry_type=False, no=5)
+        transcription_to_balance.save()
+        payout = TransactionType(name="Payout", is_entry_type=False, no=6)
+        payout.save()
+        transfer = TransactionType(name="Transfer", is_entry_type=True, no=7)
+        transfer.save()
+        cost_sharing = TransactionType(name="Cost sharing", is_entry_type=True, no=8)
+        cost_sharing.save()
+        credit = TransactionType(name="Credit", is_entry_type=False, no=9)
+        credit.save()
 
 except OperationalError:
     pass

@@ -16,21 +16,22 @@ class BatchTransactionTable:
     def generate(self):
         takings = Taking.objects.filter(batch=self.batch)
         restitutions = Restitution.objects.filter(batch=self.batch)
+        specific_insertions = SpecificInsertion.objects.filter(batch=self.batch)
         # cost_sharings = CostSharing.objects.all()
         # proceeds_sharings = ProceedsSharing.objects.all()
         # donations = Donation.objects.all()
         # recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions)), key=lambda t: (t.date, t.id))
+        transactions = sorted(list(itertools.chain(takings, restitutions, specific_insertions)), key=lambda t: (t.date, t.id))
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
             row.append(transaction.id)
             row.append(transaction.date)
-            matter, participants, share = transaction.matter_str(account=0, show_contents=False, show_batch=False)
+            matter, participants, share = transaction.matter_str(show_contents=False, show_batch=False)
             row.append(matter)
             row.append(transaction.entry_details_str)
-            row.append(transaction.value_str(account=0))
-            row.append(transaction.batch_stock_str())
+            row.append(transaction.value_str())
+            row.append(batch_stock_str(transaction))
             row.append(transaction.comment_str)
             self.rows.append(row)
 
@@ -49,21 +50,22 @@ class ConsumableTransactionTable:
         #         cost_sharings.append(cs)
         takings = Taking.objects.filter(batch__consumable=self.consumable_id)
         restitutions = Restitution.objects.filter(batch__consumable=self.consumable_id)
+        specific_insertions = SpecificInsertion.objects.filter(batch__consumable=self.consumable_id)
         # cost_sharings = CostSharing.objects.all()
         # proceeds_sharings = ProceedsSharing.objects.all()
         # donations = Donation.objects.all()
         # recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions)), key=lambda t: (t.date, t.id))
+        transactions = sorted(list(itertools.chain(takings, restitutions, specific_insertions)), key=lambda t: (t.date, t.id))
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
             row.append(transaction.id)
             row.append(transaction.date)
-            matter, participants, share = transaction.matter_str(account=0)
+            matter, participants, share = transaction.matter_str()
             row.append(matter)
             row.append(transaction.entry_details_str)
-            row.append(transaction.value_str(account=0))
-            row.append(transaction.consumable_stock_str())
+            row.append(transaction.value_str())
+            row.append(consumable_stock_str(transaction))
             row.append(transaction.comment_str)
             self.rows.append(row)
 
@@ -77,14 +79,15 @@ class TransactionTable:
         restitutions = Restitution.objects.all()
         inpayments = Inpayment.objects.all()
         depositations = Depositation.objects.all()
+        transcriptions_to_balance = TranscriptionToBalance.objects.all()
+        payouts = Payout.objects.all()
         transfers = Transfer.objects.all()
         cost_sharings = CostSharing.objects.all()
         proceeds_sharings = ProceedsSharing.objects.all()
         donations = Donation.objects.all()
         recoveries = Recovery.objects.all()
-        credits_to_balance = CreditToBalance.objects.all()
-        credits_to_deposit = CreditToDeposit.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits_to_balance, credits_to_deposit)), key=lambda t: (t.date, t.id))
+        credits = Credit.objects.all()
+        transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transcriptions_to_balance, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits)), key=lambda t: (t.date, t.id))
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
@@ -114,30 +117,27 @@ class AccountTable:
         restitutions = Restitution.objects.filter(originator_account=self.account_id)
         inpayments = Inpayment.objects.filter(originator_account=self.account_id)
         depositations = Depositation.objects.filter(originator_account=self.account_id)
+        transcriptions_to_balance = TranscriptionToBalance.objects.filter(originator_account=self.account_id)
+        payouts = Payout.objects.filter(originator_account=self.account_id)
         transfers = Transfer.objects.filter(Q(originator_account=self.account_id) | Q(recipient_account=self.account_id))
         cost_sharings = []
         for cs in CostSharing.objects.all():
             if cs.originator_account == acc or cs.participating_accounts.filter(pk=self.account_id).count():
                 cost_sharings.append(cs)
-        # cost_sharing = CostSharing.objects.filter(originator_account=self.account_id) | CostSharing.objects.filter(participating_accounts=self.account_id)
         proceeds_sharings = []
         for ps in ProceedsSharing.objects.all():
             if ps.originator_account == acc or ps.participating_accounts.filter(pk=self.account_id).count():
                 proceeds_sharings.append(ps)
-        # proceeds_sharing = ProceedsSharing.objects.filter(originator_account=self.account_id) | ProceedsSharing.objects.filter(participating_accounts=self.account_id)
         donations = []
         for dt in Donation.objects.all():
             if dt.originator_account == acc or dt.participating_accounts.filter(pk=self.account_id).count():
                 donations.append(dt)
-        # donation = Donation.objects.filter(originator_account=self.account_id) & Donation.objects.filter(participating_accounts=self.account_id)
         recoveries = []
         for rc in Recovery.objects.all():
             if rc.originator_account == acc or rc.participating_accounts.filter(pk=self.account_id).count():
                 recoveries.append(rc)
-        credits_to_balance = CreditToBalance.objects.filter(originator_account=self.account_id)
-        credits_to_deposit = CreditToDeposit.objects.filter(originator_account=self.account_id)
-        # recovery = Recovery.objects.filter(originator_account=self.account_id) & Recovery.objects.filter(participating_accounts=self.account_id)
-        all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits_to_balance, credits_to_deposit)), key=lambda t: (t.date, t.id))
+        credits = Credit.objects.filter(originator_account=self.account_id)
+        all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transcriptions_to_balance, payouts, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits)), key=lambda t: (t.date, t.id))
         transactions = []
         for tr in all_transactions:
             if self.start_date == None:
@@ -169,17 +169,20 @@ class AccountTable:
                 self.occuring_users.append(transaction.entered_by_user)
             row = list()
             row.append(transaction.row_color(account=self.account_id)) # 0
-            if transaction.transaction_type in detailed_types:
-                show_details = True
+            matter, details1, details2 = transaction.matter_str(account=self.account_id)
+            if transaction.transaction_type in detailed_types and not details1 == "":
+                if details2 == "":
+                    show_details = 1
+                else:
+                    show_details = 2
             else:
-                show_details = False
+                show_details = 0
             row.append(show_details) # 1
             row.append(transaction.id) # 2
             row.append(transaction.date) # 3
-            matter, participants, share = transaction.matter_str(account=self.account_id)
             row.append(matter) # 4
-            row.append(participants) # 5
-            row.append(share) # 6
+            row.append(details1) # 5
+            row.append(details2) # 6
             row.append(transaction.transaction_type) # 7
             row.append(transaction.entry_details_str) # 8
             row.append(transaction.value_str(account=self.account_id)) # 9

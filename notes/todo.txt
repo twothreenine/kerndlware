@@ -1,2 +1,5 @@
-- Taking und andere TransactionTypes variabel für to_deposit / to_balance machen, oder Taking-deposit-Type hinzufügen
-- Im ods-Importskript umsetzen
+- (fertig?) Taking und andere TransactionTypes variabel für to_deposit / to_balance machen, oder Taking-deposit-Type hinzufügen
+- ods-Importskript: Inventur (Typ 5/6) als Taking/Restitution bzw. Inventur-Klasse analog zu Insertion? batch, amount
+- wenn alles klappt, dann neu alles importieren und überprüfen
+- Insertion sheet
+- SQL statt Sqlite?

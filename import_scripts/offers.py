@@ -14,10 +14,10 @@ Questions:
 def identify_consumable(name):
     pass
 
-def obermeyer():
-    with open('import_scripts/Obermeyer Preisliste.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
+def oechsler():
+    with open('import_scripts/Oechsler Preisliste.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
-        distributor = models.Supplier.objects.filter(name='Obermeyer')[0]
+        distributor = models.Supplier.objects.filter(name='Oechsler')[0]
         vat7 = models.VAT.objects.filter(percentage=7)[0]
         unit_kg = models.Unit.objects.get(abbr='kg')
         existing_gos = models.GeneralOffer.objects.filter(distributor=distributor)

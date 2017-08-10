@@ -1,107 +1,107 @@
 0	Hartweizen Körner	kg						25	4	24												1000
 0	Hartweizen X	kg						25	4	24												1000
-1	Khorasan-Weizen Körner	kg	1,760			1,760	2,30 €	25	4	24	0,0703831579	169%	7,0383157895	1	25		57,50 €	14,2	20	Kraut		1000
-1	Weizen Körner	kg	1,814	7,5		1,814	1,00 €	25	3	24	0,0725549133	174%	5,4416184971	1	25		25,00 €	13,8	3	Tränkl	1,3,4,5,6,7,8,10,14,16,18	1000
-1	Purpurweizen Körner	kg	2,085	0,7		2,085	1,98 €	25	3	24	0,0834117647	200%	6,2558823529	1	25		49,50 €	12,0	4	Lex	4,6	1000
+1	Khorasan-Weizen Körner	kg	1,563			1,563	2,30 €	25	4	24	0,0625126354	150%	6,2512635379	1	25		57,50 €	16,0	20	Kreidel		1000
+1	Weizen Körner	kg	1,824	7,5		1,824	1,00 €	25	3	24	0,0729740699	175%	5,4730552424	1	25		25,00 €	13,7	3	Treutle	1,3,4,5,6,7,8,10,14,16,18	1000
+1	Purpurweizen Körner	kg	2,092	0,7		2,092	1,98 €	25	3	24	0,0836823105	201%	6,2761732852	1	25		49,50 €	11,9	4	Leipert	4,6	1000
 0	Weizen X	kg						25	4	24												1000
 0	Weizen Y	kg						25	4	24												1000
-1	Dinkel Oberkulmer Rotkorn Körner	kg	5,973	9,75		5,973	1,60 €	25	5	24	0,2389205835	573%	29,8650729335	2	50		80,00 €	8,4	2	Penzl	3,4,5,6,7.8,10,11,14,16,17,18	1000
+1	Dinkel Oberkulmer Rotkorn Körner	kg	5,745	9,75		5,745	1,60 €	25	5	24	0,2297892985	551%	28,7236623068	2	50		80,00 €	8,7	2	Perchner	3,4,5,6,7.8,10,11,14,16,17,18	1000
 0	Dinkel X Körner	kg						25	4	24												1000
 0	Dinkel Y Körner	kg						25	4	24												1000
 0	Grünkern Körner	kg					4,00 €	10	4	24												1000
-1	Emmer Körner	kg	2,834	2,15		2,834	2,60 €	25	5	24	0,1133485179	272%	14,1685647426	1	25		65,00 €	8,8	5	Neidhardt	5,6,7,17	1000
+1	Emmer Körner	kg	2,548	2,15		2,548	2,60 €	25	5	24	0,1019129032	245%	12,7391129032	1	25		65,00 €	9,8	5	Neuffer	5,6,7,17	1000
 0	Emmer X Körner	kg						25	4	24												1000
-1	Einkorn Körner	kg	2,938	6		2,938	3,00 €	25	5	24	0,1175103448	282%	14,6887931034	1	25		75,00 €	8,5	5	Neidhardt	5,6,7,8,17	1000
-0	Einkorn Körner Kochqualität	kg						25	5	24									5	Neidhardt		1000
+1	Einkorn Körner	kg	2,815	6		2,815	3,00 €	25	6	24	0,1125814613	270%	16,887219193	1	25		75,00 €	8,9	6	Oechsle	5,6,7,8,17	1000
+0	Einkorn Körner Kochqualität	kg						25	4	24												1000
 0	Einkorn Körner gesamt	kg						25	4	24												1000
 0	Weizengetr. X	kg						25	4	24												1000
 0	Weizengetr. Y	kg						25	4	24												1000
 0	Weizengetr. Z	kg						25	4	24												1000
-1	Roggen Körner	kg	0,868	1		0,868	1,00 €	25	4	24	0,0347105812	83%	3,4710581222	0	0	1	0,00 €	0,0	16	Pfänder	1,3,4,5,6,7,8,10,14,16,18	1000
-1	Lichtkornroggen Körner	kg	1,002	0,2		1,002	1,50 €	5	3	24	0,2004933586	481%	3,0074003795	1	5		7,50 €	5,0	4	Lex	4	1000
-1	Waldstaudenroggen Körner	kg	1,541	1,7		1,541	1,50 €	25	3	24	0,061630814	148%	4,6223110465	1	25		37,50 €	16,2	11	Küchle	1,11	1000
+1	Roggen Körner	kg	0,776	1		0,776	1,00 €	25	4	24	0,0310544	75%	3,10544	0	0	1	0,00 €	0,0	16	Pfalzer	1,3,4,5,6,7,8,10,14,16,18	1000
+1	Lichtkornroggen Körner	kg	1,002	0,2		1,002	1,50 €	5	3	24	0,2004933586	481%	3,0074003795	1	5		7,50 €	5,0	4	Leipert	4	1000
+1	Waldstaudenroggen Körner	kg	1,373	1,7		1,373	1,50 €	25	3	24	0,0549241877	132%	4,1193140794	1	25		37,50 €	18,2	11	Kübel	1,11	1000
 0	Roggen X Körner	kg						25	4	24												1000
-1	Gerste Körner	kg	0,668	0,2		0,668	2,30 €	5	3	24	0,1335714286	321%	2,0035714286	1	5		11,50 €	7,5	3	Tränkl	1,3,4,10	1000
+1	Gerste Körner	kg	0,531	0,2		0,531	2,30 €	5	3	24	0,1062008141	255%	1,5930122117	1	5		11,50 €	9,4	3	Treutle	1,3,4,10	1000
 0	Gerste X Körner	kg						25	4	24												1000
-1	Hafer Körner	kg	20,097	5,9		20,097	1,80 €	30	3	24	0,6698984615	1608%	60,2908615385	3	90		162,00 €	4,5	3	Tränkl	3,4,6,7,8,	1000
+1	Hafer Körner	kg	15,680	5,9		15,680	1,80 €	30	3	24	0,5226831797	1254%	47,0414861751	2	60		108,00 €	3,8	3	Treutle	3,4,6,7,8,	1000
 0	Hafer X Körner	kg						25	4	24												1000
 0	Glutengetr. X	kg						25	4	24												1000
 0	Glutengetr. Y	kg						25	4	24												1000
-1	Speisemais Körner rot	kg	0,936	1,2		0,936	1,52 €	25	3	24	0,0374231499	90%	2,8067362429	0	0	1	0,00 €	0,0	4	Lex		1000
-0	Speisemais Körner gelb	kg					1,12 €	25	3	24									4	Lex		1000
-1	Braunhirse	kg	0,779	1,7		0,779	3,40 €	5	3	24	0,155776699	374%	2,3366504854	1	5		17,00 €	6,4	4	Lex		1000
-1	Speisehirse	kg	2,198	2,642		2,198	3,40 €	25	4	24	0,0879272727	211%	8,7927272727	1	25		85,00 €	11,4	13	Jahrstorfer		1000
+1	Speisemais Körner rot	kg	0,773	1,2		0,773	1,52 €	25	3	24	0,0309195046	74%	2,3189628483	0	0	1	0,00 €	0,0	4	Leipert		1000
+0	Speisemais Körner gelb	kg					1,12 €	25	3	24									4	Leipert		1000
+1	Braunhirse	kg	0,722	1,7		0,722	3,40 €	5	3	24	0,1443060498	346%	2,1645907473	1	5		17,00 €	6,9	4	Leipert		1000
+1	Speisehirse	kg	2,401	2,642		2,401	3,40 €	25	4	24	0,09602	230%	9,602	1	25		85,00 €	10,4	13	Janzen		1000
 0	Hirse X	kg						25	4	24												1000
-1	Buchweizen	kg	3,745	3,292		3,745	3,40 €	25	3	24	0,1498043277	360%	11,235324575	1	25		85,00 €	6,7	4	Lex		1000
-1	Amarant	kg	0,381	2,35		0,381	5,79 €	5	2	24	0,0761950413	183%	0,7619504132	1	5		28,95 €	13,1	8	Schwab		1000
-0	Quinoa	kg						25	3	24									4	Lex		1000
+1	Buchweizen	kg	3,898	3,292		3,898	3,40 €	25	3	24	0,1559047297	374%	11,6928547297	1	25		85,00 €	6,4	4	Leipert		1000
+1	Amarant	kg	0,475	2,35		0,475	5,79 €	5	2	24	0,0950786802	228%	0,950786802	1	5		28,95 €	10,5	8	Staimler		1000
+0	Quinoa	kg						25	3	24									4	Leipert		1000
 0	Pseudogetr. X	kg						25	4	24												1000
 0	Pseudogetr. Y	kg						25	4	24												1000
-1	Belugalinsen	kg	2,919	6,5		2,919	4,60 €	25	3	24	0,1167629522	280%	8,7572214182	1	25		115,00 €	8,6	4	Lex		1000
-1	Tellerlinsen hellbraun	kg	3,438	4,15		3,438	4,50 €	25	3	24	0,1375293777	330%	10,3147033285	1	25		112,50 €	7,3	4	Lex		1000
-0	Gelbe Linsen (geschält)	kg						25	3	24									4	Lex		1000
-1	Grüne Delikatess-Linsen du Puy	kg		6,2		12,400	4,50 €	25	6	24	0,496	1190%	74,4	3	75		337,50 €	6,0	6	Obermeyer		1000
-1	Alblinse I »Die Große«	kg	4,440			4,440		25	4	24	0,1775935829	426%	17,7593582888	1	25		0	5,6				1000
+1	Belugalinsen	kg	3,217	6,5		3,217	4,60 €	25	3	24	0,1286929368	309%	9,6519702602	1	25		115,00 €	7,8	4	Leipert		1000
+1	Tellerlinsen hellbraun	kg	2,861	4,15		2,861	4,50 €	25	3	24	0,1144229075	275%	8,5817180617	1	25		112,50 €	8,7	4	Leipert		1000
+0	Gelbe Linsen (geschält)	kg						25	3	24									4	Leipert		1000
+1	Grüne Delikatess-Linsen du Puy	kg		6,2		12,400	4,50 €	25	6	24	0,496	1190%	74,4	3	75		337,50 €	6,0	6	Oechsle		1000
+1	Alblinse I »Die Große«	kg	2,591			2,591		25	4	24	0,103625	249%	10,3625	1	25		0	9,7				1000
 0	Alblinse II »Die Kleine«	kg						25	4	24												1000
 0	Linsen Z	kg						25	4	24												1000
 1	Erbsen grün	kg						25	4	24												1000
 0	Erbsen Y	kg						25	4	24												1000
-1	Borlottibohnen	kg	3,052	3,803		3,052	3,80 €	25	3	24	0,1220635135	293%	9,1547635135	1	25		95,00 €	8,2	4	Lex		1000
+1	Borlottibohnen	kg	2,677	3,803		2,677	3,80 €	25	3	24	0,1070660099	257%	8,0299507389	1	25		95,00 €	9,3	4	Leipert		1000
 0	Bohnen 2	kg						25	4	24												1000
 0	Bohnen 3	kg						25	4	24												1000
 0	Bohnen 4	kg						25	4	24												1000
-1	Sojabohnen ungeschält	kg	0,297	1,65		0,297	1,90 €	25	3	24	0,0118633776	28%	0,8897533207	0	0	1	0,00 €	0,0	4	Lex		1000
-0	Sojabohnen geschält	kg						25	3	24									4	Lex		1000
-0	Sojabohnen split	kg					1,90 €	25	3	4									4	Lex		1000
+1	Sojabohnen ungeschält	kg	0,524	1,65		0,524	1,90 €	25	3	24	0,0209594096	50%	1,5719557196	0	0	1	0,00 €	0,0	4	Leipert		1000
+0	Sojabohnen geschält	kg						25	3	24									4	Leipert		1000
+0	Sojabohnen split	kg					1,90 €	25	3	4									4	Leipert		1000
 0	Hülsenfrucht X	kg						25	4	24												1000
 0	Hülsenfrucht Y	kg						25	4	24												1000
-1	Sonnenblumenkerne	kg		2,65		5,300	4,90 €	25	4	12	0,212	254%	21,2	1	25		122,50 €	4,7	13	Jahrstorfer		1000
+1	Sonnenblumenkerne	kg		2,65		5,300	4,90 €	25	4	12	0,212	254%	21,2	1	25		122,50 €	4,7	13	Janzen		1000
 0	Sonnenblumenkerne X	kg						25	4	12												1000
-1	Leinsamen	kg	0,559	2,2		0,559	2,72 €	25	4	12	0,0223554817	27%	2,2355481728	0	0	1	0,00 €	0,0	7	Chiemgaukorn		1000
+1	Leinsamen	kg	0,559	2,2		0,559	2,72 €	25	4	12	0,0223554817	27%	2,2355481728	0	0	1	0,00 €	0,0	7	Chuonberger		1000
 0	Leinsamen X	kg						25	4	12												1000
-1	Hanfsamen ungeschält	kg	0,489	0,9		0,489	12,00 €	4	2	12	0,1222066787	147%	0,9776534296	1	4		48,00 €	8,2	8	Schwab		1000
-1	Hanfsamen geschält	kg	0,448	0,45		0,448	13,00 €	10	4	6	0,0448333333	27%	1,7933333333	0	0	1	0,00 €	0,0	0			1000
+1	Hanfsamen ungeschält	kg	0,489	0,9		0,489	12,00 €	4	2	12	0,1222066787	147%	0,9776534296	1	4		48,00 €	8,2	8	Staimler		1000
+1	Hanfsamen geschält	kg	0,707	0,45		0,707	13,00 €	10	4	6	0,0707142857	42%	2,8285714286	0	0	1	0,00 €	0,0	0			1000
 0	Hanfsamen X	kg						25	4	12												1000
-1	Hanfsamenschalen	kg	1,136			1,136		25	4	12	0,0454285714	55%	4,5428571429	0	0	1	0	0,0				1000
-1	Blaumohn	kg	1,269			1,269		25	4	12	0,0507698234	61%	5,0769823435	0	0	1	0	0,0				1000
+1	Hanfsamenschalen	kg	0,297			0,297		25	4	12	0,0118850575	14%	1,1885057471	0	0	1	0	0,0				1000
+1	Blaumohn	kg	1,167			1,167		25	4	12	0,0466977191	56%	4,6697719088	0	0	1	0	0,0				1000
 0	Ölsaat Y	kg						25	4	12												1000
 0	Ölsaat Z	kg						25	4	12												1000
-1	Kürbiskerne	kg		2		4,000	10,00 €	10	5	12	0,4	480%	20	2	20		200,00 €	5,0	23	Schmid		1000
+1	Kürbiskerne	kg		2		4,000	10,00 €	10	5	12	0,4	480%	20	2	20		200,00 €	5,0	23	Senft		1000
 0	Kürbiskerne X	kg						25	4	12												1000
-1	Haselnusskerne	kg	4,697	2,85		4,697	11,00 €	25	12	12	0,1878919708	225%	56,3675912409	2	50		550,00 €	10,6	9	Hartl		1000
+1	Haselnusskerne	kg	4,458	2,85		4,458	11,00 €	25	12	12	0,1783279121	214%	53,4983736264	2	50		550,00 €	11,2	9	Hagel		1000
 0	Haselnuss X	kg						25	4	16												1000
-1	Haselnüsse in der Schale	kg	1,711	0,2		1,711	7,00 €	25	12	24	0,0684408428	164%	20,5322528363	1	25		175,00 €	14,6	9	Hartl		1000
+1	Haselnüsse in der Schale	kg	1,314	0,2		1,314	7,00 €	25	12	24	0,0525448505	126%	15,7634551495	1	25		175,00 €	19,0	9	Hagel		1000
 0	Walnusskerne	kg							4													1000
 1	Walnüsse in der Schale	kg		3,7		7,400	7,00 €	1	4	17	7,4	12580%	29,6	30	30		210,00 €	4,1	0			1000
 0	Nüsse X	kg							4													1000
 0	Nüsse Y	kg							4													1000
 0	Nüsse Z	kg							4													1000
 0	Perlweizen	kg						10	4													1000
-1	Perldinkel Oberkulmer Rotkorn	kg	2,153	2,9		2,153	3,30 €	10	3	24	0,21528739	517%	6,4586217009	1	10		33,00 €	4,6	4	Lex		1000
-1	Perlemmer	kg	1,267	0,5		1,267	5,80 €	10	4	24	0,1267084691	304%	5,0683387622	1	10		58,00 €	7,9	7	Chiemgaukorn		1000
-1	Perleinkorn	kg	1,360	0,5		1,360	5,80 €	10	4	24	0,1360306748	326%	5,4412269939	1	10		58,00 €	7,4	7	Chiemgaukorn		1000
-1	Perlroggen	kg		0,8		1,600	2,90 €	10	3	24	0,16	384%	4,8	1	10		29,00 €	6,3	4	Lex		1000
-0	Perlroggen X	kg						10	3										4	Lex		1000
+1	Perldinkel Oberkulmer Rotkorn	kg	2,123	2,9		2,123	3,30 €	10	3	24	0,2123066038	510%	6,3691981132	1	10		33,00 €	4,7	4	Leipert		1000
+1	Perlemmer	kg	1,327	0,5		1,327	5,80 €	10	4	24	0,1327375796	319%	5,3095031847	1	10		58,00 €	7,5	7	Chuonberger		1000
+1	Perleinkorn	kg	1,370	0,5		1,370	5,80 €	10	4	24	0,1370357143	329%	5,4814285714	1	10		58,00 €	7,3	7	Chuonberger		1000
+1	Perlroggen	kg		0,8		1,600	2,90 €	10	3	24	0,16	384%	4,8	1	10		29,00 €	6,3	4	Leipert		1000
+0	Perlroggen X	kg						10	3										4	Leipert		1000
 0	Perlroggen Y	kg						10	4													1000
 0	Perlgetreide X	kg						10	4													1000
-0	Perlgetreide Y	kg						10	4													1000
+1	Purpurweizen-Bulgur	kg	1,245			1,245	3,80 €	5	6	24	0,249	598%	7,47	2	10		38,00 €	8,0	6	Oechsle		1000
 0	Gerstengraupen	kg						10	4													1000
-1	Amarantpops	kg	0,618	0,8		0,618	13,69 €	0,8	2	6	0,7724052347	463%	1,2358483755	2	1,6		21,90 €	2,6	8	Schwab		1000
-1	Braunhirsepops	kg					13,25 €	0,6	2	6									8	Schwab		1000
+1	Amarantpops	kg	0,618	0,8		0,618	13,69 €	0,8	2	6	0,7724052347	463%	1,2358483755	2	1,6		21,90 €	2,6	8	Staimler		1000
+1	Braunhirsepops	kg	0,611			0,611	13,25 €	0,6	2	6	1,01875	611%	1,2225	3	1,8		23,85 €	2,9	8	Staimler		1000
 0	Getreidepops Y	kg							4													1000
-1	Weizen Zentrofanmehl	kg	1,608	3,7		1,608	2,30 €	2,5	3	4	0,6433320683	257%	4,8249905123	2	5		11,50 €	3,1	3	Tränkl		1000
-1	Dinkel Zentrofanmehl (Oberkulmer Rotkorn)	kg	2,099	6,4		2,099	3,30 €	2,5	3	4	0,8394642857	336%	6,2959821429	3	7,5		24,75 €	3,6	3	Tränkl		1000
+1	Weizen Zentrofanmehl	kg	1,219	3,7		1,219	2,30 €	2,5	3	4	0,4877933579	195%	3,6584501845	1	2,5		5,75 €	2,1	3	Treutle		1000
+1	Dinkel Zentrofanmehl (Oberkulmer Rotkorn)	kg	1,750	6,4		1,750	3,30 €	2,5	3	4	0,6998085642	280%	5,2485642317	2	5		16,50 €	2,9	3	Treutle		1000
 0	Grünkern Zentrofanmehl	kg						2,5	4	4												1000
-1	Emmer Zentrofanmehl	kg	1,084	1,75		1,084	2,85 €	2,5	4	4	0,4335550756	173%	4,3355507559	1	2,5		7,13 €	2,3	7	Chiemgaukorn		1000
-1	Einkorn Zentrofanmehl	kg	0,550	0,95		0,550	2,85 €	2,5	4	4	0,2200488998	88%	2,2004889976	0	0	1	0,00 €	0,0	7	Chiemgaukorn		1000
-1	Roggen Zentrofanmehl	kg	0,647	2		0,647	2,30 €	2,5	3	4	0,2586757679	103%	1,9400682594	1	2,5		5,75 €	3,9	3	Tränkl		1000
+1	Emmer Zentrofanmehl	kg	1,084	1,75		1,084	2,85 €	2,5	4	4	0,4335550756	173%	4,3355507559	1	2,5		7,13 €	2,3	7	Chuonberger		1000
+1	Einkorn Zentrofanmehl	kg	0,550	0,95		0,550	2,85 €	2,5	4	4	0,2200488998	88%	2,2004889976	0	0	1	0,00 €	0,0	7	Chuonberger		1000
+1	Roggen Zentrofanmehl	kg	0,533	2		0,533	2,30 €	2,5	3	4	0,2130149254	85%	1,5976119403	0	0	1	0,00 €	0,0	3	Treutle		1000
 0	Gerste Zentrofanmehl	kg						2,5	4	4												1000
 0	Hafer Zentrofanmehl	kg						2,5	4	4												1000
 0	Mais Zentrofanmehl	kg						2,5	4	4												1000
-1	Braunhirse Zentrofanmehl	kg					6,60 €	2,5	4	4									7	Chiemgaukorn		1000
+1	Braunhirse Zentrofanmehl	kg					6,60 €	2,5	4	4									7	Chuonberger		1000
 0	Speisehirse Zentrofanmehl	kg						2,5	4	4												1000
-1	Buchweizen Zentrofanmehl	kg		1,1		2,200	5,80 €	5	4	4	0,44	176%	8,8	1	5		29,00 €	2,3	7	Chiemgaukorn		1000
-1	Amarant Zentrofanmehl	kg					8,97 €	2	2	4									8	Schwab		1000
+1	Buchweizen Zentrofanmehl	kg		1,1		2,200	5,80 €	5	4	4	0,44	176%	8,8	1	5		29,00 €	2,3	7	Chuonberger		1000
+1	Amarant Zentrofanmehl	kg					8,97 €	2	2	4									8	Staimler		1000
 0	Quinoa Zentrofanmehl	kg						25	4	4												1000
 1	Weizenmehl Type 1050	kg					1,52 €	5	4	6									0		7	1000
 1	Weizenmehl Type 550	kg		2,4		4,800		5	4	12	0,96	1152%	19,2	4	20		0	4,2	0		5,7,14	1000
@@ -116,31 +116,31 @@
 0	Auszugsmehl X	kg						25	4	12												1000
 0	Auszugsmehl Y	kg						25	4	12												1000
 0	Weizenkleie	kg						5	4													1000
-1	Dinkelkleie	kg	0,059	1,7		0,059	1,25 €	5	3	4	0,0118382353	5%	0,1775735294	0	0	1	0,00 €	0,0	4	Lex		1000
+1	Dinkelkleie	kg	0,059	1,7		0,059	1,25 €	5	3	4	0,0118382353	5%	0,1775735294	0	0	1	0,00 €	0,0	4	Leipert		1000
 0	Kleie X	kg						5	4													1000
 0	Kleie Y	kg						5	4													1000
-1	Sojamehl vollfett	kg	0,302	0,35		0,302	3,00 €	5	3	4	0,0603571429	24%	0,9053571429	0	0	1	0,00 €	0,0	4	Lex		1000
+1	Sojamehl vollfett	kg	0,180	0,35		0,180	3,00 €	5	3	4	0,0359726962	14%	0,5395904437	0	0	1	0,00 €	0,0	4	Leipert		1000
 0	Sojamehl X	kg						5	4													1000
 0	Mehl X	kg							4													1000
-1	Khorasan Spirelli	kg	0,980			0,980	4,80 €	10	4	24	0,0980423453	235%	3,9216938111	1	10		48,00 €	10,2				1000
-1	helle Dinkel-Rilli	kg	1,190	0,4		1,190	4,20 €	10	4	24	0,1189787234	286%	4,7591489362	1	10		42,00 €	8,4	7	Chiemgaukorn		1000
-1	mittelhelle Dinkel Rigatoni	kg	0,620	1		0,620	5,40 €	10	3	24	0,0620420168	149%	1,8612605042	1	10		54,00 €	16,1	4	Lex		1000
-1	mittelhelle Dinkel Spaghetti	kg	1,061	1		1,061	5,40 €	10	3	24	0,1060830325	255%	3,1824909747	1	10		54,00 €	9,4	4	Lex		1000
-1	Vollkorn-Dinkel Spaghetti	kg	2,683	2		2,683	5,40 €	10	3	24	0,2682857143	644%	8,0485714286	1	10		54,00 €	3,7	4	Lex		1000
-1	mittelhelle Dinkel Spirelli	kg		1,5		3,000	5,40 €	10	3	24	0,3	720%	9	1	10		54,00 €	3,3	4	Lex		1000
-1	Vollkorn-Dinkel Spirelli	kg	1,898	0,05		1,898	5,40 €	10	3	24	0,1898434164	456%	5,6953024911	1	10		54,00 €	5,3	4	Lex		1000
-1	mittelhelle Dinkel Bandnudeln	kg	0,917	2,5		0,917	5,40 €	10	3	24	0,0917462687	220%	2,7523880597	1	10		54,00 €	10,9	4	Lex		1000
-1	mittelhelle Dinkel Wellenbandnudeln	kg		0,266		0,532	5,40 €	10	3	24	0,0532	128%	1,596	1	10		54,00 €	18,8	4	Lex		1000
-1	helle Dinkel Suppennudeln	kg	0,832	1,05		0,832	4,20 €	10	4	24	0,0832236842	200%	3,3289473684	1	10		42,00 €	12,0	7	Chiemgaukorn		1000
-1	1050-Dinkel-Braunhirse Spirelli	kg	0,834			0,834	6,00 €	10	3	24	0,0834117647	200%	2,5023529412	1	10		60,00 €	12,0	4	Lex		1000
-1	1050-Dinkel-Maroni Spirelli	kg	0,609			0,609	6,00 €	10	3	24	0,0608595825	146%	1,8257874763	1	10		60,00 €	16,4	4	Lex		1000
-1	VK-Dinkel+Buchweizen Bandnudeln	kg		2,9		5,800	7,80 €	10	3	24	0,58	1392%	17,4	2	20		156,00 €	3,4	4	Lex		1000
-1	mittelhelle Dinkel+Buchw. Spirelli	kg	0,903			0,903	4,80 €	10	4	24	0,0902567237	217%	3,6102689487	1	10		48,00 €	11,1	7	Chiemgaukorn		1000
-1	Vollkorn-Einkorn-Bandnudeln	kg	1,649	0,5		1,649	4,80 €	10	4	24	0,1649234043	396%	6,5969361702	1	10		48,00 €	6,1	7	Chiemgaukorn		1000
-1	Vollkorn-Einkorn Rigatoni	kg	0,530	0,1		0,530	4,80 €	10	4	24	0,0529559748	127%	2,1182389937	1	10		48,00 €	18,9	7	Chiemgaukorn		1000
-1	Vollkorn-Einkorn Spirelli	kg	1,454	1,2		1,454	4,80 €	10	4	24	0,1454285714	349%	5,8171428571	1	10		48,00 €	6,9	7	Chiemgaukorn		1000
-1	mittelhelle Dinkel+BW Bandnudeln	kg					4,80 €	10	4	24									7	Chiemgaukorn		1000
-1	mittelhelle Dinkel+BW Rigatoni	kg	1,229			1,229	4,80 €	10	4	24	0,1228884026	295%	4,915536105	1	10		48,00 €	8,1	7	Chiemgaukorn		1000
+1	Khorasan Spirelli	kg	1,056			1,056	4,80 €	10	4	24	0,1055858951	253%	4,2234358047	1	10		48,00 €	9,5				1000
+1	helle Dinkel-Rilli	kg	0,976	0,4		0,976	4,20 €	10	4	24	0,0975583204	234%	3,9023328149	1	10		42,00 €	10,3	7	Chuonberger		1000
+1	mittelhelle Dinkel Rigatoni	kg	0,621	1		0,621	5,40 €	10	3	24	0,0620848708	149%	1,8625461255	1	10		54,00 €	16,1	4	Leipert		1000
+1	mittelhelle Dinkel Spaghetti	kg	1,061	1		1,061	5,40 €	10	3	24	0,1060830325	255%	3,1824909747	1	10		54,00 €	9,4	4	Leipert		1000
+1	Vollkorn-Dinkel Spaghetti	kg	2,287	2		2,287	5,40 €	10	3	24	0,2286683938	549%	6,8600518135	1	10		54,00 €	4,4	4	Leipert		1000
+1	mittelhelle Dinkel Spirelli	kg		1,5		3,000	5,40 €	10	3	24	0,3	720%	9	1	10		54,00 €	3,3	4	Leipert		1000
+1	Vollkorn-Dinkel Spirelli	kg	1,264	0,05		1,264	5,40 €	10	3	24	0,1264251012	303%	3,7927530364	1	10		54,00 €	7,9	4	Leipert		1000
+1	mittelhelle Dinkel Bandnudeln	kg	1,024	2,5		1,024	5,40 €	10	3	24	0,1024438202	246%	3,0733146067	1	10		54,00 €	9,8	4	Leipert		1000
+1	mittelhelle Dinkel Wellenbandnudeln	kg		0,266		0,532	5,40 €	10	3	24	0,0532	128%	1,596	1	10		54,00 €	18,8	4	Leipert		1000
+1	helle Dinkel Suppennudeln	kg	0,832	1,05		0,832	4,20 €	10	4	24	0,0832236842	200%	3,3289473684	1	10		42,00 €	12,0	7	Chuonberger		1000
+1	1050-Dinkel-Braunhirse Spirelli	kg	0,834			0,834	6,00 €	10	3	24	0,0834117647	200%	2,5023529412	1	10		60,00 €	12,0	4	Leipert		1000
+1	1050-Dinkel-Maroni Spirelli	kg	0,609			0,609	6,00 €	10	3	24	0,0608595825	146%	1,8257874763	1	10		60,00 €	16,4	4	Leipert		1000
+1	VK-Dinkel+Buchweizen Bandnudeln	kg		2,9		5,800	7,80 €	10	3	24	0,58	1392%	17,4	2	20		156,00 €	3,4	4	Leipert		1000
+1	mittelhelle Dinkel+Buchw. Spirelli	kg	0,761			0,761	4,80 €	10	4	24	0,0761023055	183%	3,044092219	1	10		48,00 €	13,1	7	Chuonberger		1000
+1	Vollkorn-Einkorn-Bandnudeln	kg	1,482	0,5		1,482	4,80 €	10	4	24	0,1482164502	356%	5,9286580087	1	10		48,00 €	6,7	7	Chuonberger		1000
+1	Vollkorn-Einkorn Rigatoni	kg	0,466	0,1		0,466	4,80 €	10	4	24	0,0465638767	112%	1,8625550661	1	10		48,00 €	21,5	7	Chuonberger		1000
+1	Vollkorn-Einkorn Spirelli	kg	1,454	1,2		1,454	4,80 €	10	4	24	0,1454285714	349%	5,8171428571	1	10		48,00 €	6,9	7	Chuonberger		1000
+1	mittelhelle Dinkel+BW Bandnudeln	kg					4,80 €	10	4	24									7	Chuonberger		1000
+1	mittelhelle Dinkel+BW Rigatoni	kg	0,969			0,969	4,80 €	10	4	24	0,0968530351	232%	3,8741214058	1	10		48,00 €	10,3	7	Chuonberger		1000
 0	Teigwaren a	kg						10	4	24												1000
 0	Teigwaren a	kg						10	4	24												1000
 0	Teigwaren a	kg						10	4	24												1000
@@ -149,15 +149,15 @@
 0	Teigwaren a	kg						10	4	24												1000
 0	Bratöl (HO-Sonnenblume)	l						4,5	4	24												1000
 0	Bratöl X	l							4													1000
-1	Sonnenblumenöl nativ	l		0,85		1,700	4,31 €	1	4	12	1,7	2040%	6,8	7	7		30,17 €	4,1	13	Jahrstorfer		1000
-1	Rapsöl nativ	l		1,083		2,166	6,40 €	0,5	4	10	4,332	4332%	8,664	18	9		57,60 €	4,2	21	Kappelbauer		1000
-1	Leindotteröl nativ	l	0,904	0,442		0,904	22,00 €	0,5	4	8	1,8072289157	1446%	3,6144578313	8	4		88,00 €	4,4	7	Chiemgaukorn		1000
-1	Sojaöl nativ	l		0,25		0,500	6,00 €	0,5	4	10	1	1000%	2	4	2		12,00 €	4,0	13	Jahrstorfer		1000
-1	Hanföl nativ	l	0,440	0,4		0,440	27,00 €	0,5	4	8	0,8793103448	703%	1,7586206897	4	2		54,00 €	4,5	7	Chiemgaukorn		1000
-1	Leinöl nativ	l	0,754	1,6		0,754	14,50 €	0,5	4	5	1,5088757396	754%	3,0177514793	7	3,5		50,75 €	4,6	7	Chiemgaukorn		1000
+1	Sonnenblumenöl nativ	l		0,85		1,700	4,31 €	1	4	12	1,7	2040%	6,8	7	7		30,17 €	4,1	13	Janzen		1000
+1	Rapsöl nativ	l		1,083		2,166	6,40 €	0,5	4	10	4,332	4332%	8,664	18	9		57,60 €	4,2	21	Karnath		1000
+1	Leindotteröl nativ	l	0,904	0,442		0,904	22,00 €	0,5	4	8	1,8072289157	1446%	3,6144578313	8	4		88,00 €	4,4	7	Chuonberger		1000
+1	Sojaöl nativ	l		0,25		0,500	6,00 €	0,5	4	10	1	1000%	2	4	2		12,00 €	4,0	13	Janzen		1000
+1	Hanföl nativ	l	0,440	0,4		0,440	27,00 €	0,5	4	8	0,8793103448	703%	1,7586206897	4	2		54,00 €	4,5	7	Chuonberger		1000
+1	Leinöl nativ	l	0,754	1,6		0,754	14,50 €	0,5	4	5	1,5088757396	754%	3,0177514793	7	3,5		50,75 €	4,6	7	Chuonberger		1000
 0	Leinöl X	l							4													1000
 0	Shisoöl	l							4													1000
-1	Kürbiskernöl	l		0,7		1,400	27,35 €	0,25	5	8	5,6	4480%	7	28	7		191,45 €	5,0	23	Schmid		1000
+1	Kürbiskernöl	l		0,7		1,400	27,35 €	0,25	5	8	5,6	4480%	7	28	7		191,45 €	5,0	23	Senft		1000
 0	Traubenkernöl	l							4													1000
 0	Olivenöl nativ	l							4													1000
 0	Olivenöl X	l							4													1000
@@ -165,8 +165,8 @@
 0	Öl X	l							4													1000
 0	Öl Y	l							4													1000
 0	Öl Z	l							4													1000
-1	Hanftrester	kg	0,094	1,1		0,094	4,99 €	4	2	12	0,0235665138	28%	0,1885321101	0	0	1	0,00 €	0,0	8	Schwab		1000
-1	Leintrester	kg		0,05		0,100	4,99 €	4	2	12	0,025	30%	0,2	0	0	1	0,00 €	0,0	8	Schwab		1000
+1	Hanftrester	kg	0,059	1,1		0,059	4,99 €	4	2	12	0,0148674242	18%	0,1189393939	0	0	1	0,00 €	0,0	8	Staimler		1000
+1	Leintrester	kg		0,05		0,100	4,99 €	4	2	12	0,025	30%	0,2	0	0	1	0,00 €	0,0	8	Staimler		1000
 0	Presskuchen a	kg							4													1000
 0	Presskuchen a	kg							4													1000
 0	Presskuchen a	kg							4													1000
@@ -176,9 +176,9 @@
 0	Presskuchen a	kg							4													1000
 0	Presskuchen a	kg							4													1000
 0	Presskuchen a	kg							4													1000
-1	Hanfmehl teilentölt	kg	0,037	1,3		0,037	9,24 €	4	2	6	0,0092422096	6%	0,0739376771	0	0	1	0,00 €	0,0	8	Schwab		1000
-1	Leinmehl teilentölt	kg		0,05		0,100	9,24 €	4	2	6	0,025	15%	0,2	0	0	1	0,00 €	0,0	8	Schwab		1000
-1	Hanftee (getrocknete Hanfblätter)	10g	3,966	3		3,966	1,50 €	10	2	24	0,3966028708	952%	7,9320574163	1	10		15,00 €	2,5	8	Schwab		10
+1	Hanfmehl teilentölt	kg	0,030	1,3		0,030	9,24 €	4	2	6	0,0075662739	5%	0,0605301915	0	0	1	0,00 €	0,0	8	Staimler		1000
+1	Leinmehl teilentölt	kg		0,05		0,100	9,24 €	4	2	6	0,025	15%	0,2	0	0	1	0,00 €	0,0	8	Staimler		1000
+1	Hanftee (getrocknete Hanfblätter)	10g	3,193	3		3,193	1,50 €	10	2	24	0,319263623	766%	6,3852724595	1	10		15,00 €	3,1	8	Staimler		10
 0	Tee a	100g							4													100
 0	Tee a	100g							4													100
 0	Tee a	100g							4													100
@@ -198,9 +198,9 @@
 0	Tee a	100g							4													100
 0	Tee a	100g							4													100
 1	sonstiger Tee	100g							4													100
-0	Shisoblätter rot, getrocknet	10g					1,00 €	1	1	24									12	Schorsch		10
-0	Shisoblätter grün, getrocknet	10g					1,00 €	1	1	24									12	Schorsch		10
-0	Bohnenkraut, gerebelt	10g					0,00 €	1	2	24									22	Richard Ostler		10
+0	Shisoblätter rot, getrocknet	10g					1,00 €	1	1	24									12	Seehuber		10
+0	Shisoblätter grün, getrocknet	10g					1,00 €	1	1	24									12	Seehuber		10
+0	Bohnenkraut, gerebelt	10g					0,00 €	1	2	24									22	Ortlieb		10
 0	Kräuter a	100g							4													100
 0	Kräuter a	100g							4													100
 0	Kräuter a	100g							4													100
@@ -210,7 +210,7 @@
 0	Kräuter a	100g							4													100
 0	Kräuter a	100g							4													100
 1	sonstige Kräuter	100g							4													100
-0	Koriander-Samen	100g					0,00 €	1	2	24									22	Richard Ostler		100
+0	Koriander-Samen	100g					0,00 €	1	2	24									22	Ortlieb		100
 0	Gewürz a	100g							4													100
 0	Gewürz a	100g							4													100
 0	Gewürz a	100g							4													100
@@ -221,10 +221,10 @@
 0	Gewürz a	100g							4													100
 0	Gewürz a	100g							4													100
 1	sonstige Gewürze	100g							4													100
-0	Apfelringe gedörrt	100g					0,00 €	1	1	15									12	Schorsch		100
+0	Apfelringe gedörrt	100g					0,00 €	1	1	15									12	Seehuber		100
 0	Apfelringe X	100g							4													100
-1	Apfelchips	100g		0,2		0,400	2,50 €	10	3	15	0,04	60%	1,2	0	0	1	0,00 €	0,0	4	Lex		100
-0	Birnen gedörrt	100g					0,00 €	1	1	15									12	Schorsch		100
+1	Apfelchips	100g		0,2		0,400	2,50 €	10	3	15	0,04	60%	1,2	0	0	1	0,00 €	0,0	4	Leipert		100
+0	Birnen gedörrt	100g					0,00 €	1	1	15									12	Seehuber		100
 0	Birnen gedörrt X	100g						1	4													100
 1	Hutzeln (ganze Dörrbirnen)	100g							4													100
 0	Trockenobst a	100g							4													100
@@ -237,7 +237,7 @@
 0	Trockenobst a	100g							4													100
 0	Trockenobst a	100g							4													100
 1	weiteres Trockenobst	100g							4													100
-0	Apfelsaft vom Schorsch	l					3,00 €	5	1	20									12	Schorsch		1000
+0	Apfelsaft vom Schorsch	l					3,00 €	5	1	20									12	Seehuber		1000
 1	Apfelsaft	l							4													1000
 1	Birnensaft naturtrüb	l							4													1000
 1	Birnensaft naturklar	l		4,833		9,666	1,86 €	6	4	20	1,611	3222%	38,664	7	42		78,12 €	4,3	0			1000
@@ -259,7 +259,7 @@
 0	Fruchtsaft a	l							4													1000
 0	Fruchtsaft a	l							4													1000
 0	Fruchtsaft a	l							4													1000
-1	Sojamilch natur	l		18,5		37,000	1,80 €	24	6	10	1,5416666667	1542%	222	10	240		432,00 €	6,5	15	Granovita		1000
+1	Sojamilch natur	l		18,5		37,000	1,80 €	24	6	10	1,5416666667	1542%	222	10	240		432,00 €	6,5	15	Griebsch		1000
 0	Sojamilch gesüßt	l							4													1000
 0	Sojamilch X	l							4													1000
 0	Hafermilch	l							4													1000
@@ -277,13 +277,13 @@
 0	Pflanzenmilch a	l							4													1000
 0	Pflanzenmilch a	l							4													1000
 0	Pflanzenmilch a	l							4													1000
-1	Tempeh natur	200g	2,410	7		2,410	3,89 €	1	4	9	2,4099722992	2169%	9,6398891967	10	10		38,90 €	4,1	19	tempehmanufaktur		200
-1	Tempeh Knoblauch-Koriander	200g	2,702	7		2,702	3,89 €	1	4	9	2,701863354	2432%	10,8074534161	11	11		42,79 €	4,1	19	tempehmanufaktur		200
-1	Tempeh Gyros	200g					3,89 €	1	4	9									19	tempehmanufaktur		200
-1	Tempeh Mediterran	200g					3,89 €	1	4	9									19	tempehmanufaktur		200
-1	Tempeh Sommergarten	200g					3,89 €	1	4	9									19	tempehmanufaktur		200
-1	Tempeh Curry	200g					3,89 €	1	4	9									19	tempehmanufaktur		200
-0	Tempeh a	200g					3,89 €	1	4	9									19	tempehmanufaktur		200
+1	Tempeh natur	200g	2,038	7		2,038	3,89 €	1	4	9	2,0382165605	1834%	8,152866242	9	9		35,01 €	4,4	19	Schurtenberger		200
+1	Tempeh Knoblauch-Koriander	200g	2,702	7		2,702	3,89 €	1	4	9	2,701863354	2432%	10,8074534161	11	11		42,79 €	4,1	19	Schurtenberger		200
+1	Tempeh Gyros	200g					3,89 €	1	4	9									19	Schurtenberger		200
+1	Tempeh Mediterran	200g					3,89 €	1	4	9									19	Schurtenberger		200
+1	Tempeh Sommergarten	200g					3,89 €	1	4	9									19	Schurtenberger		200
+1	Tempeh Curry	200g					3,89 €	1	4	9									19	Schurtenberger		200
+0	Tempeh a	200g					3,89 €	1	4	9									19	Schurtenberger		200
 0	Tofu natur	400g							4													1
 0	Tofu natur Großpackung	1kg							4													1
 0	Tofu a								4													1

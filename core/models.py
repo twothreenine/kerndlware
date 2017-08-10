@@ -8,6 +8,40 @@ from .functions import *
 import datetime
 import itertools
 
+"""
+Functions to return the stock of a batch resp. a consumable at a specific transaction.
+"""
+
+def batch_stock_str(transaction):
+    stock = 0
+    batch = transaction.batch
+    for specific_insertion in SpecificInsertion.objects.filter(batch=batch).filter(Q(insertion__date__lt = transaction.date) | Q(Q(insertion__date = transaction.date) & Q(id__lte = transaction.id))): # ID comparison doesn't make sense
+        stock += specific_insertion.amount
+    for taking in Taking.objects.filter(batch=batch).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
+        stock -= taking.amount
+    for restitution in Restitution.objects.filter(batch=batch).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
+        stock += restitution.amount
+    return batch.unit.display(stock, False)
+
+def consumable_stock_str(transaction):
+    stock = 0
+    consumable = transaction.batch.consumable
+    for specific_insertion in SpecificInsertion.objects.filter(batch__consumable=consumable).filter(Q(insertion__date__lt = transaction.date) | Q(Q(insertion__date = transaction.date) & Q(id__lte = transaction.id))): # ID comparison doesn't make sense
+        stock += specific_insertion.amount * specific_insertion.batch.unit.weight / specific_insertion.batch.consumable.unit.weight
+    for taking in Taking.objects.filter(batch__consumable=consumable).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
+        stock -= taking.amount * taking.batch.unit.weight / taking.batch.consumable.unit.weight
+    for restitution in Restitution.objects.filter(batch__consumable=consumable).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
+        stock += restitution.amount * restitution.batch.unit.weight / restitution.batch.consumable.unit.weight
+    return consumable.unit.display(stock)
+
+
+
+def tci_delete():
+    Transaction.objects.all().delete()
+    Charge.objects.all().delete()
+    Insertion.objects.all().delete()
+
+
 
 class TimePeriod(models.Model):
     singular = models.CharField(max_length=30)
@@ -71,6 +105,7 @@ class Account(models.Model):
     balance = models.FloatField(default=0) #MoneyField; 
     taken = models.FloatField(default=0)
     original_id = models.IntegerField(blank=True, null=True)
+    comment = models.TextField(blank=True)
 
     def __str__(self):
         rate = self.calc_rate(datetime=datetime.datetime.now())
@@ -92,15 +127,19 @@ class Account(models.Model):
 
     @property
     def users_str(self):
-        users = list(self.users.all())
-        if users:
-            usernames = users[0].name
-            users.pop(0)
-            for user in users:
-                usernames += ", " + user.name
-            return usernames
-        else:
-            return ""
+        return str(list_str(my_list=list(self.users.all()), elements=3))
+
+    # @property
+    # def users_str(self):
+    #     users = list(self.users.all())
+    #     if users:
+    #         usernames = users[0].name
+    #         users.pop(0)
+    #         for user in users:
+    #             usernames += ", " + user.name
+    #         return usernames
+    #     else:
+    #         return ""
 
     def deposit_str(self):
         return "{} €".format(format(self.deposit,'.2f'))
@@ -150,8 +189,7 @@ class Account(models.Model):
 
     @property
     def deposit_str(self):
-        self.calc_deposit()
-        return "{} €".format(format(self.deposit,'.2f'))
+        return "{} €".format(format(self.calc_deposit(),'.2f'))
 
     def calc_deposit(self):
         deposit = 0
@@ -159,10 +197,7 @@ class Account(models.Model):
         for charge in charges:
             if charge.to_balance == False:
                 deposit += charge.value
-            else:
-                pass
-        self.deposit = deposit
-        self.save()
+        return deposit
 
     @property
     def taken_str(self):
@@ -546,6 +581,8 @@ class Consumable(Item):
         So for the consumable stock, it means a subtraction of 0.5
         """
         stock = 0
+        for specific_insertion in SpecificInsertion.objects.filter(batch__consumable=self):
+            stock += specific_insertion.amount * specific_insertion.batch.unit.weight / self.unit.weight
         for taking in Taking.objects.filter(batch__consumable=self):
             stock -= taking.amount * taking.batch.unit.weight / self.unit.weight
         for restitution in Restitution.objects.filter(batch__consumable=self):
@@ -743,6 +780,8 @@ class Batch(models.Model):
 
     def calc_stock(self):
         stock = 0
+        for specific_insertion in SpecificInsertion.objects.filter(batch=self):
+            stock += specific_insertion.amount
         for taking in Taking.objects.filter(batch=self):
             stock -= taking.amount
         for restitution in Restitution.objects.filter(batch=self):
@@ -1115,6 +1154,19 @@ class Transaction(models.Model):
     def __str__(self):
         return "Tr {}: {} by {} on {} (entered by {})".format(self.id, self.transaction_type.name, self.originator_account.name, self.date, self.entered_by_user.name)
 
+    def unperform(self):
+        """
+        Deletes all the charges linked to this transaction.
+        Currently, the other attributes are not set to null. Not sure if this is ok, as they might not be replaced by perform() if the new value shall be null. Yet not in every case, all the attributes will be replaced, so we should keep them.
+        ShareTransactions (8-11) have the associated charges linked as foreign key resp. many-to-many-field. We have to unlink them to prevent the transaction to be deleted.
+        """
+        if self.transaction_type.no >= 8 and self.transaction_type.no <= 11:
+            self.shares.clear()
+            self.originator_share = None
+            self.save()
+        for c in Charge.objects.filter(transaction=self):
+            c.delete()
+
     @property
     def comment_str(self):
         if self.comment == "":
@@ -1126,7 +1178,7 @@ class Transaction(models.Model):
     def entry_details_str(self):
         return "entered on {} by {}".format(self.entry_date, self.entered_by_user.name)
     
-    def value_str(self, account):
+    def value_str(self, account=0):
         # Returns the value of a transaction affecting the selected account, in the anchor currency, as a string.
         # In case the value shall be displayed generally, not regarding a specific account, provide account=0. The value will then be returned directly from the value attribute.
         if account == 0:
@@ -1134,7 +1186,7 @@ class Transaction(models.Model):
         else:
             # For the case multiple accounts are involved (transfer, cost sharing etc.), we have to choose the charge affecting the selected account.
             # If the account is both originator and participating, there can be 2 charges for the same account, that's why "filter" and a for loop are used instead of "get" (also for some potentially upcoming features)
-            charges = Charge.objects.filter(transaction=self, account=account)
+            charges = Charge.objects.filter(transaction=self, account=account, to_balance=True)
             value = 0
             for charge in charges:
                 value += charge.value
@@ -1146,21 +1198,14 @@ class Transaction(models.Model):
         # In some cases the balance of the originator account shall be shown (for example, in a batch-specific transaction list). If so, provide account=0
         if account == 0:
             account = self.originator_account.id
-        # If the transaction doesn't affect the balance but the deposit, the balance field should be empty in this row (-> else case)
-        # This If is a bit hacky, it assumes there aren't any other subclasses which don't affect the balance. The two lines below could be an alternative solution, not tested yet.
-        if not self.__class__ == Depositation and not self.__class__ == PayOutDeposit:
-        #linked_charges = Charge.objects.filter(transaction=self, account=account, to_balance=True)
-        #if linked_charges:
-            balance = 0
-            # Filtering all the charges leading up to and including this transaction.
-            # As the transactions in the list are sorted by date (and if same, by id), either the date must be lower, or the same but without a higher id.
-            charges = Charge.objects.filter(account=account, to_balance=True).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(transaction__lte = self.id)))
-            for charge in charges:
-                #if charge.date < self.date or (charge.date == self.date and charge.id <= self.id): # if the Q combination above causes any problems, you can use this instead.
-                balance += charge.value
-            return "{} €".format(format(balance,'.2f'))
-        else:
-            return ""
+        balance = 0
+        # Filtering all the charges leading up to and including this transaction.
+        # As the transactions in the list are sorted by date (and if same, by id), either the date must be lower, or the same but without a higher id.
+        charges = Charge.objects.filter(account=account, to_balance=True).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(transaction__lte = self.id)))
+        for charge in charges:
+            #if charge.date < self.date or (charge.date == self.date and charge.id <= self.id): # if the Q combination above causes any problems, you can use this instead.
+            balance += charge.value
+        return "{} €".format(format(balance,'.2f'))
 
 class Charge(models.Model):
     # Defines a change in balance or deposit of one account. Most transactions will have one associated charge, transfers mostly two, cost sharing etc. will have multiple.
@@ -1177,6 +1222,16 @@ class Charge(models.Model):
 class BatchTransaction(Transaction):
     batch = models.ForeignKey('Batch')
 
+    # def batch_stock_str(self):
+    #     stock = 0
+    #     for specific_insertion in SpecificInsertion.objects.filter(batch=self.batch).filter(batch=self.batch).filter(Q(insertion__date__lt = self.date) | Q(Q(insertion__date = self.date) & Q(id__lte = self.id))): # ID comparison doesn't make sense
+    #         stock += specific_insertion.amount
+    #     for taking in Taking.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+    #         stock -= taking.amount
+    #     for restitution in Restitution.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
+    #         stock += restitution.amount
+    #     return self.batch.unit.display(stock, False)
+
 class Taking(BatchTransaction): # taking of goods from balance
     type_name = "Taking" # for s in Transaction.__subclasses__(): print (s.__qualname__)
 
@@ -1190,7 +1245,7 @@ class Taking(BatchTransaction): # taking of goods from balance
     def row_color(self, account):
         return ""
 
-    def matter_str(self, account, show_contents=True, show_batch=True):
+    def matter_str(self, account=0, show_contents=True, show_batch=True):
         if account == 0:
             originator = self.originator_account.name
         else:
@@ -1219,14 +1274,14 @@ class Taking(BatchTransaction): # taking of goods from balance
     def perform(self):
         self.transaction_type = TransactionType.objects.get(no=1)
         self.save()
-        batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
-        batch.subtract_stock(self.amount)
-        batch.add_taken(self.amount)
-        batch.save()
-        self.value = self.amount * batch.price * (-1)
+        # batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
+        # batch.subtract_stock(self.amount)
+        # batch.add_taken(self.amount)
+        # batch.save()
+        self.value = self.amount * self.batch.price * (-1)
         # account.subtract_balance(self.value)
-        self.originator_account.add_taken(self.amount)
-        self.originator_account.save()
+        # self.originator_account.add_taken(self.amount)
+        # self.originator_account.save()
         self.save()
         charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         charge.save()
@@ -1234,22 +1289,6 @@ class Taking(BatchTransaction): # taking of goods from balance
     @property
     def details(self):
         pass
-
-    def batch_stock_str(self):
-        stock = 0
-        for taking in Taking.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock -= taking.amount
-        for restitution in Restitution.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock += restitution.amount
-        return self.batch.unit.display(stock, False)
-
-    def consumable_stock_str(self):
-        stock = 0
-        for taking in Taking.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock -= taking.amount * taking.batch.unit.weight / taking.batch.consumable.unit.weight
-        for restitution in Restitution.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock += restitution.amount * restitution.batch.unit.weight / restitution.batch.consumable.unit.weight
-        return self.batch.consumable.unit.display(stock)
 
     # def unperform(self): # TODO
     #     batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
@@ -1280,19 +1319,19 @@ class Restitution(BatchTransaction): # return goods to the storage
 
     def perform(self): # not tested yet
         self.transaction_type = TransactionType.objects.get(no=2)
-        batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
-        batch.add_stock(self.amount)
-        batch.subtract_taken(self.amount)
-        batch.save()
-        self.value = self.amount * batch.price
+        # batch = Batch.objects.get(no=self.batch.no) # type(transaction.batch) == Batch
+        # batch.add_stock(self.amount)
+        # batch.subtract_taken(self.amount)
+        # batch.save()
+        self.value = self.amount * self.batch.price
         #account.add_balance(self.value)
-        self.originator_account.subtract_taken(self.amount)
-        self.originator_account.save()
+        # self.originator_account.subtract_taken(self.amount)
+        # self.originator_account.save()
         self.save()
         charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         charge.save()
 
-    def matter_str(self, account, show_contents=True, show_batch=True):
+    def matter_str(self, account=0, show_contents=True, show_batch=True):
         if account == 0:
             originator = self.originator_account.name
         else:
@@ -1313,22 +1352,6 @@ class Restitution(BatchTransaction): # return goods to the storage
 
     # def matter_str(self, account):
     #     return "batch no. {} ({} from {} in {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name, self.batch.supplier.broad_location, format(self.batch.price,'.2f'), self.batch.unit.abbr)
-
-    def batch_stock_str(self):
-        stock = 0
-        for taking in Taking.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock -= taking.amount
-        for restitution in Restitution.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock += restitution.amount
-        return self.batch.unit.display(stock, False)
-
-    def consumable_stock_str(self):
-        stock = 0
-        for taking in Taking.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock -= taking.amount * taking.batch.unit.weight / taking.batch.consumable.unit.weight
-        for restitution in Restitution.objects.filter(batch__consumable=self.batch.consumable).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
-            stock += restitution.amount * restitution.batch.unit.weight / restitution.batch.consumable.unit.weight
-        return self.batch.consumable.unit.display(stock)
 
 class Inpayment(Transaction): # insertion of money to balance
     currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
@@ -1359,7 +1382,7 @@ class Inpayment(Transaction): # insertion of money to balance
         charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         charge.save()
 
-    def matter_str(self, account):
+    def matter_str(self, account=0):
         if account == 0:
             originator = self.originator_account.name
         else:
@@ -1386,14 +1409,43 @@ class Inpayment(Transaction): # insertion of money to balance
     #     else:
     #         return "{}, confirmed by {} '{}'".format(self.money_box.name, self.confirmed_by.name, self.confirmation_comment)
 
-class Depositation(Transaction): # insertion of money to deposit
-    currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
+class Payout(Transaction): # payout of money from balance
+    currency = models.ForeignKey('Currency')
     money_box = models.ForeignKey('MoneyBox')
-    confirmed_by = models.ForeignKey('User', blank=True, null=True)
-    confirmation_comment = models.TextField(blank=True)
+
+    def perform(self):
+        self.transaction_type = TransactionType.objects.get(no=4)
+        self.save()
+        self.value = self.amount * self.currency.conversion_rate * (-1)
+        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
+        moneyboxstock.payout(self.amount)
+        moneyboxstock.save()
+        self.save()
+        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
+        charge.save()
+
+    @property
+    def type(self):
+        return self.__class__
+
+    def row_color(self, account):
+        return ""
+
+    def matter_str(self, account=0):
+        if account == 0:
+            originator = self.originator_account.name+" was"
+        else:
+            originator = "You were"
+        if self.currency.name == "€":
+            return "{} paid out {} € via {}".format(originator, format(self.amount,'.2f'), self.money_box.name), "", ""
+        else:
+            return "{} paid out {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'), self.money_box.name), "", ""
+
+class Depositation(Transaction): # transcription from balance to deposit
+    pass
 
     def __str__(self):
-        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
+        return "Tr{} {} on {}: {} € (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.entered_by_user.name)
 
     @property
     def type(self):
@@ -1403,27 +1455,23 @@ class Depositation(Transaction): # insertion of money to deposit
         return ""
 
     def perform(self):
-        self.transaction_type = TransactionType.objects.get(no=4)
+        self.transaction_type = TransactionType.objects.get(no=5)
         self.save()
-        self.value = self.amount * self.currency.conversion_rate
-        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
-        moneyboxstock.inpayment(self.amount)
-        moneyboxstock.save()
-        # self.originator_account.add_deposit(self.value)
-        # self.originator_account.save()
+        self.value = self.amount*(-1)
         self.save()
-        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=False, date=self.date)
-        charge.save()
+        charge_deposit = Charge(transaction=self, account=self.originator_account, value=self.amount, to_balance=False, date=self.date)
+        charge_deposit.save()
+        charge_balance = Charge(transaction=self, account=self.originator_account, value=(-1)*self.amount, to_balance=True, date=self.date)
+        charge_balance.save()
 
-    def matter_str(self, account):
+    def matter_str(self, account=0):
         if account == 0:
             originator = self.originator_account.name
+            pronoun = "his/her"
         else:
             originator = "You"
-        if self.currency.name == "€":
-            return "{} deposited {} € via {}".format(originator, format(self.amount,'.2f'), self.money_box.name), "", ""
-        else:
-            return "{} deposited {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.name, self.value, self.money_box.name), "", ""
+            pronoun = "your own"
+        return "{} deposited {} € from {} balance".format(originator, format(self.amount,'.2f'), pronoun), "", ""
 
     # @property
     # def type_name(self):
@@ -1442,20 +1490,11 @@ class Depositation(Transaction): # insertion of money to deposit
     #     else:
     #         return "{}, confirmed by {} '{}'".format(self.money_box.name, self.confirmed_by.name, self.confirmation_comment)
 
-class PayOutBalance(Transaction):
-    currency = models.ForeignKey('Currency')
-    money_box = models.ForeignKey('MoneyBox')
+class TranscriptionToBalance(Transaction): # transcription from deposit to balance
+    pass
 
-    def perform(self):
-        self.transaction_type = TransactionType.objects.get(no=5)
-        self.save()
-        self.value = self.amount * self.currency.conversion_rate * (-1)
-        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
-        moneyboxstock.payout(self.amount)
-        moneyboxstock.save()
-        self.save()
-        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
-        charge.save()
+    def __str__(self):
+        return "Tr{} {} on {}: {} € (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.entered_by_user.name)
 
     @property
     def type(self):
@@ -1463,28 +1502,25 @@ class PayOutBalance(Transaction):
 
     def row_color(self, account):
         return ""
-
-class PayOutDeposit(Transaction):
-    currency = models.ForeignKey('Currency')
-    money_box = models.ForeignKey('MoneyBox')
 
     def perform(self):
         self.transaction_type = TransactionType.objects.get(no=6)
         self.save()
-        self.value = self.amount * self.currency.conversion_rate * (-1)
-        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
-        moneyboxstock.payout(self.amount)
-        moneyboxstock.save()
+        self.value = self.amount
         self.save()
-        charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=False, date=self.date)
-        charge.save()
+        charge_deposit = Charge(transaction=self, account=self.originator_account, value=(-1)*self.amount, to_balance=False, date=self.date)
+        charge_deposit.save()
+        charge_balance = Charge(transaction=self, account=self.originator_account, value=self.amount, to_balance=True, date=self.date)
+        charge_balance.save()
 
-    @property
-    def type(self):
-        return self.__class__
-
-    def row_color(self, account):
-        return ""
+    def matter_str(self, account=0):
+        if account == 0:
+            originator = self.originator_account.name
+            pronoun = "his/her"
+        else:
+            originator = "You"
+            pronoun = "your"
+        return "{} transcripted {} € from {} deposit to {} balance".format(originator, format(self.amount,'.2f'), pronoun, pronoun), "", ""
 
 class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Angaben in Felder Amount und entweder Currency oder Batch berechnet
     recipient_account = models.ForeignKey('Account')
@@ -1515,7 +1551,7 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
         # self.recipient_account.add_balance(self.value)
         # self.recipient_account.save()
 
-    def matter_str(self, account):
+    def matter_str(self, account=0):
         if account == 0:
             return "{} transferred {} € to {}".format(self.originator_account.name, format(self.amount,'.2f'), self.recipient_account.name), "", ""
         else:
@@ -1567,7 +1603,7 @@ class ShareTransaction(Transaction):
             print("Error: Sum of current account rates is 0")
         self.save()
 
-    def matter_str(self, account):
+    def matter_str(self, account=0):
         if self.transaction_type.no == 8:
             str_part_1 = "divided costs of"
             str_part_2 = "among"
@@ -1639,8 +1675,9 @@ class Recovery(ShareTransaction): # donation backwards
         elif self.participating_accounts.filter(pk=account).count():
             return "" # TODO
 
-class CreditToBalance(Transaction):
+class Credit(Transaction): # credit to balance resp. charge from balance
     matter = models.TextField(blank=True)
+    insertion = models.ForeignKey('Insertion', blank=True, null=True) # If an insertion is the matter, it will be linked
 
     @property
     def type(self):
@@ -1650,54 +1687,52 @@ class CreditToBalance(Transaction):
         return ""
 
     def perform(self):
-        self.transction_type = TransactionType.objects.get(no=12)
+        self.transaction_type = TransactionType.objects.get(no=12)
         self.save()
         charge = Charge(transaction=self, account=self.originator_account, value=self.amount, to_balance=True, date=self.date)
         charge.save()
 
-    def matter_str(self, account):
+    def credit_matter_str(self):
+        if self.insertion == None and self.matter == "":
+            return ""
+        elif self.insertion == None:
+            matter = self.matter
+        else:
+            specific_insertions = SpecificInsertion.objects.filter(insertion=self.insertion)
+            batches = list()
+            for si in specific_insertions:
+                if not si.batch in specific_insertions:
+                    batches.append(si.batch)
+            suppliers = list()
+            for si in specific_insertions:
+                if not si.batch.supplier in suppliers:
+                    suppliers.append(si.batch.supplier)
+            matter = "insertion of " + list_str(my_list=specific_insertions, sorted_by_attribute="amount", displayed_attribute="batch.name", type_plural="batches") + " from " + list_str(my_list=suppliers, type_plural="suppliers")
+        return " for "+matter
+
+    def matter_str(self, account=0):
         if account == 0:
             originator = str(self.originator_account.name)+"'s"
         else:
             originator = "your"
-        if self.matter == "":
-            matter = ""
+        if self.value < 0:
+            text = " were charged from "
         else:
-            matter = " for "+str(self.matter)
-        return "{} € were credited to {} balance".format(format(self.amount,'.2f'), originator), matter, ""
-
-class CreditToDeposit(Transaction):
-    matter = models.TextField(blank=True)
-
-    @property
-    def type(self):
-        return self.__class__
-
-    def row_color(self, account):
-        return ""
-
-    def perform(self):
-        self.transction_type = TransactionType.objects.get(no=13)
-        self.save()
-        charge = Charge(transaction=self, account=self.originator_account, value=self.amount, to_balance=False, date=self.date)
-        charge.save()
-
-    def matter_str(self, account):
-        if account == 0:
-            originator = str(self.originator_account.name)+"'s"
-        else:
-            originator = "your"
-        if self.matter == "":
-            matter = ""
-        else:
-            matter = " for "+str(self.matter)
-        return "{} € were credited to {} deposit".format(format(self.amount,'.2f'), originator), matter, ""
+            text = " were credited to "
+        return format(self.amount,'.2f')+" €"+text+originator+" balance", self.credit_matter_str(), ""
 
 class Insertion(models.Model):
-    specific_insertions = models.ManyToManyField('SpecificInsertion')
+    name = models.CharField(max_length=80, blank=True)
+    description = models.TextField(blank=True)
+    date = models.DateField()
+    entry_date = models.DateField(auto_now_add=True) # Date when insertion is entered into the system
+    entered_by_user = models.ForeignKey('User') # Person who typed in the insertion
+    # To make it possible for multiple accounts to be credited, there is no field like credited_account. Use Credit.objects.filter(insertion=x) to get the information which amounts were credited to which accounts for insertion x.
 
 class SpecificInsertion(models.Model):
-    supplier = models.ForeignKey('Supplier')
+    insertion = models.ForeignKey('Insertion')
+    batch = models.ForeignKey('Batch')
+    amount = models.FloatField()
     total_cost = models.FloatField(null=True, blank=True) #MoneyField; 
     total_price = models.FloatField(null=True, blank=True) #MoneyField; 
     discount = models.FloatField(null=True, blank=True) #MoneyField; 
@@ -1709,3 +1744,39 @@ class SpecificInsertion(models.Model):
     compensation_account = models.ForeignKey('Account', related_name="compensation_account", null=True, blank=True) # who pays or gets the difference
     comment = models.TextField(blank=True)
     # status
+
+    @property
+    def date(self):
+        return self.insertion.date
+
+    def matter_str(self, show_contents=True, show_batch=True):
+        if show_batch == True:
+            batch = " to batch no. {} ({} from {} for {}€/{})".format(self.batch.no, self.batch.name, self.batch.supplier.name if self.batch.supplier else "", format(self.batch.price,'.2f'), self.batch.unit.abbr)
+        else:
+            batch = ""
+        credited_accounts = list()
+        for c in Credit.objects.filter(insertion=self.insertion):
+            credited_accounts.append(c.originator_account)
+        if credited_accounts:
+            credited_to = list_str(credited_accounts, type_plural="accounts")
+        else:
+            credited_to = ""
+        # if self.batch.unit.continuous == False and not self.amount == 1:
+        #     unit = self.batch.unit.plural
+        # else:
+        #     unit = self.batch.unit.abbr
+        return "{} were inserted{}, credited to {}".format(self.batch.unit.display(self.amount, show_contents), batch, credited_to), "", ""
+
+    @property
+    def entry_details_str(self):
+        return "entered on {} by {}".format(self.insertion.entry_date, self.insertion.entered_by_user.name)
+
+    @property
+    def comment_str(self):
+        if self.comment == "":
+            return ""
+        else:
+            return "'{}'".format(self.comment)
+    
+    def value_str(self):
+        return "{} €".format(format(self.total_cost,'.2f'))

@@ -1,4 +1,3 @@
-0	0	Zusätzliche Kaution		einmalig, optional	1,00 €	€								1
 0	1	Hartweizen Körner	für selbstgemachte Teigwaren	auch zum Mahlen		kg				25				1000
 0	2	Hartweizen X		auch zum Mahlen		kg				25				1000
 1	3	Khorasan-Weizen Körner	hartweizenähnliche Urweizensorte	auch zum Mahlen	2,30 €	kg				25				1000
@@ -85,7 +84,7 @@
 0	84	Perlroggen X				kg				25				1000
 0	85	Perlroggen Y				kg				25				1000
 0	86	Perlgetreide X				kg				25				1000
-0	87	Perlgetreide Y				kg				25				1000
+1	87	Purpurweizen-Bulgur			3,80 €	kg				25				1000
 0	88	Gerstengraupen				kg				25				1000
 1	89	Amarantpops			13,70 €	kg				0,8				1000
 1	90	Braunhirsepops			13,25 €	kg				0,6				1000
@@ -123,8 +122,8 @@
 1	122	Sojamehl vollfett	ungetoastet, evtl. aus ungeschältem Soja		3,00 €	kg				5				1000
 0	123	Sojamehl X				kg				5				1000
 0	124	Mehl X				kg								1000
-1	125	Khorasan Spirelli			4,80 €	kg								1000
-1	126	helle Dinkel-Rilli	Oberkulmer Rotkorn, mit Steinsalz		4,20 €	kg				5				1000
+1	125	Khorasan Spirelli		Preis geschätzt	4,80 €	kg								1000
+1	126	helle Dinkel-Rilli	Oberkulmer Rotkorn	Preis geschätzt	4,20 €	kg				5				1000
 1	127	mittelhelle Dinkel Rigatoni	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
 1	128	mittelhelle Dinkel Spaghetti	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
 1	129	Vollkorn-Dinkel Spaghetti	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
@@ -132,16 +131,16 @@
 1	131	Vollkorn-Dinkel Spirelli	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
 1	132	mittelhelle Dinkel Bandnudeln	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
 1	133	mittelhelle Dinkel Wellenbandnudeln	Oberkulmer Rotkorn		5,20 €	kg				k/A				1000
-1	134	helle Dinkel Suppennudeln	Oberkulmer Rotkorn		4,20 €	kg				k/A				1000
+1	134	helle Dinkel Suppennudeln	Oberkulmer Rotkorn	Preis geschätzt	4,20 €	kg				k/A				1000
 1	135	1050-Dinkel-Braunhirse Spirelli	Oberkulmer Rotkorn		5,80 €	kg				k/A				1000
 1	136	1050-Dinkel-Maroni Spirelli	Oberkulmer Rotkorn; ital. Maronimehl		5,80 €	kg				k/A				1000
 1	137	VK-Dinkel+Buchweizen Bandnudeln	60% Vollkorndinkel (Oberk. Rotk.), 40% Buchweizen		7,60 €	kg				k/A				1000
-1	138	mittelhelle Dinkel+Buchw. Spirelli	heller Dinkel (Oberk. Rotk.) + Buchweizen		4,80 €	kg				k/A				1000
-1	139	Vollkorn-Einkorn-Bandnudeln	mit Steinsalz		4,80 €	kg				5				1000
-1	140	Vollkorn-Einkorn Rigatoni	mit Steinsalz		4,80 €	kg				5				1000
-1	141	Vollkorn-Einkorn Spirelli	mit Steinsalz		4,80 €	kg				5				1000
-1	142	mittelhelle Dinkel+BW Bandnudeln	50% Dinkel 630 (Oberk. Rotk.) + 50% Buchweizen, mit Steinsalz		4,80 €	kg								1000
-1	143	mittelhelle Dinkel+BW Rigatoni	50% Dinkel 630 (Oberk. Rotk.) + 50% Buchweizen, mit Steinsalz		4,80 €	kg								1000
+1	138	mittelhelle Dinkel+Buchw. Spirelli	heller Dinkel (Oberk. Rotk.) + Buchweizen	Preis geschätzt	4,80 €	kg				k/A				1000
+1	139	Vollkorn-Einkorn-Bandnudeln		Preis geschätzt	4,80 €	kg				5				1000
+1	140	Vollkorn-Einkorn Rigatoni		Preis geschätzt	4,80 €	kg				5				1000
+1	141	Vollkorn-Einkorn Spirelli		Preis geschätzt	4,80 €	kg				5				1000
+1	142	mittelhelle Dinkel+BW Bandnudeln	heller Dinkel (Oberk. Rotk.) + Buchweizen	Preis geschätzt	4,80 €	kg								1000
+1	143	mittelhelle Dinkel+BW Rigatoni	heller Dinkel (Oberk. Rotk.) + Buchweizen	Preis geschätzt	4,80 €	kg								1000
 0	144	Teigwaren a				kg								1000
 0	145	Teigwaren a				kg								1000
 0	146	Teigwaren a				kg								1000
@@ -222,10 +221,10 @@
 0	221	Gewürz a				100g				k/A				100
 0	222	Gewürz a				100g				k/A				100
 1	223	sonstige Gewürze	bitte Wünsche angeben			100g				k/A				100
-0	224	Apfelringe gedörrt	aus Schorschs Äpfeln, Rohkostqualität	geringer Bestand		100g				k/A				100
+0	224	Apfelringe gedörrt	Rohkostqualität	geringer Bestand		100g				k/A				100
 0	225	Apfelringe X				100g				k/A				100
 1	226	Apfelchips	knusprig		2,50 €	100g				k/A				100
-0	227	Birnen gedörrt	aus Schorschs teigigen Birnen, Rohkostqualität	sehr geringer Bestand		100g								100
+0	227	Birnen gedörrt	aus teigigen Birnen, Rohkostqualität	sehr geringer Bestand		100g								100
 0	228	Birnen gedörrt X				100g								100
 1	229	Hutzeln (ganze Dörrbirnen)				100g								100
 0	230	Trockenobst a	bitte Wünsche angeben			100g								100
@@ -279,8 +278,8 @@
 0	278	Pflanzenmilch a				l								1000
 0	279	Pflanzenmilch a				l								1000
 1	280	Tempeh natur	Infos siehe		3,90 €	200g								200
-1	281	Tempeh Knoblauch-Koriander	http://www.tempehmanufaktur.net		3,90 €	200g								200
-1	282	Tempeh Gyros	verarbeitet im Allgäu,		3,90 €	200g								200
+1	281	Tempeh Knoblauch-Koriander	Internet		3,90 €	200g								200
+1	282	Tempeh Gyros			3,90 €	200g								200
 1	283	Tempeh Mediterran	Soja aus Bayern oder EU,		3,90 €	200g								200
 1	284	Tempeh Sommergarten	im Glas,		3,90 €	200g								200
 1	285	Tempeh Curry	ca. 6 Monate ungekühlt haltbar		3,90 €	200g								200

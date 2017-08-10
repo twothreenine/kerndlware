@@ -112,7 +112,7 @@
 
   <div class="panel panel-default">
     <div class="panel-body">
-      <form id="transaction_list_filter" action="/account" method="POST">
+      <form id="transaction_list_filter" action="/account_transactions" method="POST">
         {% csrf_token %}
         <input type="hidden" name="form_name" value="transaction_list_filter">
         <div>
@@ -205,8 +205,7 @@
       <tr style="background-color: {{ row.0 }}"> <!-- class="{{ row.2|lower }} if transactions.objects.get(pk=int(row.0)).value < 0 }}"negative"  else  "positive" -->
         <td class="transaction_id"> {{ row.2 }} </td>
         <td class="transaction_date"> {{ row.3 }} </td>
-        <td class="transaction_matter"> {{ row.4 }} {% if row.1 == True %} <a data-toggle="modal" href="#details{{ row.2 }}">{{ row.5 }}</a>
-          <div id="details{{ row.2 }}" class="modal fade" role="dialog">
+        <td class="transaction_matter"> {{ row.4 }}{% if row.1 > 0 %} <a data-toggle="modal" href="#details{{ row.2 }}">{{ row.5 }}</a><div id="details{{ row.2 }}" class="modal fade" role="dialog">
             <div class="modal-dialog">
 
               <!-- Modal content-->
@@ -235,8 +234,7 @@
               </div>
 
             </div>
-          </div>
-          {{ row.6 }}{% endif %}</td>
+          </div>{% endif %}{% if row.1 == 2 %}{{ row.6 }}{% endif %}.</td>
         <td class="transaction_entry_details"> {{ row.8 }} </td>
         <td class="transaction_value"> {{ row.9 }} </td>
         <td class="transaction_balance"> {{ row.10 }} </td>
@@ -271,7 +269,7 @@
         break;
     case '3': // inpayment
     case '4': // depositation
-        $("#money_fields").css("display", "")
+        $("#money_fields").hide()
         $("#participating_accounts").hide()
         $("#recipient_account").hide()
         $("#batch_fields").hide()
@@ -315,7 +313,7 @@
 </script>
 
 <div class="panel panel-default" id="bottom">
-  <form id="transaction_entry_form" action="/account" method="POST">
+  <form id="transaction_entry_form" action="/account_transactions" method="POST">
     {% csrf_token %}
     <input type="hidden" name="form_name" value="transaction_entry_form">
     <div class="panel-heading">Enter new transaction <input type="reset" value="Clear fields"/></div>

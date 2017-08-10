@@ -25,7 +25,7 @@ from core.views import BatchViewSet
 urlpatterns = [
     url(r'^$', views.index),
     url(r'^base$', views.base),
-    url(r'^account$', views.account),
+    url(r'^account_transactions$', views.account_transactions),
     url(r'^register$', views.register),
     url(r'^account_settings$', views.account_settings),
     url(r'^account_consumption$', views.account_consumption),

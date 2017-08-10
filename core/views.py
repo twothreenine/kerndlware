@@ -68,6 +68,7 @@ try:
 
     if not TransactionType.objects.all():
         """
+        OLD:
         1 = Taking
         2 = Restitution
         3 = Inpayment
@@ -109,6 +110,7 @@ try:
         credit_to_deposit = TransactionType(name="Credit to deposit", is_entry_type=False, to_balance=False, no=13)
         credit_to_deposit.save()
 
+        NEW:
 
         1 = Taking (charged from balance or deposit)
         2 = Restitution (credited to balance or deposit)
@@ -117,8 +119,11 @@ try:
         5 = Transcription to balance (credited to balance, charged from deposit)
         6 = Payout (charged from balance)
         7 = Transfer (charged from one's balance, credited to another's balance)
-        8 = Cost sharing (balance)
-        9 = Credit (credited to balance)
+        8 = CostSharing         # 8 = Division (positive value: charged from one's balance, credited to various' balances; negative value: credited to one's balance, charged from various' balances)
+        9 = ProceedsSharing
+        10 = Donation
+        11 = Recovery
+        12 = Credit (credited to balance)
         """
 
         taking = TransactionType(name="Taking", is_entry_type=True, no=1)
@@ -127,17 +132,23 @@ try:
         restitution.save()
         inpayment = TransactionType(name="Inpayment", is_entry_type=True, no=3)
         inpayment.save()
-        depositation = TransactionType(name="Depositation", is_entry_type=True, no=4)
-        depositation.save()
-        transcription_to_balance = TransactionType(name="Transcription to balance", is_entry_type=False, no=5)
-        transcription_to_balance.save()
-        payout = TransactionType(name="Payout", is_entry_type=False, no=6)
+        payout = TransactionType(name="Payout", is_entry_type=False, no=4)
         payout.save()
+        depositation = TransactionType(name="Depositation", is_entry_type=True, no=5)
+        depositation.save()
+        transcription_to_balance = TransactionType(name="Transcription to balance", is_entry_type=False, no=6)
+        transcription_to_balance.save()
         transfer = TransactionType(name="Transfer", is_entry_type=True, no=7)
         transfer.save()
         cost_sharing = TransactionType(name="Cost sharing", is_entry_type=True, no=8)
         cost_sharing.save()
-        credit = TransactionType(name="Credit", is_entry_type=False, no=9)
+        proceeds_sharing = TransactionType(name="Proceeds sharing", is_entry_type=True, no=9)
+        proceeds_sharing.save()
+        donation = TransactionType(name="Donation", is_entry_type=True, no=10)
+        donation.save()
+        recovery = TransactionType(name="Recovery", is_entry_type=True, no=11)
+        recovery.save()
+        credit = TransactionType(name="Credit", is_entry_type=False, no=12)
         credit.save()
 
 except OperationalError:
@@ -282,18 +293,15 @@ def enter_new_transaction(request):
                     t.save()
                     t.perform()
             elif t_type.no == 4: # depositation
-                currency = request.POST.get("currency")
-                if currency:
-                    t_currency = Currency.objects.get(pk=int(currency))
-                else:
-                    t_currency = Currency.objects.get(pk=1) # get anchor currency
-                money_box = request.POST.get("money_box")
-                if money_box:
-                    t_money_box = MoneyBox.objects.get(pk=int(money_box))
-                if t_date and t_amount and t_currency and t_money_box:
-                    t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+                if t_date and t_amount:
+                    t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
                     t.save()
                     t.perform()
+            # elif t_type.no == 5: # transcription of balance (currently not an entry type)
+            #     if t_date and t_amount:
+            #         t = Transcription_to_balance(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+            #         t.save()
+            #         t.perform()
             elif t_type.no == 7: # transfer
                 recipient_account = request.POST.get("recipient_account")
                 if recipient_account:
@@ -388,13 +396,13 @@ def base(request):
     select_account(request)
     return HttpResponseRedirect(request.POST['current_path'])
 
-def account(request):
+def account_transactions(request):
     if request.method == 'POST':
         if request.POST["form_name"] == "transaction_list_filter":
             filter_account_transactions(request) 
         if request.POST["form_name"] == "transaction_entry_form":
             enter_new_transaction(request)
-    template = loader.get_template('core/account.html')
+    template = loader.get_template('core/account_transactions.html')
     g_context = global_context(request)
     global selected_account
     deposit = selected_account.deposit_str

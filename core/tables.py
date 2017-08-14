@@ -16,12 +16,12 @@ class BatchTransactionTable:
     def generate(self):
         takings = Taking.objects.filter(batch=self.batch)
         restitutions = Restitution.objects.filter(batch=self.batch)
-        specific_insertions = SpecificInsertion.objects.filter(batch=self.batch)
+        specific_purchases = SpecificPurchase.objects.filter(batch=self.batch)
         # cost_sharings = CostSharing.objects.all()
         # proceeds_sharings = ProceedsSharing.objects.all()
         # donations = Donation.objects.all()
         # recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions, specific_insertions)), key=lambda t: (t.date, t.id))
+        transactions = sorted(list(itertools.chain(takings, restitutions, specific_purchases)), key=lambda t: (t.date, t.id))
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
@@ -50,12 +50,12 @@ class ConsumableTransactionTable:
         #         cost_sharings.append(cs)
         takings = Taking.objects.filter(batch__consumable=self.consumable_id)
         restitutions = Restitution.objects.filter(batch__consumable=self.consumable_id)
-        specific_insertions = SpecificInsertion.objects.filter(batch__consumable=self.consumable_id)
+        specific_purchases = SpecificPurchase.objects.filter(batch__consumable=self.consumable_id)
         # cost_sharings = CostSharing.objects.all()
         # proceeds_sharings = ProceedsSharing.objects.all()
         # donations = Donation.objects.all()
         # recoveries = Recovery.objects.all()
-        transactions = sorted(list(itertools.chain(takings, restitutions, specific_insertions)), key=lambda t: (t.date, t.id))
+        transactions = sorted(list(itertools.chain(takings, restitutions, specific_purchases)), key=lambda t: (t.date, t.id))
         for i in range(0, len(transactions)):
             transaction = transactions[i]
             row = list()
@@ -419,4 +419,57 @@ class SupplierSubsubtable: # ssst
             row.append("/admin/core/offer/"+str(o.id)+"/change/?_popup=1") # row.4
             row.append(o) # row.5
             row.append(o.minimum_quantity_str())
+            self.rows.append(row)
+
+class PurchaseListTable:
+    def __init__(self, statuses, start_date, end_date, enterers):
+        self.rows = list()
+        self.statuses = statuses
+        self.start_date = start_date
+        self.end_date = end_date
+        self.enterers = enterers
+        self.generate()
+
+    def generate(self):
+        purchases = []
+        for p in sorted(Purchase.objects.all(), key=lambda t: t.date, reverse=True):
+            if self.statuses == None:
+                status_condition = True
+            else:
+                status_condition = False
+                for ss in self.statuses:
+                    if ss in p.statuses:
+                        status_condition = True
+                        break
+            if self.start_date == None:
+                start_condition = True
+            else:
+                if p.date >= self.start_date:
+                    start_condition = True
+                else:
+                    start_condition = False
+            if self.end_date == None:
+                end_condition = True
+            else:
+                if p.date <= self.end_date:
+                    end_condition = True
+                else:
+                    end_condition = False
+            if self.enterers == None:
+                enterer_condition = True
+            elif p.entered_by_user in self.enterers:
+                enterer_condition = True
+            else:
+                enterer_condition = False
+            if status_condition == True and start_condition == True and end_condition == True and enterer_condition == True:
+                purchases.append(p)
+        for p in purchases:
+            row = list()
+            row.append(p.id) # row.0
+            row.append(p.date) # row.1
+            row.append(p.batches_str()) # row.2
+            row.append(p.suppliers_str()) # row.3
+            row.append(p.status_str()) # row.4
+            row.append(p.entered_by_user.name) # row.5
+            row.append(p.credited_accounts) # row.6
             self.rows.append(row)

@@ -335,7 +335,7 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
 
                 if ttype == 30 or ttype == 40: # inpayment/depositation by insertion of goods
                     batch = models.Batch.objects.get(original_no=original_batch)
-                    associated_credits = models.Credit.objects.filter(date=date, originator_account=originator_account, insertion__isnull=False)
+                    associated_credits = models.Credit.objects.filter(date=date, originator_account=originator_account, purchase__isnull=False)
                     if associated_credits:
                         t = associated_credits[0]
                         t.amount += value
@@ -343,14 +343,14 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                         t.unperform()
                         t.perform()
                     else:
-                        i = models.Insertion(date=date)
-                        i.save()
-                        t = models.Credit(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, insertion=i)
+                        p = models.Purchase(date=date)
+                        p.save()
+                        t = models.Credit(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, purchase=p)
                         t.save()
                         t.perform()
-                    si = models.SpecificInsertion(insertion=t.insertion, batch=batch, amount=amount, total_cost=value, comment=comment)
-                    si.save()
+                    sp = models.SpecificPurchase(purchase=t.purchase, batch=batch, amount=amount, total_cost=value, comment=comment)
+                    sp.save()
                     if ttype == 40:
-                        t2 = models.Depositation(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment="Depositation of value from insertion")
+                        t2 = models.Depositation(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment="Depositation of value from purchase")
                         t2.save()
                         t2.perform()

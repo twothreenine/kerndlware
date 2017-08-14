@@ -1,0 +1,148 @@
+{% extends "core/base.html" %}
+{% block title %}Purchases{% endblock %}
+{% block style %}
+  div.row {
+
+  }
+  #purchase_list_filter div {
+    float: left;
+    margin-right: 1em;
+  }
+  #purchase_list_filter div > label, #purchase_list_filter div > select {
+    display: block;
+  }
+  div.purchase_date {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.purchase_batches {
+    display: inline-block;
+    width: 35%;
+    margin-left: 1em;
+  }
+  div.purchase_suppliers {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.purchase_status {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.purchase_enterer {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.purchase_credited {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.product_estimation_consumption > input { box-sizing: border-box; }      /* doesn't work! */
+
+  #account_consumption_form .panel-body .row:nth-child(odd) {
+    background-color: #ddd;
+  }
+{% endblock %}
+{% block content %}
+
+<div id="head">
+  <h1>List of orders and insertions</h1>
+<!--   <ul id="account_info">
+    <li>Current balance: {{ balance }}</li>
+    <li>Taken: {{ taken }}</li>
+    <li>Deposited: {{ deposit }}</li>
+  </ul> -->
+
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <form id="purchase_list_filter" action="/purchases" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="form_name" value="purchase_list_filter">
+        <div>
+          <label for="apply">Filter this list</label>
+          <input name="apply" type="submit" value="Apply" />
+        </div>
+        <div>
+          <label for="purchase_statuses">Statuses</label>
+          <select multiple="multiple" name="purchase_statuses" class="selectpicker" data-actions-box="true">
+            {% for status in all_purchase_statuses %}
+            <option value={{ status.id }} {% if status in selected_statuses_in_purchase_list %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="start_date">Start date</label>
+          <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
+        </div>
+        <div>
+          <label for="end_date">End date</label>
+          <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
+        </div>
+        <div>
+          <label for="enterers">Enterer</label>
+          <select multiple="multiple" name="enterers" class="selectpicker" data-live-search="true" data-actions-box="true">
+            {% for user in purchase_enterers %}
+            <option value={{ user.id }} {% if user in selected_enterers %}selected{% endif %}>{{ user }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="panel-group">
+  <form id="modify_purchase_list" action="/purchases" method="POST">
+  {% csrf_token %}
+    <div class="panel panel-default">
+      <div class="panel-body">
+<!--         <div>
+          <input name="save" type="submit" value="Save" />
+        </div>
+        <div>Total amount: {{ total_amount }}</div>
+        <div>Value sum: {{ total_pres_value }}</div>
+        <div><input name="reset" type="reset" value="Discard changes" /></div> -->
+      </div>
+    </div>
+    <div class ="row">
+      <div class ="purchase_date">Date</div>
+      <div class ="purchase_batches">Batches</div>
+      <div class ="purchase_suppliers">Suppliers</div>
+      <div class ="purchase_status">Status</div>
+      <div class ="purchase_enterer">Entered by</div>
+      <div class ="purchase_credited">Credited to</div>
+    </div>
+    {% for p in purchases.rows %}
+      <div class="panel panel-default">
+        <div class ="purchase_date">{{ p.1 }}</div>
+        <div class ="purchase_batches"><a data-toggle="collapse" href="#{{ p.id }}">{{ p.2 }}</a></div>
+<!--         <div id="{{ p.id }}" class="panel-collapse collapse in">
+          <div class="panel-body">
+            <p><i>{{ st.subheading }}</i></p>
+            {% for row in st.rows %}
+            <div class ="row">
+              <div class ="product_name">{{ row.1 }}</div>
+              <div class ="product_description"><i>{{ row.2 }}</i></div>
+              <div class ="product_pres_price">{{ row.3 }}</div>
+              <div class ="product_unit">{{ row.4 }}</div>
+              <div class ="product_estimation_consumption"><input type="text" name="{{ row.0 }}" step="any" size="5" value={{ row.5 }}></div>
+              <div class ="product_value">{{ row.6 }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div> -->
+        <div class ="purchase_suppliers">{{ p.3 }}</div>
+        <div class ="purchase_status">{{ p.4 }}</div>
+        <div class ="purchase_enterer">{{ p.5 }}</div>
+        <div class ="purchase_credited">{{ p.6 }}</div>
+      </div>
+    {% endfor %}
+  </form>
+</div>
+
+
+{% endblock %}

@@ -33,7 +33,7 @@ def last_day_of_month(any_day):
     next_month = any_day.replace(day=28) + datetime.timedelta(days=4)  # this will never fail
     return next_month - datetime.timedelta(days=next_month.day)
 
-def list_str(my_list, sorted_by_attribute=None, displayed_attribute="name", type_plural="", elements=2):
+def list_str(my_list, sorted_by_attribute=None, descending=True, displayed_attribute="name", type_plural="", elements=2):
     """
     Returns a string from a list of strings like "x, y, and n-2 other [type]s" or "n [type]s".
     If the list consists of objects, they can be sorted by one of their attributes given as sorted_by_attribute;
@@ -63,7 +63,7 @@ def list_str(my_list, sorted_by_attribute=None, displayed_attribute="name", type
 
         else:
             if sorted_by_attribute:
-                my_list = sorted(my_list, key=lambda t: eval("t."+sorted_by_attribute))
+                my_list = sorted(my_list, key=lambda t: eval("t."+sorted_by_attribute), reverse=descending)
             obj_names = str(eval("my_list[0]."+displayed_attribute)) # writes first element into string
             my_list.pop(0) # removes that first element
             elements_written = 1

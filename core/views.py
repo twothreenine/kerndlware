@@ -58,6 +58,16 @@ try:
     enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
     enterer_in_account_transactions = None
 
+    # purchases list filter
+    selected_statuses_in_purchase_list = PurchaseStatus.objects.all()
+    start_date_in_purchase_list = models.DateField(blank=True, null=True)
+    start_date_in_purchase_list = None
+    end_date_in_purchase_list = models.DateField(blank=True, null=True)
+    end_date_in_purchase_list = None
+    enterers_in_purchase_list = list()
+    for p in Purchase.objects.all():
+        if not p.entered_by_user in enterers_in_purchase_list:
+            enterers_in_purchase_list.append(p.entered_by_user)
 
 
     # participate/transactions entry form
@@ -150,6 +160,38 @@ try:
         recovery.save()
         credit = TransactionType(name="Credit", is_entry_type=False, no=12)
         credit.save()
+
+    if not PurchaseStatusType.objects.all(): # fix types of purchase statuses
+        nonbinding = PurchaseStatusType(name="nonbinding", no=1)
+        nonbinding.save()
+        binding = PurchaseStatusType(name="binding", no=2)
+        binding.save()
+        closed = PurchaseStatusType(name="closed", no=3)
+        closed.save()
+        waste = PurchaseStatusType(name="waste", no=4)
+        waste.save()
+
+    if not PurchaseStatus.objects.all(): # default statuses which can be renamed, deleted, and added
+        planned = PurchaseStatus(name="planned", purchase_status_type=PurchaseStatusType.objects.get(no=1))
+        planned.save()
+        to_be_ordered = PurchaseStatus(name="to be ordered", purchase_status_type=PurchaseStatusType.objects.get(no=2))
+        to_be_ordered.save()
+        ordered = PurchaseStatus(name="ordered", purchase_status_type=PurchaseStatusType.objects.get(no=2))
+        ordered.save()
+        delivered = PurchaseStatus(name="delivered", purchase_status_type=PurchaseStatusType.objects.get(no=2))
+        delivered.save()
+        not_delivered = PurchaseStatus(name="not delivered", purchase_status_type=PurchaseStatusType.objects.get(no=2))
+        not_delivered.save()
+        questionable = PurchaseStatus(name="questionable", purchase_status_type=PurchaseStatusType.objects.get(no=2))
+        questionable.save()
+        inserted = PurchaseStatus(name="inserted", purchase_status_type=PurchaseStatusType.objects.get(no=3)) # populated into database
+        inserted.save()
+        picked_up = PurchaseStatus(name="picked up", purchase_status_type=PurchaseStatusType.objects.get(no=3))
+        picked_up.save()
+        scrapped = PurchaseStatus(name="scrapped", purchase_status_type=PurchaseStatusType.objects.get(no=4))
+        scrapped.save()
+        aborted = PurchaseStatus(name="aborted", purchase_status_type=PurchaseStatusType.objects.get(no=4))
+        aborted.save()
 
 except OperationalError:
     pass
@@ -384,6 +426,35 @@ def modify_consumablelist(request):
             consumable.unit = Unit.objects.get(pk=int(request.POST.get("{}_unit".format(consumable.id))))
             consumable.save()
 
+def filter_purchases(request):
+    if request.method == 'POST':
+        purchase_statuses = request.POST.getlist("purchase_statuses")
+        global selected_statuses_in_purchase_list
+        selected_statuses_in_purchase_list = []
+        if purchase_statuses:
+            for p in purchase_statuses:
+                ps = PurchaseStatus.objects.get(id=int(p))
+                selected_statuses_in_purchase_list.append(ps)
+        start_date = request.POST.get("start_date")
+        global start_date_in_purchase_list
+        if start_date:
+            start_date_in_purchase_list = datetime.datetime.strptime(start_date , '%Y-%m-%d').date()
+        else:
+            start_date_in_purchase_list = None
+        end_date = request.POST.get("end_date")
+        global end_date_in_purchase_list
+        if end_date:
+            end_date_in_purchase_list = datetime.datetime.strptime(end_date , '%Y-%m-%d').date()
+        else:
+            end_date_in_purchase_list = None
+        enterers = request.POST.getlist("enterers")
+        global enterers_in_purchase_list
+        enterers_in_purchase_list = []
+        if enterers:
+            for er in enterers:
+                e = User.objects.get(id=int(er))
+                enterers_in_purchase_list.append(e)
+
 def global_context(request):
     accounts = Account.objects.all()
     global selected_account
@@ -610,6 +681,36 @@ def consumablelist_modify(request):
     consumablelist = sorted(list(consumables), key=lambda t: t.id)
     units = Unit.objects.all()
     context = {"consumablelist" : consumablelist, "units" : units}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def purchases(request):
+    if request.method == 'POST':
+        if request.POST["form_name"] == "purchase_list_filter":
+            filter_purchases(request) 
+        # if request.POST["form_name"] == "transaction_entry_form":
+        #     enter_new_transaction(request)
+    template = loader.get_template('core/purchases.html')
+    g_context = global_context(request)
+    all_purchase_statuses = PurchaseStatus.objects.all()
+    global selected_statuses_in_purchase_list
+    global start_date_in_purchase_list
+    if not start_date_in_purchase_list == None:
+        start_date = start_date_in_purchase_list.strftime("%Y-%m-%d")
+    else:
+        start_date = ''
+    global end_date_in_purchase_list
+    if not end_date_in_purchase_list == None:
+        end_date = end_date_in_purchase_list.strftime("%Y-%m-%d")
+    else:
+        end_date = ''
+    global enterers_in_purchase_list
+    purchases = PurchaseListTable(statuses=selected_statuses_in_purchase_list, start_date=start_date_in_purchase_list, end_date=end_date_in_purchase_list, enterers=enterers_in_purchase_list)
+    purchase_enterers = []
+    for p in Purchase.objects.all():
+        if not p.entered_by_user in purchase_enterers:
+            purchase_enterers.append(p.entered_by_user)
+    context = {"all_purchase_statuses" : all_purchase_statuses, "purchases" : purchases, "purchase_enterers" : purchase_enterers, "selected_statuses_in_purchase_list" : selected_statuses_in_purchase_list,
+             "start_date" : start_date, "end_date" : end_date, "selected_enterers" : enterers_in_purchase_list, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 @api_view(['GET', 'POST'])

@@ -15,8 +15,8 @@ Functions to return the stock of a batch resp. a consumable at a specific transa
 def batch_stock_str(transaction):
     stock = 0
     batch = transaction.batch
-    for specific_insertion in SpecificInsertion.objects.filter(batch=batch).filter(Q(insertion__date__lt = transaction.date) | Q(Q(insertion__date = transaction.date) & Q(id__lte = transaction.id))): # ID comparison doesn't make sense
-        stock += specific_insertion.amount
+    for specific_purchase in SpecificPurchase.objects.filter(batch=batch).filter(Q(purchase__date__lt = transaction.date) | Q(Q(purchase__date = transaction.date) & Q(id__lte = transaction.id))): # ID comparison doesn't make sense
+        stock += specific_purchase.amount
     for taking in Taking.objects.filter(batch=batch).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
         stock -= taking.amount
     for restitution in Restitution.objects.filter(batch=batch).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
@@ -26,8 +26,8 @@ def batch_stock_str(transaction):
 def consumable_stock_str(transaction):
     stock = 0
     consumable = transaction.batch.consumable
-    for specific_insertion in SpecificInsertion.objects.filter(batch__consumable=consumable).filter(Q(insertion__date__lt = transaction.date) | Q(Q(insertion__date = transaction.date) & Q(id__lte = transaction.id))): # ID comparison doesn't make sense
-        stock += specific_insertion.amount * specific_insertion.batch.unit.weight / specific_insertion.batch.consumable.unit.weight
+    for specific_purchase in SpecificPurchase.objects.filter(batch__consumable=consumable).filter(Q(purchase__date__lt = transaction.date) | Q(Q(purchase__date = transaction.date) & Q(id__lte = transaction.id))): # ID comparison doesn't make sense
+        stock += specific_purchase.amount * specific_purchase.batch.unit.weight / specific_purchase.batch.consumable.unit.weight
     for taking in Taking.objects.filter(batch__consumable=consumable).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
         stock -= taking.amount * taking.batch.unit.weight / taking.batch.consumable.unit.weight
     for restitution in Restitution.objects.filter(batch__consumable=consumable).filter(Q(date__lt = transaction.date) | Q(Q(date = transaction.date) & Q(id__lte = transaction.id))):
@@ -39,7 +39,7 @@ def consumable_stock_str(transaction):
 def tci_delete():
     Transaction.objects.all().delete()
     Charge.objects.all().delete()
-    Insertion.objects.all().delete()
+    Purchase.objects.all().delete()
 
 
 
@@ -581,8 +581,8 @@ class Consumable(Item):
         So for the consumable stock, it means a subtraction of 0.5
         """
         stock = 0
-        for specific_insertion in SpecificInsertion.objects.filter(batch__consumable=self):
-            stock += specific_insertion.amount * specific_insertion.batch.unit.weight / self.unit.weight
+        for specific_purchase in SpecificPurchase.objects.filter(batch__consumable=self):
+            stock += specific_purchase.amount * specific_purchase.batch.unit.weight / self.unit.weight
         for taking in Taking.objects.filter(batch__consumable=self):
             stock -= taking.amount * taking.batch.unit.weight / self.unit.weight
         for restitution in Restitution.objects.filter(batch__consumable=self):
@@ -691,8 +691,8 @@ class Batch(models.Model):
     owner_account = models.ForeignKey('Account', blank=True, null=True)
     unit = models.ForeignKey('Unit', blank=True, null=True)
     price = models.FloatField() #MoneyField; 
-    production_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
-    purchase_date = models.DateField(blank=True, null=True) # date of production, harvest, or purchase (for devices: start of warranty)
+    production_date = models.DateField(blank=True, null=True) # date of production, harvest, or insertion (for devices: start of warranty)
+    purchase_date = models.DateField(blank=True, null=True) # date of production, harvest, or insertion (for devices: start of warranty)
     date_of_expiry = models.DateField(blank=True, null=True) # durability date; resp. for devices: end of service life, e.g. end of warranty
     exhaustion_date = models.DateField(blank=True, null=True) # the date when the stock is likely to be used-up
     stock = models.FloatField(default=0) # the exact amount in stock (desired value according to transitions)
@@ -750,6 +750,16 @@ class Batch(models.Model):
         return "B{} - {}{} by {} from {}".format(str(self.no), self.name, cont, self.supplier, self.purchase_date)
 
     @property
+    def str_short(self):
+        cont = ""
+        try:
+            if not self.unit.contents == '':
+                cont = " ({} {})".format(self.unit.contents, self.unit_abbr_str)
+        except AttributeError:
+            pass
+        return "#"+str(self.no)+" "+self.name+cont
+
+    @property
     def stock_str(self):
         return "{} {}".format(format(self.calc_stock(), '.3f'), self.unit_abbr_str)
 
@@ -780,8 +790,8 @@ class Batch(models.Model):
 
     def calc_stock(self):
         stock = 0
-        for specific_insertion in SpecificInsertion.objects.filter(batch=self):
-            stock += specific_insertion.amount
+        for specific_purchase in SpecificPurchase.objects.filter(batch=self):
+            stock += specific_purchase.amount
         for taking in Taking.objects.filter(batch=self):
             stock -= taking.amount
         for restitution in Restitution.objects.filter(batch=self):
@@ -866,138 +876,34 @@ class Container(Consumable):
     # A type of storage containers or packaging containers/material
     material = models.ForeignKey('Material')
     category = models.ForeignKey('ContainerCategory')
-    loanable = models.BooleanField() # whether it may be borrowed by participants
-    buyable = models.BooleanField() # whether it may be bought by participants
+    # loanable = models.BooleanField() # whether it may be borrowed by participants
+    # buyable = models.BooleanField() # whether it may be bought by participants
     capacity = models.FloatField() # volume in l
-    circular = models.BooleanField()
-    foodsave = PercentField()
-    cleanness = PercentField()
-    smelliness = PercentField()
-    cleanability = PercentField()
-    reachability = PercentField() # how easy it is to open and to close (to handle generally)
-    resistance_smell = PercentField()
-    resistance_light = PercentField()
-    resistance_humidity = PercentField()
-    capability_oil = PercentField() # how well it is suitable for oily goods like oily seeds
-    capability_liquid = PercentField() # how well it is suitable for liquids
-    ventilation = PercentField()
-    rodentfree = models.NullBooleanField() # whether it keeps the product safe from mice without further packaging
-    mothfree = models.NullBooleanField() # whether it keeps the product safe from moths without further packaging
-    width = models.FloatField() # width of the container in cm
-    depth = models.FloatField() # depth of the container in cm (if it is circular, enter the width again)
-    height = models.FloatField() # height of the container in cm
-    amount_occupied = models.PositiveSmallIntegerField()
-    amount_ready = models.PositiveSmallIntegerField()
-    amount_unclean = models.PositiveSmallIntegerField()
-    amount_defective = models.PositiveSmallIntegerField()
-    amount_loaned = models.PositiveSmallIntegerField()
-    amount_new = models.PositiveSmallIntegerField()
-    volume_max = models.FloatField() # in l
-    volume_easy = models.FloatField() # in l
-    tare = models.FloatField() # in g
-    tare_without_lid = models.FloatField() # in g
-    tare3 = models.FloatField() # in g
-    tare3_name = models.CharField(max_length=50)
-    tare4 = models.FloatField() # in g
-    tare4_name = models.CharField(max_length=50)
-    tare5 = models.FloatField() # in g
-    tare5_name = models.CharField(max_length=50)
-
-    def __init__(self, name="Unnamed container", capacity=0, circular=False, amount_occupied=0, amount_ready=0, amount_unclean=0, amount_defective=0, amount_loaned=0, amount_new=0, tare=0, tare_without_lid=0):
-        self.name = name
-        self.capacity = capacity
-        self.circular = circular
-        self.amount_occupied = amount_occupied
-        self.amount_ready = amount_ready
-        self.amount_unclean = amount_unclean
-        self.amount_defective = amount_defective
-        self.amount_loaned = amount_loaned
-        self.amount_new = amount_new
-        self.tare = tare
-        self.tare_without_lid = tare_without_lid
-
-    def print_amounts(self):
-        print("occupied:", self.amount_occupied, "ready:", self.amount_ready, "unclean:", self.amount_unclean, "defective:", self.amount_defective)
-
-    def occupy(self, amount, status):
-        if status == 'ready':
-            self.amount_occupied += amount
-            self.amount_ready -= amount
-        elif status == 'unclean':
-            self.amount_occupied += amount
-            self.amount_unclean -= amount
-        elif status == 'defective':
-            self.amount_occupied += amount
-            self.amount_defective -= amount
-        else:
-            print('The former status must be entered: ready, unclean or defective.')
-
-    def clean(self, amount):
-        self.amount_ready += amount
-        self.amount_unclean -= amount
-
-    def defect(self, amount, status):
-        if status == 'occupied':
-            self.amount_defective += amount
-            self.amount_occupied -= amount
-        elif status == 'ready':
-            self.amount_defective += amount
-            self.amount_ready -= amount
-        elif status == 'unclean':
-            self.amount_defective += amount
-            self.amount_unclean -= amount
-        else:
-            print('The former status must be entered: occupied, ready or unclean.')
-
-    def repaired(self, amount, status):
-        if status == 'occupied':
-            self.amount_defective -= amount
-            self.amount_occupied += amount
-        elif status == 'ready':
-            self.amount_defective -= amount
-            self.amount_ready += amount
-        elif status == 'unclean':
-            self.amount_defective -= amount
-            self.amount_unclean += amount
-        else:
-            print('The new status must be entered: occupied, ready or unclean.')
-
-    def empty(self, amount, status):
-        if status == 'ready':
-            self.amount_occupied -= amount
-            self.amount_ready += amount
-        elif status == 'unclean':
-            self.amount_occupied -= amount
-            self.amount_unclean += amount
-        elif status == 'defective':
-            self.amount_occupied -= amount
-            self.amount_defective += amount
-        else:
-            print('The new status must be entered: ready, unclean or defective.')
-
-    def delete(self, amount, status):
-        if status == 'ready':
-            self.amount_ready -= amount
-        elif status == 'unclean':
-            self.amount_unclean -= amount
-        elif status == 'defective':
-            self.amount_defective -= amount
-        elif status == 'occupied':
-            self.amount_occupied -= amount
-        else:
-            print('The former status must be entered: defective, occupied, ready or unclean.')
-
-    def add(self, amount, status):
-        if status == 'ready':
-            self.amount_ready += amount
-        elif status == 'unclean':
-            self.amount_unclean += amount
-        elif status == 'defective':
-            self.amount_defective += amount
-        elif status == 'occupied':
-            self.amount_occupied += amount
-        else:
-            print('The new status must be entered: occupied, ready, unclean or defective.')
+    # circular = models.BooleanField()
+    # foodsave = PercentField()
+    # cleanness = PercentField()
+    # smelliness = PercentField()
+    # cleanability = PercentField()
+    # reachability = PercentField() # how easy it is to open and to close (to handle generally)
+    # resistance_smell = PercentField()
+    # resistance_light = PercentField()
+    # resistance_humidity = PercentField()
+    # capability_oil = PercentField() # how well it is suitable for oily goods like oily seeds
+    # capability_liquid = PercentField() # how well it is suitable for liquids
+    # ventilation = PercentField()
+    # rodentfree = models.NullBooleanField() # whether it keeps the product safe from mice without further packaging
+    # mothfree = models.NullBooleanField() # whether it keeps the product safe from moths without further packaging
+    # width = models.FloatField() # width of the container in cm
+    # depth = models.FloatField() # depth of the container in cm (if it is circular, enter the width again)
+    # height = models.FloatField() # height of the container in cm
+    # amount_occupied = models.PositiveSmallIntegerField()
+    # amount_ready = models.PositiveSmallIntegerField()
+    # amount_unclean = models.PositiveSmallIntegerField()
+    # amount_defective = models.PositiveSmallIntegerField()
+    # amount_loaned = models.PositiveSmallIntegerField()
+    # amount_new = models.PositiveSmallIntegerField()
+    # volume_max = models.FloatField() # in l
+    # volume_easy = models.FloatField() # in l
 
 class GeneralOffer(models.Model):
     # Describes a consumable offered by a supplier, but not in a specific package and with a specific price.
@@ -1224,8 +1130,8 @@ class BatchTransaction(Transaction):
 
     # def batch_stock_str(self):
     #     stock = 0
-    #     for specific_insertion in SpecificInsertion.objects.filter(batch=self.batch).filter(batch=self.batch).filter(Q(insertion__date__lt = self.date) | Q(Q(insertion__date = self.date) & Q(id__lte = self.id))): # ID comparison doesn't make sense
-    #         stock += specific_insertion.amount
+    #     for specific_purchase in SpecificPurchase.objects.filter(batch=self.batch).filter(batch=self.batch).filter(Q(purchase__date__lt = self.date) | Q(Q(purchase__date = self.date) & Q(id__lte = self.id))): # ID comparison doesn't make sense
+    #         stock += specific_purchase.amount
     #     for taking in Taking.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
     #         stock -= taking.amount
     #     for restitution in Restitution.objects.filter(batch=self.batch).filter(Q(date__lt = self.date) | Q(Q(date = self.date) & Q(id__lte = self.id))):
@@ -1677,7 +1583,7 @@ class Recovery(ShareTransaction): # donation backwards
 
 class Credit(Transaction): # credit to balance resp. charge from balance
     matter = models.TextField(blank=True)
-    insertion = models.ForeignKey('Insertion', blank=True, null=True) # If an insertion is the matter, it will be linked
+    purchase = models.ForeignKey('Purchase', blank=True, null=True) # If an purchase is the matter, it will be linked
 
     @property
     def type(self):
@@ -1693,21 +1599,21 @@ class Credit(Transaction): # credit to balance resp. charge from balance
         charge.save()
 
     def credit_matter_str(self):
-        if self.insertion == None and self.matter == "":
+        if self.purchase == None and self.matter == "":
             return ""
-        elif self.insertion == None:
+        elif self.purchase == None:
             matter = self.matter
         else:
-            specific_insertions = SpecificInsertion.objects.filter(insertion=self.insertion)
+            specific_purchases = SpecificPurchase.objects.filter(purchase=self.purchase)
             batches = list()
-            for si in specific_insertions:
-                if not si.batch in specific_insertions:
+            for si in specific_purchases:
+                if not si.batch in specific_purchases:
                     batches.append(si.batch)
             suppliers = list()
-            for si in specific_insertions:
+            for si in specific_purchases:
                 if not si.batch.supplier in suppliers:
                     suppliers.append(si.batch.supplier)
-            matter = "insertion of " + list_str(my_list=specific_insertions, sorted_by_attribute="amount", displayed_attribute="batch.name", type_plural="batches") + " from " + list_str(my_list=suppliers, type_plural="suppliers")
+            matter = "purchase of " + list_str(my_list=specific_purchases, sorted_by_attribute="amount", displayed_attribute="batch.name", type_plural="batches") + " from " + list_str(my_list=suppliers, type_plural="suppliers")
         return " for "+matter
 
     def matter_str(self, account=0):
@@ -1721,16 +1627,80 @@ class Credit(Transaction): # credit to balance resp. charge from balance
             text = " were credited to "
         return format(self.amount,'.2f')+" €"+text+originator+" balance", self.credit_matter_str(), ""
 
-class Insertion(models.Model):
+class PurchaseStatusType(models.Model):
+    no = models.IntegerField()
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class PurchaseStatus(models.Model):
+    purchase_status_type = models.ForeignKey('PurchaseStatusType')
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name+" ("+str(self.purchase_status_type)+")"
+
+class Purchase(models.Model):
     name = models.CharField(max_length=80, blank=True)
     description = models.TextField(blank=True)
     date = models.DateField()
-    entry_date = models.DateField(auto_now_add=True) # Date when insertion is entered into the system
-    entered_by_user = models.ForeignKey('User') # Person who typed in the insertion
-    # To make it possible for multiple accounts to be credited, there is no field like credited_account. Use Credit.objects.filter(insertion=x) to get the information which amounts were credited to which accounts for insertion x.
+    entry_date = models.DateField(auto_now_add=True) # Date when purchase is entered into the system
+    entered_by_user = models.ForeignKey('User') # Person who typed in the purchase
+    # To make it possible for multiple accounts to be credited, there is no field like credited_account. Use Credit.objects.filter(purchase=x) to get the information which amounts were credited to which accounts for purchase x.
 
-class SpecificInsertion(models.Model):
-    insertion = models.ForeignKey('Insertion')
+    def __str__(self):
+        specific_purchases = SpecificPurchase.objects.filter(purchase=self)
+        # batches = list()
+        # for sp in specific_purchases:
+        #     if not sp.batch in batches:
+        #         batches.append(sp.batch)
+        suppliers = list()
+        for sp in specific_purchases:
+            if not sp.batch.supplier in suppliers:
+                suppliers.append(sp.batch.supplier)
+        return "Purchase of " + list_str(my_list=specific_purchases, sorted_by_attribute="amount", displayed_attribute="batch.name", type_plural="batches") + " from " + list_str(my_list=suppliers, type_plural="suppliers") + " on " + str(self.date)
+
+    @property
+    def statuses(self):
+        statuses = []
+        for sp in SpecificPurchase.objects.filter(purchase=self):
+            if not sp.status in statuses:
+                statuses.append(sp.status)
+        return statuses
+
+    def batches_str(self):
+        specific_purchases = SpecificPurchase.objects.filter(purchase=self)
+        return list_str(my_list=specific_purchases, sorted_by_attribute="amount", displayed_attribute="batch.str_short", type_plural="batches")
+
+    def suppliers_str(self):
+        specific_purchases = SpecificPurchase.objects.filter(purchase=self)
+        suppliers = list()
+        for sp in specific_purchases:
+            if not sp.batch.supplier in suppliers:
+                suppliers.append(sp.batch.supplier)
+        return list_str(my_list=suppliers, type_plural="suppliers")
+
+    def status_str(self):
+        specific_purchases = SpecificPurchase.objects.filter(purchase=self)
+        status_str = ""
+        for ps in self.statuses:
+            sps = SpecificPurchase.objects.filter(purchase=self, status=ps).count()
+            if sps:
+                if not status_str == "":
+                    status_str += ", "
+                status_str += str(sps)+" "+str(ps)
+        return status_str
+
+    def credited_accounts(self):
+        accounts = []
+        for c in Credit.objects.filter(purchase=self):
+            if not c in accounts:
+                accounts.append(c)
+        return list_str(my_list=accounts, displayed_attribute="originator_account.name", type_plural="accounts")
+
+class SpecificPurchase(models.Model):
+    purchase = models.ForeignKey('Purchase')
     batch = models.ForeignKey('Batch')
     amount = models.FloatField()
     total_cost = models.FloatField(null=True, blank=True) #MoneyField; 
@@ -1743,11 +1713,11 @@ class SpecificInsertion(models.Model):
     difference = models.FloatField(null=True, blank=True) #MoneyField; 
     compensation_account = models.ForeignKey('Account', related_name="compensation_account", null=True, blank=True) # who pays or gets the difference
     comment = models.TextField(blank=True)
-    # status
+    status = models.ForeignKey('PurchaseStatus')
 
     @property
     def date(self):
-        return self.insertion.date
+        return self.purchase.date
 
     def matter_str(self, show_contents=True, show_batch=True):
         if show_batch == True:
@@ -1755,7 +1725,7 @@ class SpecificInsertion(models.Model):
         else:
             batch = ""
         credited_accounts = list()
-        for c in Credit.objects.filter(insertion=self.insertion):
+        for c in Credit.objects.filter(purchase=self.purchase):
             credited_accounts.append(c.originator_account)
         if credited_accounts:
             credited_to = list_str(credited_accounts, type_plural="accounts")
@@ -1769,7 +1739,7 @@ class SpecificInsertion(models.Model):
 
     @property
     def entry_details_str(self):
-        return "entered on {} by {}".format(self.insertion.entry_date, self.insertion.entered_by_user.name)
+        return "entered on {} by {}".format(self.purchase.entry_date, self.purchase.entered_by_user.name)
 
     @property
     def comment_str(self):
@@ -1780,3 +1750,28 @@ class SpecificInsertion(models.Model):
     
     def value_str(self):
         return "{} €".format(format(self.total_cost,'.2f'))
+
+class Inventory(models.Model): # A group of one or multiple stock corrections & a group of one or multiple stocktakings
+    date = models.DateField()
+    entry_date = models.DateField(auto_now_add=True) # Date when entered into the system
+    entered_by_user = models.ForeignKey('User') # Person who typed in the inventory
+    comment = models.TextField(blank=True)
+
+class Stocktaking(models.Model): # A single measurement of an inventory. There can be multiple stocktakings for the same batch.
+    batch = models.ForeignKey('Batch')
+    amount = models.FloatField()
+    tare = models.ManyToManyField('Tare', blank=True)
+    additional_tara = models.FloatField(blank=True, null=True)
+
+class Tare(models.Model):
+    name = models.CharField(max_length=80)
+    weight = models.FloatField()
+    container = models.ForeignKey('Container', blank=True, null=True)
+    comment = models.TextField(blank=True)
+    entry_date = models.DateField(auto_now_add=True) # Date when entered into the system
+
+class StockCorrection(models.Model): # Correction of a single, but whole batch
+    stocktaking = models.ForeignKey('Stocktaking')
+    batch = models.ForeignKey('Batch')
+    amount = models.FloatField()
+    status = models.ForeignKey('TransactionStatus', blank=True, null=True)

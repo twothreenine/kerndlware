@@ -77,14 +77,15 @@ class User(models.Model):
     name = models.CharField(max_length=50)
     active = models.BooleanField(default=True)
     comment = models.TextField(blank=True)
-    accounts = models.ManyToManyField('Account', blank=True)
+    accounts = models.ManyToManyField('Account', blank=True, related_name="accounts")
+    primary_account = models.ForeignKey('Account', blank=True, null=True, related_name="primary_account")
 
     def __str__(self):
         return "{} - {}".format(str(self.id), self.name)
 
 class Person(User):
-    last_name = models.CharField(max_length=50)
-    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50, blank=True)
+    first_name = models.CharField(max_length=50, blank=True)
     streetname = models.CharField(max_length=100, blank=True)
     streetnumber = models.SmallIntegerField(blank=True, null=True)
     zipcode = models.IntegerField(blank=True, null=True)
@@ -93,9 +94,17 @@ class Person(User):
     email = models.EmailField(max_length=254, blank=True)
     website = models.TextField(blank=True)
     telephone = models.BigIntegerField(blank=True, null=True)
+
+    @property
+    def is_person(self):
+        return True
     
 class VirtualUser(User):
     description = models.TextField(blank=True)
+
+    @property
+    def is_person(self):
+        return False
 
 class Account(models.Model):
     name = models.CharField(max_length=50, default="")
@@ -960,6 +969,10 @@ class Offer(models.Model):
 
     def __str__(self):
         return "{} ({} {})".format(self.general_offer, self.parcel, self.unit.abbr)
+
+    # @property
+    # def name(self):
+    #     return self.general_offer.consumable_variety_str
 
     def amount_str(self, details=True):
         amount = str(remove_zeros(self.amount()))

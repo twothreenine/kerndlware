@@ -84,62 +84,104 @@
         <!-- Sidebar -->
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            <li><h2>Coopbook</h2></li>
-            <li><strong>Participate <a href="/register">New account</a></strong></li>
+            <li><h2>openBulks</h2></li>
+            <li>
+              <form id="user_selection_form" action="/base" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="current_path" value="{{ current_path }}">
+                <input type="hidden" name="form_name" value="user_selection_form">
+                <!-- <button type="button" class="btn btn-default" onclick="document.getElementById('select_user').val('0').trigger('change');">Logout</button> doesn't work! --> 
+                <select onchange="document.getElementById('user_selection_form').submit();" id="select_user" name="user_id" class="selectpicker" data-live-search="true">
+                  <option value="0">Logout</option>
+                  <option value="" disabled selected>Select yourself as user</option>
+                  {% for user in recent_users %}
+                  <option value="{{ user.id }}" {% if user.id == selected_user.id %}selected{% endif %}>{{ user }}</option>
+                  {% endfor %}
+                </select> <a href="/register_user" class="btn btn-primary" role="button">+</a>
+              </form>
+            </li>
+            <li><a>Messages</a></li> <!-- /user_messages -->
+            <li><a href="/user_settings">Settings</a></li> <!-- /user_settings -->
+            <div class="btn-group btn-group-justified">
+              <a href="#" onclick="show_menu('info');" class="btn btn-default">Info</a>
+              <a href="#" onclick="show_menu('participate');" class="btn btn-success">Participate</a>
+              <a href="#" onclick="show_menu('help');" class="btn btn-info">Help</a>
+            </div>
+            <button type="button" class="btn btn-primary btn-xs" id="show_admin_features" data-toggle="modal" data-target="#verify_admin">Show admin menu</button>
+            <div class="btn-group btn-group-justified" id="admin_features">
+              <a href="#" onclick="show_menu('lists');" class="btn btn-default">Lists</a>
+              <a href="#" onclick="show_menu('manage');" class="btn btn-warning">Manage</a>
+              <a href="#" onclick="show_menu('administrate');" class="btn btn-danger">Administrate</a>
+            </div>
+            <button type="button" class="btn btn-primary btn-xs" id="hide_admin_features" onclick="non_admin_session();">Hide admin menu</button>
+          </ul>
+          <ul class="nav nav-sidebar" id="participate">
+            <li><strong>Select an account <a href="/register_account" class="btn btn-primary btn-xs" role="button">New account</a></strong></li>
             <li>
               <form id="account_selection_form" action="/base" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="current_path" value="{{ current_path }}">
-                <select onchange="document.getElementById('account_selection_form').submit();" name="account_id" class="selectpicker" data-live-search="true">
-                  {% for account in accounts %}
+                <input type="hidden" name="form_name" value="account_selection_form">
+                <button class="btn btn-primary" name="primary_account" type="submit" value="primary">#1</button><select onchange="document.getElementById('account_selection_form').submit();" name="account_id" class="selectpicker" data-live-search="true">
+                  <option value="" disabled>Your accounts</option>
+                  {% for account in accounts_of_selected_user %}
                   <option value="{{ account.id }}" {% if account.id == selected_account.id %}selected{% endif %}>{{ account }}</option>
                   {% endfor %}
-                </select> {{ balance }}
+                  <option value="" disabled>Recent other accounts</option>
+                  {% for account in recent_other_accounts %}
+                  <option value="{{ account.id }}" {% if account.id == selected_account.id %}selected{% endif %}>{{ account }}</option>
+                  {% endfor %}
+                </select>
               </form>
             </li>
+            <li>Current balance: {{ balance }}</li>
             <li><a href="/account_transactions">Transactions</a></li>
-            <li><a href="">Shopping list</a></li>
+            <li><a>Shopping list</a></li>
             <li><a href="/account_consumption">Estimate consumption</a></li>
-            <li><a href="">Pre-order attachments</a></li>
+            <li><a>Pre-order attachments</a></li>
             <li><a href="/account_settings">Settings</a></li>
           </ul>
-           <ul class="nav nav-sidebar">
+           <ul class="nav nav-sidebar" id="info">
             <li><strong>Overview</strong></li>
-            <li><a href="">Stock summary</a></li>
-            <li><a href="">Encyclopedia</a></li>
+            <li><a>Stock summary</a></li>
+            <li><strong>Encyclopedia</strong></li>
+            <li><a>Suppliers</a></li>
+            <li><a>Products</a></li>
           </ul>
-          <ul class="nav nav-sidebar">
-            <li><strong>Manage</strong></li>
+          <ul class="nav nav-sidebar" id="help">
+            <li><strong>Help & About</strong></li>
+            <li><a>Help</a></li>
+            <li><a>Coopbook portal</a></li>
+            <li><a>About this software</a></li>
+          </ul>
+          <ul class="nav nav-sidebar" id="manage">
+            <li><strong>Supply</strong></li>
             <li><a href="/suppliers">Suppliers & offers</a></li>
-            <li><a href="/purchases">Order & insert</a></li>
+            <li><a href="/purchases">Orders & insertions</a></li>
+            <li><strong>Inventory</strong></li>
+            <li><a>Storage containers</a></li>
+            <li><a>Inventory</a></li>
           </ul>
-          <ul class="nav nav-sidebar">
+          <ul class="nav nav-sidebar" id="administrate">
             <li><strong>Administrate</strong></li>
-            <li><a href="">Storage containers</a></li>
-            <li><a href="">Inventory</a></li>
+            <li><strong>Setup</strong></li>
+            <li><a>General settings</a></li>
+            <li><a>Import data</a></li>
+            <li><a>Export data</a></li>
+            <li><strong>Django admin menu</strong></li>
+            <li><a target="_blank" href="/admin">Open</a></li>
           </ul>
-          <ul class="nav nav-sidebar">
+          <ul class="nav nav-sidebar" id="lists">
             <li><strong>Transaction lists</strong></li>
             <li><a href="/transactionlist">All transactions</a></li>
             <li><a href="/batchtransactiontable">Specific batch</a></li>
             <li><a href="/consumabletransactiontable">Specific consumable</a></li>
-          </ul>
-          <ul class="nav nav-sidebar">
-            <li><strong>Lists</strong></li>
+            <li><strong>Other lists</strong></li>
             <li><a href="/accountlist">Accounts</a></li>
             <li><a href="/itemlist">Items</a></li>
             <li><a href="/consumablelist">Consumables</a> <a href="/consumablelist_modify">Modify</a></li>
             <li><a href="/batchlist">Batches</a></li>
             <li><a href="/supplierlist">Suppliers</a></li>
-          </ul>
-          <ul class="nav nav-sidebar">
-            <li><strong>Setup & About</strong></li>
-            <li><a href="">General settings</a></li>
-            <li><a href="">Import data</a></li>
-            <li><a href="">Export data</a></li>
-            <li><a href="">Help</a></li>
-            <li><a href="">Coopbook portal</a></li>
-            <li><a href="">About this software</a></li>
           </ul>
         </div>
 
@@ -153,6 +195,97 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.1/js/bootstrap-select.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.min.js"></script>
-    {% block script %}{% endblock %}
+
+    {% block script %}
+    <script>
+
+    show_menu(sessionStorage.getItem('selected_menu'));
+    if (sessionStorage.getItem('admin_features') == 'true') {
+      show_admin_features()
+    } else {
+      hide_admin_features()
+    }
+
+    function show_menu(menu) {
+      sessionStorage.setItem('selected_menu', menu);
+      $("#participate").hide()
+      $("#info").hide()
+      $("#help").hide()
+      $("#manage").hide()
+      $("#administrate").hide()
+      $("#lists").hide()
+      switch(menu) {
+      case 'participate':
+        $("#participate").show()
+        break;
+      case 'info':
+      default:
+        $("#info").show()
+        break;
+      case 'help':
+        $("#help").show()
+        break;
+      case 'manage':
+        $("#manage").show()
+        break;
+      case 'administrate':
+        $("#administrate").show()
+        break;
+      case 'lists':
+        $("#lists").show()
+        break;
+      }
+    }
+
+    function show_admin_features() {
+      sessionStorage.setItem('admin_features', 'true');
+      $("#show_admin_features").hide()
+      $("#admin_features").show()
+      $("#hide_admin_features").show()
+    }
+
+    function hide_admin_features() {
+      sessionStorage.setItem('admin_features', 'false');
+      $("#show_admin_features").show()
+      $("#admin_features").hide()
+      $("#hide_admin_features").hide()
+    }
+
+    function non_admin_session() {
+      hide_admin_features()
+      // if (sessionStorage.getItem('selected_menu') == 'manage' || sessionStorage.getItem('selected_menu') == 'administrate' || sessionStorage.getItem('selected_menu') == 'lists') {
+      show_menu('info')
+      if (!document.location.href == "") { // TODO: Replace /account_settings with a welcome-page for a new session (non-admin)
+        window.location.replace("/"); // TODO: This should delete the session history, so you cannot go back to an admin page
+      }
+    }
+
+    </script>
+    {% endblock %}
   </body>
+
+  <div id="verify_admin" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+      <!-- Modal content-->
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Do you really want to enter the admin menu?</h4>
+        </div>
+        <div class="modal-body">
+          <table class"table">
+            <thead></thead>
+            <tbody>Only proceed if you are sure.
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" data-dismiss="modal" onclick="show_admin_features();">Yes, proceed</button>
+          <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </html>

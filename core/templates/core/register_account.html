@@ -7,7 +7,7 @@
 {% block content %}
 
 <div class="panel panel-default">
-  <form id="register_form" action="/register" method="POST">
+  <form id="register_form" action="/register_account" method="POST">
     {% csrf_token %}
     <div class="panel-heading"></div>
     <div class="panel-body">
@@ -15,7 +15,7 @@
         <input type="text" name="name" placeholder="Name of new account" required="true">
       </div>
       <div>
-        <label for="users">Select associated users if they already exist</label>
+        <label for="users">Choose associated users if they already exist</label>
         <select multiple="multiple" name="users" class="selectpicker" data-actions-box="true" data-live-search="true">
           <option value="" disabled>Select users</option>
           {% for user in users %}
@@ -35,18 +35,4 @@
   </form>
 </div>
 
-{% endblock %}
-
-{% block script %}
-<!-- <script>
-  }
-  $(document).ready(function() {
-    
-    var dict = {
-      "taking": function() {
-        $("#transaction_entry_form");
-      }
-    }
-  });
-</script> -->
 {% endblock %}

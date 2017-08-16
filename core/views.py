@@ -13,6 +13,7 @@ from rest_framework.response import Response
 import itertools
 import logging
 from django.db.utils import OperationalError
+from django.core.exceptions import ObjectDoesNotExist
 
 try:
 
@@ -26,12 +27,14 @@ try:
         year = TimePeriod(singular="year", plural="years", days=365.25, decimals_shown=2)
         year.save()
 
+    selected_user = None
     accounts = Account.objects.all()
     if accounts:
         selected_account = accounts[0]
     else:
         selected_account = Account(name="Test")
         selected_account.save()
+
     logger = logging.getLogger(__name__)
     batches = Batch.objects.all()
     if batches.count():
@@ -48,6 +51,7 @@ try:
 
     # General
     recent_users = list(User.objects.all())
+    recent_accounts = list(Account.objects.all())
 
     # participate/transactions list filter
     selected_types_in_account_transactions = TransactionType.objects.all()
@@ -71,8 +75,6 @@ try:
 
 
     # participate/transactions entry form
-    default_enterer_of_new_transaction = models.ForeignKey('User', blank=True, null=True)
-    default_enterer_of_new_transaction = None
     default_date_of_new_transaction = models.CharField()
     default_date_of_new_transaction = ""
 
@@ -196,34 +198,91 @@ try:
 except OperationalError:
     pass
 
-def index(request):
-    template = loader.get_template('core/index.html')
-
-    # if this is a POST request we need to process the form data
+def select_user(request):
     if request.method == 'POST':
-        # create a form instance and populate it with data from the request:
-        form = TakingForm(request.POST)
-        # check whether it's valid:
-        if form.is_valid():
-            taking = form.save(commit=False)
-            taking.batch = Batch.objects.get(no=int(form.cleaned_data["batch_no"]))
-            taking.perform()
-            return HttpResponseRedirect('/')
+        user_id = request.POST.get("user_id")
+        if user_id:
+            global selected_user
+            if int(user_id) == 0:
+                selected_user = None
+            else:
+                selected_user = User.objects.get(pk=int(user_id))
+                global recent_users
+                # print(recent_users)
+                # matching_user = [user for user in recent_users if user.id == int(user_id)]
+                i = recent_users.index(selected_user)
+                recent_users.insert(0, recent_users.pop(i))
 
-    # if a GET (or any other method) we'll create a blank form
-    else:
-        form = TakingForm()
-    
-    context = {"form" : form}
-    return HttpResponse(template.render(context, request))
+def create_user(request):
+    if request.method == 'POST':
+        if request.POST.get("is_person"):
+            u = Person(name=str(request.POST.get("name")))
+            u.save()
+            if request.POST.getlist("accounts"):
+                for acc in request.POST.getlist("accounts"):
+                    acc = Account.objects.get(pk=int(acc))
+                    acc.accounts.add(u)
+                    acc.save()
+                    u.accounts.add(acc)
+                    u.save()
+            # if not request.POST.get("new_user") == '':
+            #     if request.POST.get("is_non_real") == True:
+            #         u = User(name=str(request.POST.get("new_user")))
+            #     else:
+            #         u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
+            #     u.save()
+            #     u.accounts.add(a)
+            #     u.save()
+            #     a.users.add(u)
+            #     a.save()
+
+def modify_user(request):
+    if request.method == 'POST':
+        global selected_user
+        selected_user.name = str(request.POST.get("name"))
+        if not is_virtual:
+            selected_user.first_name = str(request.POST.get("first_name"))
+            selected_user.last_name = str(request.POST.get("last_name"))
+        selected_user.accounts.clear()
+        for acc in request.POST.getlist("accounts"):
+            acc = Account.objects.get(pk=int(acc))
+            acc.users.add(selected_user)
+            acc.save()
+            selected_user.accounts.add(acc)
+        pacc = request.POST.get("primary_account")
+        if pacc:
+            if int(pacc) == 0:
+                selected_user.primary_account = None
+            else:
+                selected_user.primary_account = Account.objects.get(pk=int(pacc))
+        if not is_virtual:
+            pass # TODO
+        # if not request.POST.get("new_user") == '':
+        #     if request.POST.get("is_non_real"):
+        #         u = VirtualUser(name=str(request.POST.get("new_user")))
+        #     else:
+        #         u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
+        #     u.save()
+        #     u.accounts.add(selected_user)
+        #     u.save()
+        #     selected_user.users.add(u)
+        selected_user.save()
 
 def select_account(request):
     # account_id = 1
     if request.method == 'POST':
         account_id = request.POST.get("account_id")
-        if account_id:
+        primary = request.POST.get("primary_account")
+        global selected_account
+        if primary:
+            global selected_user
+            if selected_user:
+                if selected_user.primary_account:
+                    selected_account = selected_user.primary_account
+                else:
+                    selected_account = selected_user.accounts.all()[0]
+        elif account_id:
             account_id = int(account_id)
-            global selected_account
             selected_account = Account.objects.get(pk=account_id)
 
 def select_batch_for_batchtransactiontable(request):
@@ -282,14 +341,14 @@ def enter_new_transaction(request):
             t_type = TransactionType.objects.get(no=int(transaction_type))
         else:
             t_type = None
-        entered_by = request.POST.get("entered_by")
-        if entered_by:
-            t_enterer = User.objects.get(pk=int(entered_by))
-            global default_enterer_of_new_transaction
-            default_enterer_of_new_transaction = t_enterer
-            global recent_users
-            i = recent_users.index(t_enterer)
-            recent_users.insert(0, recent_users.pop(i))
+        # entered_by = request.POST.get("entered_by")
+        # if entered_by:
+        #     t_enterer = User.objects.get(pk=int(entered_by))
+        #     global default_enterer_of_new_transaction
+        #     default_enterer_of_new_transaction = t_enterer
+        #     global recent_users
+        #     i = recent_users.index(t_enterer)
+        #     recent_users.insert(0, recent_users.pop(i))
         date = request.POST.get("date")
         if date:
             t_date = datetime.datetime.strptime(date , '%Y-%m-%d').date()
@@ -310,7 +369,7 @@ def enter_new_transaction(request):
                 if batch_no:
                     t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
-                    t = Taking(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t = Taking(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.save()
                     t.perform()
             elif t_type.no == 2: # restitution
@@ -318,7 +377,7 @@ def enter_new_transaction(request):
                 if batch_no:
                     t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
-                    t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.save()
                     t.perform()
             elif t_type.no == 3: # inpayment
@@ -331,12 +390,12 @@ def enter_new_transaction(request):
                 if money_box:
                     t_money_box = MoneyBox.objects.get(pk=int(money_box))
                 if t_date and t_amount and t_currency and t_money_box:
-                    t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+                    t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
                     t.save()
                     t.perform()
             elif t_type.no == 4: # depositation
                 if t_date and t_amount:
-                    t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                    t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
                     t.save()
                     t.perform()
             # elif t_type.no == 5: # transcription of balance (currently not an entry type)
@@ -349,7 +408,7 @@ def enter_new_transaction(request):
                 if recipient_account:
                     t_recipient_account = Account.objects.get(pk=int(recipient_account))
                 if t_date and t_amount and t_recipient_account:
-                    t = Transfer(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment, recipient_account=t_recipient_account)
+                    t = Transfer(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, recipient_account=t_recipient_account)
                     t.save()
                     t.perform()
             elif t_type.no == 8 or t_type.no == 9 or t_type.no == 10 or t_type.no == 11: # cost sharing, proceeds sharing, donation, recovery
@@ -361,13 +420,13 @@ def enter_new_transaction(request):
                         t_participating_accounts.append(pa)
                 if t_date and t_amount and t_participating_accounts:
                     if t_type.no == 8:
-                        t = CostSharing(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                        t = CostSharing(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
                     if t_type.no == 9:
-                        t = ProceedsSharing(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                        t = ProceedsSharing(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
                     if t_type.no == 10:
-                        t = Donation(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                        t = Donation(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
                     if t_type.no == 11:
-                        t = Recovery(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+                        t = Recovery(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
                     t.save()
                     t.perform(transaction_type_no=t_type.no, participating_accounts=t_participating_accounts)
 
@@ -456,16 +515,64 @@ def filter_purchases(request):
                 enterers_in_purchase_list.append(e)
 
 def global_context(request):
+    global recent_users
+    global recent_accounts
+    global selected_user
+    accounts_of_selected_user = []
+    recent_other_accounts = []
+    if selected_user:
+        for account in recent_accounts:
+            if selected_user:
+                if account.users.filter(id=selected_user.id).count(): # if selected_user is a user related to account
+                    accounts_of_selected_user.append(account)
+                else:
+                    recent_other_accounts.append(account)
+    else:
+        recent_other_accounts = recent_accounts
     accounts = Account.objects.all()
     global selected_account
     balance = selected_account.balance_str
     current_path = request.get_full_path()
-    context = {"accounts": accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path, }
+    context = {"recent_users" : recent_users, "selected_user" : selected_user, "accounts_of_selected_user": accounts_of_selected_user, "recent_other_accounts" : recent_other_accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path, }
     return context
 
 def base(request):
-    select_account(request)
+    if request.method == 'POST':
+        if request.POST["form_name"] == "user_selection_form":
+            select_user(request)
+        if request.POST["form_name"] == "account_selection_form":
+            select_account(request)
     return HttpResponseRedirect(request.POST['current_path'])
+
+def index(request):
+    template = loader.get_template('core/index.html')
+    
+    context = { }
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def register_user(request):
+    create_user(request)
+    template = loader.get_template('core/register_user.html')
+    accounts = Account.objects.all()
+    context = {"accounts" : accounts}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def user_settings(request):
+    modify_user(request)
+    template = loader.get_template('core/user_settings.html')
+    global selected_user
+    accounts = Account.objects.all()
+    selected_user_is_person = False
+    if selected_user:
+        try:
+            sup = selected_user.person
+            selected_user_is_person = True
+        except ObjectDoesNotExist:
+            pass
+        except:
+            raise
+    context = {"selected_user" : selected_user, "accounts" : accounts, "selected_user_is_person" : selected_user_is_person}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def account_transactions(request):
     if request.method == 'POST':
@@ -474,7 +581,6 @@ def account_transactions(request):
         if request.POST["form_name"] == "transaction_entry_form":
             enter_new_transaction(request)
     template = loader.get_template('core/account_transactions.html')
-    g_context = global_context(request)
     global selected_account
     deposit = selected_account.deposit_str
     taken = selected_account.taken_str
@@ -508,14 +614,14 @@ def account_transactions(request):
     entry_types = TransactionType.objects.filter(is_entry_type=True)
 
     # users_of_selected_account = selected_account.users.all # list(selected_account.users.all()) ??
-    global recent_users
-    users_of_selected_account = []
-    recent_other_users = []
-    for user in recent_users:
-        if user.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to user
-            users_of_selected_account.append(user)
-        else:
-            recent_other_users.append(user)
+    # global recent_users
+    # users_of_selected_account = []
+    # recent_other_users = []
+    # for user in recent_users:
+    #     if user.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to user
+    #         users_of_selected_account.append(user)
+    #     else:
+    #         recent_other_users.append(user)
 
     table_users_of_selected_account = []
     other_table_users = []
@@ -538,25 +644,23 @@ def account_transactions(request):
     accounts = Account.objects.all()
     accounts_except_itself = Account.objects.exclude(id=selected_account.id)
     global default_date_of_new_transaction
-    global default_enterer_of_new_transaction
     context = {
         "account_table" : account_table, "deposit" : deposit,
         "taken" : taken, "entry_form" : entry_form, "entry_types" : entry_types,
         "currencies" : currencies, "money_boxes" : money_boxes,
         "batches" : batches, "transaction_types" : transaction_types, "selected_type_nos" : selected_type_nos, 
         "start_date" : start_date, "end_date" : end_date, "enterer_in_account_transactions" : enterer_in_account_transactions,
-        "accounts_except_itself" : accounts_except_itself, "accounts" : accounts, "users_of_selected_account" : users_of_selected_account, "recent_other_users" : recent_other_users,
+        "accounts_except_itself" : accounts_except_itself, "accounts" : accounts,
         "table_users_of_selected_account" : table_users_of_selected_account, "other_table_users" : other_table_users, 
-        "default_date_of_new_transaction" : default_date_of_new_transaction, "default_enterer_of_new_transaction" : default_enterer_of_new_transaction, 
+        "default_date_of_new_transaction" : default_date_of_new_transaction,
     }
-    return HttpResponse(template.render({**g_context, **context}, request))
+    return HttpResponse(template.render({**global_context(request), **context}, request))
 
-def register(request):
+def register_account(request):
     create_account(request)
-    template = loader.get_template('core/register.html')
-    global selected_account
+    template = loader.get_template('core/register_account.html')
     users = User.objects.all()
-    context = {"account" : selected_account, "users" : users}
+    context = {"users" : users}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def account_consumption_form(request):
@@ -637,12 +741,11 @@ def consumabletransactiontable(request):
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def accountlist(request):
-    g_context = global_context(request)
     template = loader.get_template('core/accountlist.html')
     accounts = Account.objects.all()
     accountlist = sorted(list(accounts), key=lambda t: t.id)
     context = {"accountlist" : accountlist}
-    return HttpResponse(template.render({**g_context, **context}, request))
+    return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def batchlist(request):
     template = loader.get_template('core/batchlist.html')
@@ -690,7 +793,6 @@ def purchases(request):
         # if request.POST["form_name"] == "transaction_entry_form":
         #     enter_new_transaction(request)
     template = loader.get_template('core/purchases.html')
-    g_context = global_context(request)
     all_purchase_statuses = PurchaseStatus.objects.all()
     global selected_statuses_in_purchase_list
     global start_date_in_purchase_list

@@ -2,3 +2,9 @@
 - wenn alles klappt, dann neu alles importieren und überprüfen
 - Insertion sheet
 - SQL statt Sqlite?
+
+New menu:
+- Block script in pages should extend block script of base, not override it (parent tag doesn't work)
+- Finish register_user page (person/virtual check with javascript show/hide person fields)
+- Complete user_settings page (more fields especially for persons)
+- Complete account_settings page

@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+{% block title %}Change settings of this user{% endblock %}
+{% block heading %}Change settings of this user{% endblock %}
+{% block style %}
+
+{% endblock %}
+{% block content %}
+
+{% if selected_user %}
+<div class="panel panel-default">
+  <form id="user_settings_form" action="/user_settings" method="POST">
+    {% csrf_token %}
+    <div class="panel-heading"></div>
+    <div class="panel-body">
+      <div>
+        <input type="submit" value="Save changes" />
+      </div>
+      <div>
+        <label for="name">Name</label>
+        <input type="text" name="name" value="{{ selected_user.name }}" required="true">
+      </div>
+      {% if selected_user_is_person %}
+      <div>
+        <label for="first_name">First name</label>
+        <input type="text" name="first_name" value="{{ selected_user.first_name }}">
+      </div>
+      <div>
+        <label for="last_name">Last name</label>
+        <input type="text" name="last_name" value="{{ selected_user.last_name }}">
+      </div>
+      {% endif %}
+      <div>
+        <label for="accounts">Associated accounts</label>
+        <select multiple="multiple" name="accounts" class="selectpicker" data-actions-box="true" data-live-search="true">
+          <option value="" disabled>Select accounts</option>
+          {% for account in accounts %}
+          <option value="{{ account.id }}" {% if account in selected_user.accounts.all %}selected{% endif %}>{{ account }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="primary_account">Primary account</label>
+        <select name="primary_account" class="selectpicker">
+          <option value="0">No primary account</option>
+          <option value="" disabled {% if not selected_user.primary_account %}selected{% endif %}>Select one of your accounts</option>
+          {% for account in selected_user.accounts.all %}
+          <option value="{{ account.id }}" {% if account == selected_user.primary_account %}selected{% endif %}>{{ account }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% else %}
+<div>No user selected.</div>
+{% endif %}
+
+{% endblock %}

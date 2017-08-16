@@ -1,0 +1,37 @@
+{% extends "core/base.html" %}
+{% block title %}Create new user{% endblock %}
+{% block heading %}Create new user{% endblock %}
+{% block style %}
+
+{% endblock %}
+{% block content %}
+
+<div class="panel panel-default">
+  <form id="register_form" action="/register_user" method="POST">
+    {% csrf_token %}
+    <div class="panel-heading">This page is incomplete: Add person/virtualuser check and person fields</div>
+    <div class="panel-body">
+      <div>
+        <input type="text" name="name" placeholder="Name of new user" required="true">
+      </div>
+      <div>
+        <label for="users">Select associated accounts if they already exist</label>
+        <select multiple="multiple" name="accounts" class="selectpicker" data-actions-box="true" data-live-search="true">
+          <option value="" disabled>Select accounts</option>
+          {% for account in accounts %}
+          <option value="{{ account.id }}">{{ account }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="new_account">Create new account for this account</label>
+        <input type="text" name="new_account" placeholder="Name of new account">
+      </div>
+      <div>
+        <input type="submit" value="Register" />
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

@@ -7,7 +7,6 @@ from .fields import PercentField
 from .functions import *
 import datetime
 import itertools
-from django_enumfield import enum
 from .config import *
 
 """

@@ -44,6 +44,7 @@ urlpatterns = [
     url(r'^batches', views.batches),
     url(r'^currencies', views.currencies),
     url(r'^purchases', views.purchases),
+    url(r'^add_insertion', views.add_insertion),
     url(r'^general_settings', views.general_settings),
     url(r'^admin/', admin.site.urls),
     #url(r'^', include(router.urls)),

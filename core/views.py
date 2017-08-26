@@ -902,6 +902,16 @@ def purchases(request):
              "start_date" : start_date, "end_date" : end_date, "selected_enterers" : enterers_in_purchase_list, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
+def add_insertion(request):
+    if request.method == 'POST':
+        pass
+    template = loader.get_template('core/add_insertion.html')
+    units = Unit.objects.all()
+    money_boxes = MoneyBox.objects.all()
+    accounts = Account.objects.all()
+    context = {"units" : units, "money_boxes" : money_boxes, "accounts" : accounts}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
 def general_settings(request):
     template = loader.get_template('core/general_settings.html')
 

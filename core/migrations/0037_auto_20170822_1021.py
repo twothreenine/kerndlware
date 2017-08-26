@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import core.models
 from django.db import migrations, models
 import django.db.models.deletion
-import django_enumfield.db.fields
 
 
 class Migration(migrations.Migration):

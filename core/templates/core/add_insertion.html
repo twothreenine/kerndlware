@@ -1,0 +1,148 @@
+{% extends "core/base.html" %}
+{% block title %}Add insertion{% endblock %}
+{% block style %}
+  div.row {
+
+  }
+  #form_head div {
+    float: left;
+    margin-right: 1em;
+  }
+  div.sp_consumable {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.sp_batch {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.sp_supplier {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.sp_actual_weight {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.sp_invoice_price {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.sp_transportation_cost {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.sp_effective_basic_price {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.sp_cost_difference {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.product_estimation_consumption > input { box-sizing: border-box; }      /* doesn't work! */
+
+  #account_consumption_form .panel-body .row:nth-child(odd) {
+    background-color: #ddd;
+  }
+{% endblock %}
+{% block content %}
+
+<form id="modify_purchase_list" action="/purchases" method="POST">
+{% csrf_token %}
+<div class="panel panel-default">
+  <div class="panel-head">
+    <div id="form_head">
+      <div>
+        <label for="name">Name</label>
+        <input name="name" type="text" />
+      </div>
+      <div>
+        <label for="date">Date</label>
+        <input name="date" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
+      </div>
+      <div>
+        <label for="credit">Credit/payout</label>
+        <select name="credit" class="selectpicker" data-live-search="true">
+          <option value=0>Main balance</option>
+          <option value="" disabled>Direct payout from money box</option>
+          {% for box in money_boxes %}
+          <option value=box{{ box.id }}>{{ box }}</option>
+          {% endfor %}
+          <option value="" disabled>Participant accounts</option>
+          {% for account in accounts %}
+          <option value=account{{ account.id }}>{{ account }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="transportation_cost">Transportation cost</label>
+        <input type="number" name="transportation_cost" step="any" size="5" placeholder="in €">
+      </div>
+      <div>
+        <label for="total_invoice">Total invoice</label>
+        <input type="number" name="total_invoice" step="any" size="5" placeholder="in €">
+      </div>
+    </div>
+    <div id="form_head">
+      <div>Description</div>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <div class ="row">
+      <div class ="sp_consumable">Consumable</div>
+      <div class ="sp_batch">batch</div>
+      <div class ="sp_supplier">supplier</div>
+      <div class ="sp_actual_weight">actual weight</div>
+      <div class ="sp_invoice_price">invoice price</div>
+      <div class ="sp_transportation_cost">transportation cost</div>
+      <div class ="sp_effective_basic_price">basic price</div>
+      <div class ="sp_cost_difference">cost difference</div>
+    </div>
+
+  <!-- for custom phases:
+  row.append(any_detail_str(object=phase.recipient_account)) # row.0
+  row.append(phase.active) # row.1
+  row.append(phase.start) # row.2
+  row.append(phase.end) # row.3
+  row.append("custom fee: "+str(phase.comment)) # row.4 (mode)
+  row.append(format(phase.rate,'.2f')+" €") # row.5 (rate)
+  row.append(phase.comment) # row.6
+  if phase.time_period_multiplicator == 1 and phase.time_period.adjective:
+      period_str = phase.time_period.adjective
+  else:
+      period_str = "every {} {}".format(phase.time_period_multiplicator, phase.time_period.plural)
+  row.append(period_str) # row.7 (time period)
+  row.append(phase.fee.next_performance) # row.8 (next performance)
+  row.append(phase.fee.previous_performance) # row.9 (previous performance)
+  row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10 -->
+
+
+      <div class ="row">
+        <div class ="sp_consumable"></div>
+        <div class ="sp_batch"></div>
+        <div class ="sp_supplier"></div>
+        <div class ="sp_actual_weight"></div>
+        <div class ="sp_invoice_price"></div>
+        <div class ="sp_transportation_cost"></div>
+        <div class ="sp_effective_basic_price"></div>
+        <div class ="sp_cost_difference">cost difference</div>
+      </div>
+  </div>
+</div>
+
+
+</form>
+
+
+
+{% endblock %}

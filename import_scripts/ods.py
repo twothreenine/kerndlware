@@ -148,7 +148,7 @@ def import_accounts(create_users=True):
                     else:
                         end_date = None
                         orig_end_date = ""
-                    ap = models.AccPayPhase(account=a, start=start_date, end=end_date, rate=rate, comment=orig_start_date+orig_end_date+comment)
+                    ap = models.MembershipFee(account=a, start=start_date, end=end_date, rate=rate, comment=orig_start_date+orig_end_date+comment)
                     ap.save()
                 elif not row[5] == '':
                     a.comment = "Eintritt am "+str(row[5])+", nicht zahlend; "+comment

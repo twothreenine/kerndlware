@@ -1,0 +1,197 @@
+{% extends "core/base.html" %}
+{% block title %}Membership fees{% endblock %}
+{% block heading %}Your membership fees{% endblock %}
+{% block style %}
+  div.row {
+
+  }
+  div.phase_active {
+    display: inline-block;
+    width: 3%;
+    margin-left: 1em;
+  }
+  div.phase_start {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.phase_end {
+    display: inline-block;
+    width: 7%;
+    margin-left: 1em;
+  }
+  div.phase_mode {
+    display: inline-block;
+    width: 15%;
+    margin-left: 1em;
+  }
+  div.phase_rate {
+    display: inline-block;
+    width: 10%;
+    margin-left: 1em;
+  }
+  div.phase_period {
+    display: inline-block;
+    width: 15%;
+    margin-left: 1em;
+  }
+  div.phase_details {
+    display: inline-block;
+    width: 5%;
+    margin-left: 1em;
+  }
+{% endblock %}
+{% block content %}
+
+<div class="panel-group">
+    <div class="panel panel-default">
+      <div class="panel-body">
+        <div>
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#add_membership_fee">Add membership fee</button>
+        </div>
+        <div>Current share on single sharings: {{ table.current_share_sum }}</div>
+        <div>Current regular fee: {{ table.current_fee_sum }}</div>
+      </div>
+    </div>
+    <div class ="row">
+      <div class ="phase_active">active?</div>
+      <div class ="phase_start">start</div>
+      <div class ="phase_end">end</div>
+      <div class ="phase_mode">mode</div>
+      <div class ="phase_rate">rate</div>
+      <div class ="phase_period">time period</div>
+    </div>
+
+<!-- for custom phases:
+row.append(any_detail_str(object=phase.recipient_account)) # row.0
+row.append(phase.active) # row.1
+row.append(phase.start) # row.2
+row.append(phase.end) # row.3
+row.append("custom fee: "+str(phase.comment)) # row.4 (mode)
+row.append(format(phase.rate,'.2f')+" €") # row.5 (rate)
+row.append(phase.comment) # row.6
+if phase.time_period_multiplicator == 1 and phase.time_period.adjective:
+    period_str = phase.time_period.adjective
+else:
+    period_str = "every {} {}".format(phase.time_period_multiplicator, phase.time_period.plural)
+row.append(period_str) # row.7 (time period)
+row.append(phase.fee.next_performance) # row.8 (next performance)
+row.append(phase.fee.previous_performance) # row.9 (previous performance)
+row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10 -->
+
+      <div class="panel panel-default">
+        <div class="panel-heading"><a data-toggle="collapse" href="#current_phases">Current membership fees ({{ table.current_phases_count }})</a></div>
+        <div id="current_phases" class="panel-collapse collapse in">
+          <div class="panel-body">
+            {% for row in table.current_phases %}
+            <div class ="row">
+              <div class ="phase_active">{{ row.1 }}</div>
+              <div class ="phase_start">{{ row.2 }}</div>
+              <div class ="phase_end">{{ row.3 }}</div>
+              <div class ="phase_mode">{{ row.4 }}</div>
+              <div class ="phase_rate">{{ row.5 }}</div>
+              <div class ="phase_period">{{ row.7 }}</div>
+              <div class ="phase_details"><a data-toggle="collapse" href="#details{{ row.0 }}">show details</a></div>
+                <div id="details{{ row.0 }}" class="panel-collapse collapse">
+                  <div class="panel-body">
+                    {% if not row.11 == "" %}
+                    <div>Recipient: {{ row.11 }}</div>
+                    {% endif %}
+                    <div>Next payment: {{ row.8 }}</div>
+                    <div>Previous payment: {{ row.9 }}</div>
+                    {% if row.6 %} <div>Comment: {{ row.6 }}</div> {% endif %}
+                    <div>Last edited {{ row.10 }}</div>
+                  </div>
+                </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading"><a data-toggle="collapse" href="#future_phases">Future membership fees ({{ table.future_phases_count }})</a></div>
+        <div id="future_phases" class="panel-collapse collapse">
+          <div class="panel-body">
+            {% for row in table.future_phases %}
+            <div class ="row">
+              <div class ="phase_active">{{ row.1 }}</div>
+              <div class ="phase_start">{{ row.2 }}</div>
+              <div class ="phase_end">{{ row.3 }}</div>
+              <div class ="phase_mode">{{ row.4 }}</div>
+              <div class ="phase_rate">{{ row.5 }}</div>
+              <div class ="phase_period">{{ row.7 }}</div>
+              <div class ="phase_details"><a data-toggle="collapse" href="#details{{ row.0 }}">show details</a></div>
+                <div id="details{{ row.0 }}" class="panel-collapse collapse">
+                  <div class="panel-body">
+                    {% if not row.11 == "" %} <div>Recipient: {{ row.11 }}</div> {% endif %}
+                    <div>Next payment: {{ row.8 }}</div>
+                    <div>Previous payment: {{ row.9 }}</div>
+                    {% if row.6 %} <div>Comment: {{ row.6 }}</div> {% endif %}
+                    <div>Last edited {{ row.10 }}</div>
+                  </div>
+                </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading"><a data-toggle="collapse" href="#former_phases">Former membership fees ({{ table.former_phases_count }})</a></div>
+        <div id="former_phases" class="panel-collapse collapse">
+          <div class="panel-body">
+            {% for row in table.former_phases %}
+            <div class ="row">
+              <div class ="phase_active">{{ row.1 }}</div>
+              <div class ="phase_start">{{ row.2 }}</div>
+              <div class ="phase_end">{{ row.3 }}</div>
+              <div class ="phase_mode">{{ row.4 }}</div>
+              <div class ="phase_rate">{{ row.5 }}</div>
+              <div class ="phase_period">{{ row.7 }}</div>
+              <div class ="phase_details"><a data-toggle="collapse" href="#details{{ row.0 }}">show details</a></div>
+                <div id="details{{ row.0 }}" class="panel-collapse collapse">
+                  <div class="panel-body">
+                    {% if not row.11 == "" %}
+                    <div>Recipient: {{ row.11 }}</div>
+                    {% endif %}
+                    <div>Next payment: {{ row.8 }}</div>
+                    <div>Previous payment: {{ row.9 }}</div>
+                    {% if row.6 %} <div>Comment: {{ row.6 }}</div> {% endif %}
+                    <div>Last edited {{ row.10 }}</div>
+                  </div>
+                </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+</div>
+
+
+{% endblock %}
+
+<!-- old version in one line:
+
+      <div class="panel panel-default">
+        <div class="panel-heading"><a data-toggle="collapse" href="#future_phases">Future membership fees ({{ table.future_phases_count }})</a></div>
+        <div id="future_phases" class="panel-collapse collapse">
+          <div class="panel-body">
+            {% for row in table.future_phases %}
+            <div class ="row">
+              <div class ="phase_recipient">{{ row.0 }}</div>
+              <div class ="phase_active">{{ row.1 }}</div>
+              <div class ="phase_start">{{ row.2 }}</div>
+              <div class ="phase_end">{{ row.3 }}</div>
+              <div class ="phase_mode">{{ row.4 }}</div>
+              <div class ="phase_rate">{{ row.5 }}</div>
+              <div class ="phase_comment">{{ row.6 }}</div>
+              <div class ="phase_period">{{ row.7 }}</div>
+              <div class ="phase_next">{{ row.8 }}</div>
+              <div class ="phase_previous">{{ row.9 }}</div>
+              <div class ="phase_last_edited">{{ row.10 }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div> -->

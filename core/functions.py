@@ -4,18 +4,17 @@ import math
 from collections import Counter
 import datetime
 
-
 def remove_zeros(f):
     d = Decimal(str(f));
     return d.quantize(Decimal(1)) if d == d.to_integral() else d.normalize()
 
 def any_detail_str(object, attribute, detail=None, multiple=False):
-    self_attribute = eval("object."+attribute)
-    if self_attribute:
+    obj_attribute = eval("object."+attribute)
+    if obj_attribute:
         if detail:
             return eval("object."+attribute+"."+detail)
         else:
-            return self_attribute
+            return obj_attribute
     else:
         return ''
 
@@ -80,3 +79,20 @@ def list_str(my_list, sorted_by_attribute=None, descending=True, displayed_attri
             else:
                 obj_names += " and "+str(left_to_write)+" other"+objects
             return obj_names
+
+def calc_next_date(obj):
+    if obj.day_specified and obj.time_period.is_month:
+        if obj.next_performance.day > 28:
+            obj.next_performance.replace(day=28)
+        new_month = obj.next_performance.month+obj.time_period_multiplicator
+        new_year = obj.next_performance.year
+        while new_month > 12:
+            new_year += 1
+            new_month -= 12
+        return obj.next_performance.replace(year=new_year, month=new_month)
+    elif obj.day_specified and obj.time_period.is_year:
+        if obj.next_performance.day > 28:
+            obj.next_performance.replace(day=28)
+        return obj.next_performance.replace(year=obj.next_performance.year+obj.time_period_multiplicator)
+    else:
+        return obj.next_performance + datetime.timedelta(days=obj.time_period.days*obj.time_period_multiplicator)

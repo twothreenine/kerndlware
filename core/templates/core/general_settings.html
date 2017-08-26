@@ -1,0 +1,43 @@
+{% extends "core/base.html" %}
+{% block title %}Change general settings{% endblock %}
+{% block heading %}Change general settings{% endblock %}
+{% block style %}
+
+{% endblock %}
+{% block content %}
+
+<div class="panel panel-default">
+  <form id="settings_form" action="/general_settings" method="POST">
+    {% csrf_token %}
+    <div class="panel-heading"></div>
+    <div class="panel-body">
+      <div>
+        <input type="submit" value="Save changes" />
+      </div>
+      <div>
+        <label for="group_title">Group title</label>
+        <input type="text" name="group_title" value="{{ group_title }}" required="true">
+      </div>
+      <div>
+        <label for="anchor_currency">Anchor currency</label>
+        <select name="anchor_currency" class="selectpicker">
+          <option value="" disabled {% if not anchor_currency %}selected{% endif %}>Select your anchor currency</option>
+          {% for currency in all_currencies %}
+          <option value="{{ currency.id }}" {% if account == anchor_currency %}selected{% endif %}>{{ currency }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="membership_fee_modes">Enabled modes for membership fee</label>
+        <select multiple="multiple" name="membership_fee_modes" class="selectpicker" data-actions-box="true" data-live-search="true">
+          <option value="" disabled>Select modes</option>
+          {% for mode in all_membership_fee_modes %}
+          <option value="{{ mode.value }}" {% if mode in enabled_membership_fee_modes %}selected{% endif %}>{{ mode.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

@@ -7,6 +7,8 @@ from .fields import PercentField
 from .functions import *
 import datetime
 import itertools
+from django_enumfield import enum
+from .config import *
 
 """
 Functions to return the stock of a batch resp. a consumable at a specific transaction.
@@ -46,8 +48,21 @@ def tci_delete():
 class TimePeriod(models.Model):
     singular = models.CharField(max_length=30)
     plural = models.CharField(max_length=30)
+    adjective = models.CharField(max_length=30)
     days = models.FloatField()
     decimals_shown = models.IntegerField()
+    is_day = models.BooleanField(default=False)
+    is_week = models.BooleanField(default=False)
+    is_month = models.BooleanField(default=False)
+    is_year = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "{} ({})".format(self.singular, self.days)
+
+    def conversion_factor(self, into=None):
+        if into == None: # default period
+            into = TimePeriod.objects.get(singular="Month") # TODO: select default period from general settings
+        return into.days / self.days
 
 class Currency(models.Model):
     name = models.CharField(max_length=10)
@@ -76,7 +91,7 @@ class Role(models.Model):
 class User(models.Model):
     name = models.CharField(max_length=50)
     active = models.BooleanField(default=True)
-    comment = models.TextField(blank=True)
+    notice = models.TextField(blank=True)
     accounts = models.ManyToManyField('Account', blank=True, related_name="accounts")
     primary_account = models.ForeignKey('Account', blank=True, null=True, related_name="primary_account")
 
@@ -87,13 +102,15 @@ class Person(User):
     last_name = models.CharField(max_length=50, blank=True)
     first_name = models.CharField(max_length=50, blank=True)
     streetname = models.CharField(max_length=100, blank=True)
-    streetnumber = models.SmallIntegerField(blank=True, null=True)
-    zipcode = models.IntegerField(blank=True, null=True)
+    streetnumber = models.CharField(max_length=10, blank=True)
+    zipcode = models.CharField(max_length=10, blank=True)
     town = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
     address_notice = models.TextField(blank=True)
     email = models.EmailField(max_length=254, blank=True)
-    website = models.TextField(blank=True)
-    telephone = models.BigIntegerField(blank=True, null=True)
+    website = models.CharField(max_length=500, blank=True)
+    telephone1 = models.CharField(max_length=50, blank=True)
+    telephone2 = models.CharField(max_length=50, blank=True)
 
     @property
     def is_person(self):
@@ -116,16 +133,19 @@ class Account(models.Model):
     original_id = models.IntegerField(blank=True, null=True)
     comment = models.TextField(blank=True)
 
+    # settings
+    displayed_time_period_for_membership_fees = models.ForeignKey('TimePeriod', blank=True, null=True)
+
     def __str__(self):
-        rate = self.calc_rate(datetime=datetime.datetime.now())
+        rate = self.calc_specific_sharings_rate(datetime.date.today())
         return "{} - {} ({}x)".format(str(self.id), self.name, rate)
 
-    def calc_rate(self, datetime):
+    def calc_specific_sharings_rate(self, date): # calc for datetime?
         """
         Calculates the payment rate of an account on a specific date. If more than one pay phase applies to the date, their rates get multiplied. If none applies, the rate is set to 0.
         The date must be given in this format: datetime=datetime.date(year,month,day)  or for today's date: datetime=datetime.date.today()
         """
-        current_phases = AccPayPhase.objects.filter(account = self.id).filter(Q(start=None)|Q(start__lte=datetime)).filter(Q(end=None)|Q(end__gte=datetime))
+        current_phases = [phase for phase in SpecificSharingsMembershipPhase.objects.filter(account=self, active=True, rate__gt=0) if phase.current(date)]
         if not current_phases:
             rate = 0
         else:
@@ -133,6 +153,18 @@ class Account(models.Model):
             for payphase in current_phases:
                 rate = rate * payphase.rate
         return rate
+
+    def get_time_period_for_membership_fees(self):
+        config_name_periods = TimePeriod.objects.filter(singular=get_config("time_period_for_membership_fee_sum"))
+        if self.displayed_time_period_for_membership_fees:
+            return self.displayed_time_period_for_membership_fees
+        elif config_name_periods:
+            return config_name_periods[0]
+        elif TimePeriod.objects.filter(is_month=True):
+            return TimePeriod.objects.filter(is_month=True)[0]
+        else:
+            return None
+            print("Error: Couldn't find any time period matching to general setting, nor a month with filter(is_month=True).")
 
     @property
     def users_str(self):
@@ -224,29 +256,190 @@ class Account(models.Model):
         self.taken = taken
         self.save()
 
-class AccPayPhase(models.Model):
-    account = models.ForeignKey('Account', blank=True, null=True) # former ManyToManyField
-    start = models.DateField(blank=True, null=True) # null means the phase has no minimum date
-    end = models.DateField(blank=True, null=True) # null means the phase has no maximum date (use null here for a current phase without any end given yet)
-    rate = models.FloatField(default=1)
-    comment = models.TextField(blank=True)
+"""
+I tried to use an enum here, but there were severe problems:
+Python enum34 seems not fully compatible with django 1.10: Creating and saving an instance of a model with an EnumField leads to ValueError("Cannot force an update in save() with no primary key.").
+After research, I have found this git branch: git+git://github.com/i2biz/django-enumfield.git@jbzdak/django110
+which solved the problem, but then the enums weren't iterable (old python enum is not iterable, in opposition to python enum34)
+So I finally dumped it and made a model class instead:
 
-    def __str__(self):
-        if self.start == None:
-            start = 'from the beginning'
+class MembershipFeeMode(enum.Enum):
+    SINGLE_SHARINGS = 1
+    REGULAR_RELATIVE = 2
+    REGULAR_ABSOLUTE = 3
+
+    labels = {
+        SINGLE_SHARINGS: 'share on single sharings',
+        REGULAR_RELATIVE: 'regular membership fee, absolute amount',
+        REGULAR_ABSOLUTE: 'regular membership fee, relative amount'
+    }
+"""
+
+class GeneralMembershipFee(models.Model):
+    abbr = models.CharField(max_length=30)
+    label = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    total = models.BooleanField() # if True, amount will be divided on the relevant phases; if False, amount will be drawn-in for each phase wholly
+    amount = models.FloatField() # in anchor currency
+    time_period_multiplicator = models.FloatField(default=1) # e.g. time_period_multiplicator = 2.5, time_period = Month => period of 2.5 months
+    time_period = models.ForeignKey('TimePeriod')
+    day_specified = models.BooleanField() # if it shall be performed on a specific day of each month or year
+    start = models.DateField() # first date the fee is drawn in, therefore required; set day if day_specified
+    end = models.DateField(blank=True, null=True) # including this date; null means the fee has no maximum date (use null here for a current fee without any end given yet)
+    enabled = models.BooleanField(default=True) # or "active"? Might be a way to hide old irrelevant phases
+    recipient_account = models.ForeignKey('Account', blank=True, null=True)
+    previous_performance = models.DateTimeField(blank=True, null=True)
+    next_performance = models.DateTimeField(blank=True, null=True)
+
+    def update(self, to_datetime=datetime.datetime.now()):
+        while self.next_performance < to_datetime:
+            self.perform(self.next_performance)
+
+    def perform(self, performance_datetime=datetime.datetime.now(), user=None):
+        if user == None:
+            try:
+                user = VirtualUser.objects.filter(name="Bot", active=False)[0]
+            except DoesNotExist:
+                user = VirtualUser(name="Bot", active=False)
+                user.save()
+        relevant_phases = GeneralMembershipFeePhase.objects.filter(fee=self, active=True, rate__gt=0).filter(Q(start=None)|Q(start__lte=performance_datetime.date)).filter(Q(end=None)|Q(end__gte=performance_datetime.date))
+        if self.total == True:
+            sum_of_rates = 0
+            for phase in relevant_phases:
+                sum_of_rates += phase.rate
+            one_rate = self.amount / sum_of_rates
+        for phase in relevant_phases:
+            if self.total == True:
+                amount = one_rate * phase.rate
+            else:
+                amount = self.amount
+            if self.recipient_account:
+                # When the method runs because an account is added to or removed from a fee and its shares shall be made subsequently
+                existing_transfers = Transfer.objects.filter(originator_account=self.account, date=performance_datetime.date, fee_phase=phase)
+                if existing_transfers: 
+                    existing_transfers[0].amount = amount
+                    existing_transfers[0].save()
+                    existing_transfers[0].perform()
+                else:
+                    t = Transfer(originator_account=self.account, entered_by_user=user, date=performance_datetime.date, amount=amount, comment=self.description, recipient_account=self.recipient_account)
+                    t.save()
+                    t.perform()
+            else:
+                existing_credits = Credit.objects.filter(originator_account=self.account, date=performance_datetime.date, fee_phase=phase)
+                if existing_credits:
+                    existing_credits[0].amount = amount*(-1)
+                    existing_credits[0].save()
+                    existing_credits[0].perform()
+                else:
+                    c = Credit(originator_account=phase.account, entered_by_user=user, date=performance_datetime.date, amount=amount*(-1), comment=self.description, fee_phase=phase)
+                    c.save()
+                    c.perform()
+        self.previous_performance = performance_datetime
+        self.next_performance = calc_next_datetime(obj=self) # in functions.py
+        self.save()
+
+class MembershipPhase(models.Model): # actual phase of an account
+    account = models.ForeignKey('Account', blank=True, null=True)
+    # start is defined in the subclasses
+    end = models.DateField(blank=True, null=True) # including this date; null means the phase has no maximum date (use null here for a current phase without any end given yet)
+    rate = models.FloatField(default=1)
+    active = models.BooleanField(default=True)
+    comment = models.TextField(blank=True)
+    last_edited_on = models.DateField(auto_now=True)
+    last_edited_by = models.ForeignKey('User', blank=True, null=True)
+
+    # def __str__(self):
+    #     if self.start == None:
+    #         start = 'from the beginning'
+    #     else:
+    #         start = 'from ' + str(self.start) + ' on'
+    #     if self.end == None:
+    #         end = 'to forever'
+    #     else:
+    #         end = 'to ' + str(self.end)
+    #     if self.start == None and self.end == None:
+    #         start = 'always'
+    #         end = ''
+    #     account_name = self.account.name
+    #     return "{}: {}x {} {}".format(account_name, self.rate, start, end)
+
+class GeneralMembershipFeePhase(MembershipPhase):
+    start = models.DateField(blank=True, null=True) # including this date; null means the phase has no minimum date
+    fee = models.ForeignKey('GeneralMembershipFee')
+
+    def current(self, date=datetime.date.today()):
+        if (self.start == None or self.start <= date) and (self.end == None or self.end >= date) and (self.fee.start <= date) and (self.fee.end == None or self.fee.end >= date):
+            return True
         else:
-            start = 'from ' + str(self.start) + ' on'
-        if self.end == None:
-            end = 'to forever'
+            return False
+
+    def calc_amount(self, date=datetime.date.today(), per_period=None, per_period_multiplicator=1):
+        if not per_period:
+            per_period = self.fee.time_period
+            per_period_multiplicator = self.fee.time_period_multiplicator
+        if self.fee.total == True:
+            sum_of_rates = 0
+            current_phases = [rate_phase for rate_phase in GeneralMembershipFeePhase.objects.filter(fee=self.fee) if rate_phase.current(self.date) and rate_phase.active]
+            for rates_phase in current_phases:
+                sum_of_rates += rates_phase.rate
         else:
-            end = 'to ' + str(self.end)
-        if self.start == None and self.end == None:
-            start = 'always'
-            end = ''
-        # for acc in self.account.all():
-        #     account_names += str(acc.name) + ', ' # TODO: don't put comma after last name
-        account_name = self.account.name
-        return "{}: {}x {} {}".format(account_name, self.rate, start, end)
+            sum_of_rates = 1
+        return self.rate * self.fee.amount / sum_of_rates * per_period.days * per_period_multiplicator / (self.fee.time_period.days*self.fee.time_period_multiplicator)
+
+class CustomMembershipFeePhase(MembershipPhase):
+    label = models.CharField(max_length=100)
+    start = models.DateField() # first date the fee is drawn in, therefore required
+    time_period_multiplicator = models.FloatField(default=1) # e.g. time_period_multiplicator = 2.5, time_period = Month => period of 2.5 months
+    time_period = models.ForeignKey('TimePeriod')
+    recipient_account = models.ForeignKey('Account', blank=True, null=True)
+    previous_performance = models.DateTimeField(blank=True, null=True)
+    next_performance = models.DateTimeField(blank=True, null=True)
+    # rate is already defined in the superclass, here used in anchor currency
+
+    def current(self, date=datetime.date.today()):
+        if (self.start == None or self.start <= date) and (self.end == None or self.end >= date):
+            return True
+        else:
+            return False
+
+    def calc_amount(self, date=datetime.date.today(), per_period=None, per_period_multiplicator=1):
+        if not per_period:
+            per_period = self.time_period
+            per_period_multiplicator = self.time_period_multiplicator
+        return self.rate * per_period.days * per_period_multiplicator / (self.time_period.days*self.time_period_multiplicator)
+
+    def update(self, to_datetime=datetime.datetime.now()):
+        while self.next_performance < to_datetime:
+            self.perform(self.next_performance)
+
+    def perform(self, performance_datetime=datetime.datetime.now(), user=None):
+        if user == None:
+            try:
+                user = VirtualUser.objects.filter(name="Bot", active=False)[0]
+            except DoesNotExist:
+                user = VirtualUser(name="Bot", active=False)
+                user.save()
+        if self.active == True and self.rate >= 0 and (self.start == None or self.start <= performance_datetime) and (self.end == None or self.end >= performance_datetime):
+            if self.recipient_account:
+                t = Transfer(originator_account=self.account, entered_by_user=user, date=performance_datetime.date, amount=self.rate, comment=self.comment, recipient_account=self.recipient_account)
+                t.save()
+                t.perform()
+            else:
+                c = Credit(originator_account=self.account, entered_by_user=user, date=performance_datetime.date, amount=self.rate*(-1), comment=self.comment, fee_phase=self)
+                c.save()
+                c.perform()
+        self.previous_performance = performance_datetime
+        self.next_performance = calc_next_datetime(obj=self) # in functions.py
+        self.save()
+
+class SpecificSharingsMembershipPhase(MembershipPhase):
+    start = models.DateField(blank=True, null=True) # including this date; null means the phase has no minimum date
+
+    def current(self, date=datetime.date.today()):
+        if (self.start == None or self.start <= date) and (self.end == None or self.end >= date):
+            return True
+        else:
+            return False
 
 class Engagement(models.Model):
     person = models.ForeignKey('Person')
@@ -1445,6 +1638,7 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
     recipient_account = models.ForeignKey('Account')
     currency = models.ForeignKey('Currency', blank=True, null=True)
     batch = models.ForeignKey('Batch', blank=True, null=True)
+    fee_phase = models.ForeignKey('MembershipPhase', blank=True, null=True) # If a fee phase is the matter, it will be linked
 
     @property
     def type(self):
@@ -1470,15 +1664,21 @@ class Transfer(Transaction): # IDEE: Value will be calculated by  wird durch Ang
         # self.recipient_account.add_balance(self.value)
         # self.recipient_account.save()
 
+    def transfer_matter_str(self):
+        if self.fee_phase:
+            return 'for membership fee "{}"'.format(self.fee_phase.label)
+        else:
+            return ''
+
     def matter_str(self, account=0):
         if account == 0:
-            return "{} transferred {} € to {}".format(self.originator_account.name, format(self.amount,'.2f'), self.recipient_account.name), "", ""
+            return "{} transferred {} € to {}".format(self.originator_account.name, format(self.amount,'.2f'), self.recipient_account.name), self.transfer_matter_str(), ""
         else:
             acc = Account.objects.get(pk=account)
             if self.originator_account == acc:
-                return "You transferred {} € to {}".format(format(self.amount,'.2f'), self.recipient_account.name), "", ""
+                return "You transferred {} € to {}".format(format(self.amount,'.2f'), self.recipient_account.name), self.transfer_matter_str(), ""
             elif self.recipient_account == acc:
-                return "{} transferred {} € to you".format(self.originator_account.name, format(self.amount,'.2f')), "", ""
+                return "{} transferred {} € to you".format(self.originator_account.name, format(self.amount,'.2f')), self.transfer_matter_str(), ""
             else:
                 return " ", "", ""
 
@@ -1501,7 +1701,7 @@ class ShareTransaction(Transaction):
             self.value = self.amount * batch.price
         sum_of_rates = 0
         for account in participating_accounts: # self.participating_accounts.all()
-            rate = account.calc_rate(datetime=self.date)
+            rate = account.calc_specific_sharings_rate(self.date)
             sum_of_rates += rate
             if rate > 0:
                 self.participating_accounts.add(account)
@@ -1514,7 +1714,7 @@ class ShareTransaction(Transaction):
             co.save()
             self.originator_share = co
             for account in self.participating_accounts.all():
-                share = type_factor * self.value * account.calc_rate(datetime=self.date) / sum_of_rates
+                share = type_factor * self.value * account.calc_specific_sharings_rate(self.date) / sum_of_rates
                 cp = Charge(transaction=self, account=account, value=share, to_balance=True, date=self.date)
                 cp.save()
                 self.shares.add(cp)
@@ -1597,6 +1797,7 @@ class Recovery(ShareTransaction): # donation backwards
 class Credit(Transaction): # credit to balance resp. charge from balance
     matter = models.TextField(blank=True)
     purchase = models.ForeignKey('Purchase', blank=True, null=True) # If an purchase is the matter, it will be linked
+    fee_phase = models.ForeignKey('MembershipPhase', blank=True, null=True) # If a fee phase is the matter, it will be linked
 
     @property
     def type(self):
@@ -1612,11 +1813,7 @@ class Credit(Transaction): # credit to balance resp. charge from balance
         charge.save()
 
     def credit_matter_str(self):
-        if self.purchase == None and self.matter == "":
-            return ""
-        elif self.purchase == None:
-            matter = self.matter
-        else:
+        if self.purchase:
             specific_purchases = SpecificPurchase.objects.filter(purchase=self.purchase)
             batches = list()
             for si in specific_purchases:
@@ -1626,8 +1823,13 @@ class Credit(Transaction): # credit to balance resp. charge from balance
             for si in specific_purchases:
                 if not si.batch.supplier in suppliers:
                     suppliers.append(si.batch.supplier)
-            matter = "purchase of " + list_str(my_list=specific_purchases, sorted_by_attribute="amount", displayed_attribute="batch.name", type_plural="batches") + " from " + list_str(my_list=suppliers, type_plural="suppliers")
-        return " for "+matter
+            return 'for purchase of {} from {}'.format(list_str(my_list=specific_purchases, sorted_by_attribute="amount", displayed_attribute="batch.name", type_plural="batches"), list_str(my_list=suppliers, type_plural="suppliers"))
+        elif self.fee_phase:
+            return 'for membership fee "{}"'.format(self.fee_phase.label)
+        elif self.matter:
+            return 'for {}'.format(self.matter)
+        else:
+            return ''
 
     def matter_str(self, account=0):
         if account == 0:

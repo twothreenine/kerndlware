@@ -8,25 +8,25 @@
 
 {% if selected_user %}
 <div class="panel panel-default">
-  <form id="user_settings_form" action="/user_settings" method="POST">
+  <div class="panel-heading"></div>
+  <div class="panel-body">
+    <form id="user_settings_form" action="/user_settings" method="POST">
     {% csrf_token %}
-    <div class="panel-heading"></div>
-    <div class="panel-body">
       <div>
         <input type="submit" value="Save changes" />
       </div>
       <div>
-        <label for="name">Name</label>
+        <label for="name">Displayed name</label>
         <input type="text" name="name" value="{{ selected_user.name }}" required="true">
       </div>
       {% if selected_user_is_person %}
       <div>
         <label for="first_name">First name</label>
-        <input type="text" name="first_name" value="{{ selected_user.first_name }}">
+        <input type="text" name="first_name" value="{{ selected_user.person.first_name }}">
       </div>
       <div>
         <label for="last_name">Last name</label>
-        <input type="text" name="last_name" value="{{ selected_user.last_name }}">
+        <input type="text" name="last_name" value="{{ selected_user.person.last_name }}">
       </div>
       {% endif %}
       <div>
@@ -48,8 +48,34 @@
           {% endfor %}
         </select>
       </div>
-    </div>
-  </form>
+      {% if selected_user_is_person %}
+      <div>
+        <label for="streetname">Address</label>
+        <input type="text" name="streetname" placeholder="Streetname" value="{{ selected_user.person.streetname }}">
+        <input type="text" name="streetnumber" placeholder="Streetnumber" value="{{ selected_user.person.streetnumber }}">
+        <input type="text" name="zipcode" placeholder="Zipcode" value="{{ selected_user.person.zipcode }}">
+        <input type="text" name="town" placeholder="Town" value="{{ selected_user.person.town }}">
+        <input type="text" name="country" placeholder="Country" value="{{ selected_user.person.country }}">
+        <input type="text" name="address_notice" placeholder="Address notice" value="{{ selected_user.person.address_notice }}">
+      </div>
+      <div>
+        <label for="email">Contact</label>
+        <input type="email" name="email" placeholder="Email" value="{{ selected_user.person.email }}">
+        <input type="text" name="website" placeholder="Website" value="{{ selected_user.person.website }}">
+        <input type="text" name="telephone1" placeholder="Telephone 1" value="{{ selected_user.person.telephone1 }}">
+        <input type="text" name="telephone2" placeholder="Telephone 2" value="{{ selected_user.person.telephone2 }}">
+      </div>
+      {% endif %}
+      <div>
+        <label for="notice">Notice/comment</label>
+        <input type="text" name="notice" value="{{ selected_user.notice }}">
+      </div>
+      <div>
+        <label for="active">Active</label>
+        <input type="checkbox" {% if selected_user.active == True %} checked {% endif %} name="active" value="yes"> <!--  -->
+      </div>
+    </form>
+  </div>
 </div>
 
 {% else %}

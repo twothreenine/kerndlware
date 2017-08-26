@@ -32,6 +32,19 @@
         <input type="text" name="new_user" placeholder="Name of new user">
         <input type="checkbox" name="is_non_real"> is non-real
       </div>
+      <div>
+        <label for="active">Active</label>
+        <input type="checkbox" {% if account.active == True %} checked {% endif %} name="active" value="yes"> <!--  -->
+      </div>
+      <div>
+        <label for="displayed_time_period_for_membership_fees">Displayed time period for membership fees</label>
+        <select name="displayed_time_period_for_membership_fees" class="selectpicker">
+          <option {% if not time_period.displayed_time_period_for_membership_fees %}selected{% endif %} value="0">Use general setting</option>
+          {% for time_period in all_time_periods %}
+          <option value="{{ time_period.id }}" {% if time_period == account.displayed_time_period_for_membership_fees %}selected{% endif %}>{{ time_period }}</option>
+          {% endfor %}
+        </select>
+      </div>
     </div>
   </form>
 </div>

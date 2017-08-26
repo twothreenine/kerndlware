@@ -14,17 +14,18 @@ import itertools
 import logging
 from django.db.utils import OperationalError
 from django.core.exceptions import ObjectDoesNotExist
+from core.config import *
 
 try:
 
     if not TimePeriod.objects.all():
-        day = TimePeriod(singular="day", plural="days", days=1, decimals_shown=0)
+        day = TimePeriod(singular="day", plural="days", adjective="daily", days=1, decimals_shown=0)
         day.save()
-        week = TimePeriod(singular="week", plural="weeks", days=7, decimals_shown=1)
+        week = TimePeriod(singular="week", plural="weeks", adjective="weekly", days=7, decimals_shown=1)
         week.save()
-        month = TimePeriod(singular="month", plural="months", days=30.4375, decimals_shown=1)
+        month = TimePeriod(singular="month", plural="months", adjective="monthly", days=30.4375, decimals_shown=1, is_month=True)
         month.save()
-        year = TimePeriod(singular="year", plural="years", days=365.25, decimals_shown=2)
+        year = TimePeriod(singular="year", plural="years", adjective="annual", days=365.25, decimals_shown=2, is_year=True)
         year.save()
 
     selected_user = None
@@ -51,7 +52,7 @@ try:
 
     # General
     recent_users = list(User.objects.all())
-    recent_accounts = list(Account.objects.all())
+    recent_accounts = Account.objects.all()
 
     # participate/transactions list filter
     selected_types_in_account_transactions = TransactionType.objects.all()
@@ -77,6 +78,10 @@ try:
     # participate/transactions entry form
     default_date_of_new_transaction = models.CharField()
     default_date_of_new_transaction = ""
+
+    if not VirtualUser.objects.filter(name="Bot"):
+        bot = VirtualUser(name="Bot", active=False)
+        bot.save()
 
     if not TransactionType.objects.all():
         """
@@ -198,6 +203,25 @@ try:
 except OperationalError:
     pass
 
+# perform fees
+
+# now = datetime.datetime.now()
+# update_fees(to_datetime=now)
+
+# def update_fees(to_datetime=datetime.datetime.now()):
+#     updated_general_fees_count = 0
+#     updated_custom_fees_count = 0
+#     for fee in GeneralMembershipFee.objects.exclude(next_performance=None, enabled=False, amount__lte=0).filter(next_performance__lte=now): # .filter(Q(start=None)|Q(start__lte=now)).filter(Q(end=None)|Q(end__gte=now)):
+#         fee.update(to_datetime=now)
+#         updated_general_fees_count += 1
+#     for fee in CustomMembershipFeePhase.objects.exclude(next_performance=None, enabled=False, rate__lte=0).filter(next_performance__lte=now):
+#         fee.update(to_datetime=now)
+#         updated_custom_fees_count += 1
+#     print("Fee update schedule: {} general fees updated, {} custom fees updated.".format(updated_general_fees_count, updated_custom_fees_count))
+
+# TODO: Timer/schedule
+
+
 def select_user(request):
     if request.method == 'POST':
         user_id = request.POST.get("user_id")
@@ -215,61 +239,89 @@ def select_user(request):
 
 def create_user(request):
     if request.method == 'POST':
-        if request.POST.get("is_person"):
-            u = Person(name=str(request.POST.get("name")))
+        name = str(request.POST.get("name"))
+        notice = str(request.POST.get("notice"))
+        if request.POST.get("is_non_real"):
+            u = VirtualUser(name=name, notice=notice)
             u.save()
-            if request.POST.getlist("accounts"):
-                for acc in request.POST.getlist("accounts"):
-                    acc = Account.objects.get(pk=int(acc))
-                    acc.accounts.add(u)
-                    acc.save()
-                    u.accounts.add(acc)
-                    u.save()
-            # if not request.POST.get("new_user") == '':
-            #     if request.POST.get("is_non_real") == True:
-            #         u = User(name=str(request.POST.get("new_user")))
-            #     else:
-            #         u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
-            #     u.save()
-            #     u.accounts.add(a)
-            #     u.save()
-            #     a.users.add(u)
-            #     a.save()
+        else:
+            u = Person(name=name, notice=notice)
+            u.first_name = str(request.POST.get("first_name"))
+            u.last_name = str(request.POST.get("last_name"))
+            u.streetname = str(request.POST.get("streetname"))
+            u.streetnumber = str(request.POST.get("streetnumber"))
+            u.zipcode = str(request.POST.get("zipcode"))
+            u.town = str(request.POST.get("town"))
+            u.country = str(request.POST.get("country"))
+            u.address_notice = str(request.POST.get("address_notice"))
+            u.email = str(request.POST.get("email"))
+            u.website = str(request.POST.get("website"))
+            u.telephone1 = str(request.POST.get("telephone1"))
+            u.telephone2 = str(request.POST.get("telephone2"))
+            u.save()
+        if request.POST.getlist("accounts"):
+            for acc in request.POST.getlist("accounts"):
+                acc = Account.objects.get(pk=int(acc))
+                acc.users.add(u)
+                acc.save()
+                u.accounts.add(acc)
+                u.save()
+        if not request.POST.get("new_account") == '':
+            a = Account(name=str(request.POST.get("new_account")))
+            a.save()
+            u.accounts.add(a)
+            u.save()
+            a.users.add(u)
+        global selected_user
+        selected_user = u
 
-def modify_user(request):
+def modify_user(request, selected_user_is_person):
     if request.method == 'POST':
         global selected_user
         selected_user.name = str(request.POST.get("name"))
-        if not is_virtual:
-            selected_user.first_name = str(request.POST.get("first_name"))
-            selected_user.last_name = str(request.POST.get("last_name"))
-        selected_user.accounts.clear()
+        selected_user.notice = str(request.POST.get("notice"))
+        if selected_user_is_person:
+            selected_user.person.first_name = str(request.POST.get("first_name"))
+            selected_user.person.last_name = str(request.POST.get("last_name"))
+            selected_user.person.streetname = str(request.POST.get("streetname"))
+            selected_user.person.streetnumber = str(request.POST.get("streetnumber"))
+            selected_user.person.zipcode = str(request.POST.get("zipcode"))
+            selected_user.person.town = str(request.POST.get("town"))
+            selected_user.person.country = str(request.POST.get("country"))
+            selected_user.person.address_notice = str(request.POST.get("address_notice"))
+            selected_user.person.email = str(request.POST.get("email"))
+            selected_user.person.website = str(request.POST.get("website"))
+            selected_user.person.telephone1 = str(request.POST.get("telephone1"))
+            selected_user.person.telephone2 = str(request.POST.get("telephone2"))
+            selected_user.person.save()
+        new_accountlist = list()
         for acc in request.POST.getlist("accounts"):
             acc = Account.objects.get(pk=int(acc))
+            new_accountlist.append(acc)
+        old_accountlist = selected_user.accounts.all()
+        accounts_to_add = [acc for acc in new_accountlist if acc not in old_accountlist]
+        accounts_to_remove = [acc for acc in old_accountlist if acc not in new_accountlist]
+        for acc in accounts_to_add:
             acc.users.add(selected_user)
             acc.save()
             selected_user.accounts.add(acc)
+        for acc in accounts_to_remove:
+            acc.users.remove(selected_user)
+            acc.save()
+            selected_user.accounts.remove(acc)
         pacc = request.POST.get("primary_account")
         if pacc:
             if int(pacc) == 0:
                 selected_user.primary_account = None
             else:
                 selected_user.primary_account = Account.objects.get(pk=int(pacc))
-        if not is_virtual:
-            pass # TODO
-        # if not request.POST.get("new_user") == '':
-        #     if request.POST.get("is_non_real"):
-        #         u = VirtualUser(name=str(request.POST.get("new_user")))
-        #     else:
-        #         u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
-        #     u.save()
-        #     u.accounts.add(selected_user)
-        #     u.save()
-        #     selected_user.users.add(u)
+        if str(request.POST.get("active")) == "yes":
+            selected_user.active = True
+        else:
+            selected_user.active = False
         selected_user.save()
 
 def select_account(request):
-    # account_id = 1
     if request.method == 'POST':
         account_id = request.POST.get("account_id")
         primary = request.POST.get("primary_account")
@@ -279,8 +331,10 @@ def select_account(request):
             if selected_user:
                 if selected_user.primary_account:
                     selected_account = selected_user.primary_account
-                else:
+                elif selected_user.accounts.all():
                     selected_account = selected_user.accounts.all()[0]
+                else:
+                    print("Error: User {} has no associated accounts.".format(str(selected_user)))
         elif account_id:
             account_id = int(account_id)
             selected_account = Account.objects.get(pk=account_id)
@@ -457,21 +511,45 @@ def modify_account(request):
     if request.method == 'POST':
         global selected_account
         selected_account.name = str(request.POST.get("name"))
-        selected_account.users.clear()
+        # selected_user.accounts.clear()
+        # for acc in request.POST.getlist("accounts"):
+        #     acc = Account.objects.get(pk=int(acc))
+        #     acc.users.add(selected_user)
+        #     acc.save()
+        #     selected_user.accounts.add(acc)
+        new_userlist = list()
         for us in request.POST.getlist("users"):
             us = User.objects.get(pk=int(us))
-            us.accounts.add(selected_account)
-            us.save()
-            selected_account.users.add(us)
+            new_userlist.append(us)
+        old_userlist = selected_account.users.all()
+        users_to_add = [user for user in new_userlist if user not in old_userlist]
+        users_to_remove = [user for user in old_userlist if user not in new_userlist]
+        for user in users_to_add:
+            user.accounts.add(selected_account)
+            user.save()
+            selected_account.users.add(user)
+        for user in users_to_remove:
+            user.accounts.remove(selected_account)
+            user.save()
+            selected_account.users.remove(user)
         if not request.POST.get("new_user") == '':
             if request.POST.get("is_non_real"):
                 u = VirtualUser(name=str(request.POST.get("new_user")))
             else:
-                u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
+                u = Person(name=str(request.POST.get("new_user")))
             u.save()
             u.accounts.add(selected_account)
             u.save()
             selected_account.users.add(u)
+        if str(request.POST.get("active")) == "yes":
+            selected_account.active = True
+        else:
+            selected_account.active = False
+        displayed_time_period_for_membership_fees = int(request.POST.get("displayed_time_period_for_membership_fees"))
+        if displayed_time_period_for_membership_fees == 0:
+            selected_account.displayed_time_period_for_membership_fees = None
+        else:
+            selected_account.displayed_time_period_for_membership_fees = TimePeriod.objects.get(id=displayed_time_period_for_membership_fees)
         selected_account.save()
 
 def modify_consumablelist(request):
@@ -518,6 +596,7 @@ def global_context(request):
     global recent_users
     global recent_accounts
     global selected_user
+    global selected_account
     accounts_of_selected_user = []
     recent_other_accounts = []
     if selected_user:
@@ -528,9 +607,9 @@ def global_context(request):
                 else:
                     recent_other_accounts.append(account)
     else:
-        recent_other_accounts = recent_accounts
+        selected_account = recent_accounts[0]
+        # recent_other_accounts = recent_accounts
     accounts = Account.objects.all()
-    global selected_account
     balance = selected_account.balance_str
     current_path = request.get_full_path()
     context = {"recent_users" : recent_users, "selected_user" : selected_user, "accounts_of_selected_user": accounts_of_selected_user, "recent_other_accounts" : recent_other_accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path, }
@@ -558,10 +637,7 @@ def register_user(request):
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def user_settings(request):
-    modify_user(request)
-    template = loader.get_template('core/user_settings.html')
     global selected_user
-    accounts = Account.objects.all()
     selected_user_is_person = False
     if selected_user:
         try:
@@ -571,6 +647,9 @@ def user_settings(request):
             pass
         except:
             raise
+    modify_user(request, selected_user_is_person)
+    template = loader.get_template('core/user_settings.html')
+    accounts = Account.objects.all()
     context = {"selected_user" : selected_user, "accounts" : accounts, "selected_user_is_person" : selected_user_is_person}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
@@ -696,12 +775,20 @@ def account_consumption(request):
                 "total_amount" : "{} kg".format(format(total_amount, '.3f')), "total_pres_value" : "{} €".format(format(total_pres_value, '.2f')), }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
+def account_membership_fees(request):
+    template = loader.get_template('core/account_membership_fees.html')
+    global selected_account
+    table = MembershipFeePhaseTable(account=selected_account)
+    context = {"account" : selected_account, "table" : table}
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
 def account_settings(request):
     modify_account(request)
     template = loader.get_template('core/account_settings.html')
     global selected_account
     users = User.objects.all()
-    context = {"account" : selected_account, "users" : users}
+    all_time_periods = TimePeriod.objects.all()
+    context = {"account" : selected_account, "users" : users, "all_time_periods" : all_time_periods}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def suppliers(request):
@@ -813,6 +900,23 @@ def purchases(request):
             purchase_enterers.append(p.entered_by_user)
     context = {"all_purchase_statuses" : all_purchase_statuses, "purchases" : purchases, "purchase_enterers" : purchase_enterers, "selected_statuses_in_purchase_list" : selected_statuses_in_purchase_list,
              "start_date" : start_date, "end_date" : end_date, "selected_enterers" : enterers_in_purchase_list, }
+    return HttpResponse(template.render({**global_context(request), **context}, request))
+
+def general_settings(request):
+    template = loader.get_template('core/general_settings.html')
+
+    all_currencies = Currency.objects.all()
+    # all_membership_fee_modes = list(MembershipFeeMode) # MembershipFeeMode.__members__.items()
+
+    enabled_membership_fee_modes = list()
+    # for mode in get_config("enabled_membership_fee_modes").split(","):
+    #     enabled_membership_fee_modes.append(MembershipFeeMode.objects.get(id=mode))
+    context = { "group_title" : get_config("group_title"),
+                "main_language" : get_config("main_language"),
+                "anchor_currency" : Currency.objects.get(id=get_config("anchor_currency")),
+                "enabled_membership_fee_modes" : enabled_membership_fee_modes,
+                "all_currencies" : all_currencies, "all_membership_fee_modes" : all_membership_fee_modes
+                }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 @api_view(['GET', 'POST'])

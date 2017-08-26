@@ -6,6 +6,8 @@ import datetime
 import itertools
 from .models import *
 from .functions import *
+import datetime
+from .config import *
 
 class BatchTransactionTable:
     def __init__(self, batch_no):
@@ -213,13 +215,13 @@ class TrDetailsTable:
                     total_rate = 0
                     total_value = 0
                     for charge in shares:
-                        total_rate += charge.account.calc_rate(datetime=self.transaction.date)
+                        total_rate += charge.account.calc_specific_sharings_rate(self.transaction.date)
                         total_value += charge.value
                     for charge in shares:
                         row = list()
                         row.append(charge.account.name)
                         row.append(str(format(charge.value, '.2f')) + " €")
-                        row.append("(" + str(charge.account.calc_rate(datetime=self.transaction.date)) + "x)")
+                        row.append("(" + str(charge.account.calc_specific_sharings_rate(self.transaction.date)) + "x)")
                         if not total_value == 0:
                             row.append(format(charge.value / total_value * 100, '.2f') + "%")
                         self.rows.append(row)
@@ -231,6 +233,252 @@ class TrDetailsTable:
 
         if self.transaction.transaction_type.no >= 12 and self.transaction.transaction_type.no <= 13:
             pass
+
+class MembershipFeePhaseTable:
+    def __init__(self, account=None, date=datetime.date.today(), fee=None, hide_inactive=False):
+        self.account = account
+        self.date = date
+        self.fee = fee
+        self.hide_inactive = hide_inactive
+
+        self.current_share_sum = ""
+        self.current_fee_sum = ""
+
+        self.current_specific_sharings_phases = list()
+        self.current_general_phases = list()
+        self.current_custom_phases = list()
+
+        self.current_phases = list()
+        self.future_phases = list()
+        self.former_phases = list()
+
+        # self.future_specific_sharings_phases = list()
+        # self.future_general_phases = list()
+        # self.future_custom_phases = list()
+        # self.former_specific_sharings_phases = list()
+        # self.former_general_phases = list()
+        # self.former_custom_phases = list()
+
+        self.current_phases_count = 0
+        self.future_phases_count = 0
+        self.former_phases_count = 0
+
+        self.generate()
+
+    def generate(self):
+        # current_share_phases = MembershipFee.objects.filter(account=self.account, mode=MembershipFeeMode.SINGLE_SHARINGS, active=True).filter(Q(start=None)|Q(start__lte=datetime.datetime.now())).filter(Q(end=None)|Q(end__gte=datetime.datetime.now()))
+        # if current_share_phases:
+        #     rate = 1
+        #     for phase in current_share_phases:
+        #         rate = rate * phase.rate
+        #     self.current_share = rate
+        # current_relative_regular_fee_phases = MembershipFee.objects.filter(account=self.account, mode=MembershipFeeMode.REGULAR_RELATIVE, active=True).filter(Q(start=None)|Q(start__lte=datetime.datetime.now())).filter(Q(end=None)|Q(end__gte=datetime.datetime.now()))
+        # if current_relative_regular_fee_phases:
+        #     relative_daily_rate = 1
+        #     default_period = TimePeriod.objects.get(singular="Month") # TODO: select default time period from general settings
+        #     for phase in current_relative_regular_fee_phases:
+        #         if phase.TimePeriod:
+        #             period = phase.TimePeriod
+        #         else:
+        #             period = default_period
+        #         relative_daily_rate += phase.rate * phase.TimePeriod.days
+        #     self.current_relative_regular_fee = relative_daily_rate / default_period
+        # current_absolute_regular_fee_phases = MembershipFee.objects.filter(account=self.account, mode=MembershipFeeMode.REGULAR_ABSOLUTE, active=True).filter(Q(start=None)|Q(start__lte=datetime.datetime.now())).filter(Q(end=None)|Q(end__gte=datetime.datetime.now()))
+        # if current_absolute_regular_fee_phases:
+        #     absolute_daily_rate = 0
+        #     default_period = TimePeriod.objects.get(singular="Month") # TODO: select default time period from general settings
+        #     for phase in current_absolute_regular_fee_phases:
+        #         if phase.TimePeriod:
+        #             period = phase.TimePeriod
+        #         else:
+        #             period = default_period
+        #         absolute_daily_rate += phase.rate * phase.TimePeriod.days
+        #     self.current_absolute_regular_fee = absolute_daily_rate / default_period
+        # self.current_total_regular_fee = self.current_relative_regular_fee + self.current_absolute_regular_fee
+
+
+
+        self.current_phases = self.list_specific_sharings_phases(time_filter="current") + self.list_general_phases(time_filter="current") + self.list_custom_phases(time_filter="current")
+        self.future_phases = self.list_specific_sharings_phases(time_filter="future") + self.list_general_phases(time_filter="future") + self.list_custom_phases(time_filter="future")
+        self.former_phases = self.list_specific_sharings_phases(time_filter="former") + self.list_general_phases(time_filter="former") + self.list_custom_phases(time_filter="former")
+
+        self.current_specific_sharings_phases = self.filter_specific_sharings_phases(time_filter="current")
+        self.current_general_phases = self.filter_general_phases(time_filter="current")
+        self.current_custom_phases = self.filter_custom_phases(time_filter="current")
+
+        if self.current_specific_sharings_phases:
+            share_sum = 1
+        else:
+            share_sum = 0
+        for phase in self.current_specific_sharings_phases:
+            share_sum = share_sum * phase.rate
+        self.current_share_sum = "{}x".format(format(share_sum,'.1f'))
+
+        fee_sum = 0
+        per_period = self.account.get_time_period_for_membership_fees()
+        if per_period:
+            for phase in self.current_general_phases:
+                fee_sum += phase.calc_amount(date=self.date, per_period=per_period)
+            for phase in self.current_custom_phases:
+                fee_sum += phase.rate * per_period.days / (phase.time_period.days*phase.time_period_multiplicator)
+            self.current_fee_sum = "{} € per {}".format(format(fee_sum,'.2f'), per_period.singular)
+        else:
+            self.current_fee_sum = "Error: period not found"
+
+        self.current_phases_count = len(self.current_phases)
+        self.future_phases_count = len(self.future_phases)
+        self.former_phases_count = len(self.former_phases)
+
+        # future_phases = MembershipFee.objects.filter(account=self.account).filter(Q(start__gt=datetime.datetime.now()))
+        # for phase in future_phases:
+        #     row = list()
+        #     row.append(phase.active)
+        #     row.append(phase.start)
+        #     row.append(phase.end)
+        #     if not phase.mode == MembershipFeeMode.SINGLE_SHARINGS and phase.period:
+        #         mode = str(phase.period)+str(phase.mode)
+        #     else:
+        #         mode = str(phase.mode)
+        #     row.append(mode)
+        #     row.append(phase.rate)
+        #     row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on))
+        #     self.future_phases.append(row)
+        # former_phases = MembershipFee.objects.filter(account=self.account).filter(Q(end__lt=datetime.datetime.now()))
+        # for phase in former_phases:
+        #     row = list()
+        #     row.append(phase.active)
+        #     row.append(phase.start)
+        #     row.append(phase.end)
+        #     if not phase.mode == MembershipFeeMode.SINGLE_SHARINGS and phase.period:
+        #         mode = str(phase.period)+str(phase.mode)
+        #     else:
+        #         mode = str(phase.mode)
+        #     row.append(mode)
+        #     row.append(phase.rate)
+        #     row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on))
+        #     self.former_phases.append(row)
+
+    def list_specific_sharings_phases(self, time_filter): # filter = 'current' or 'former' or 'future'
+        specific_sharings_phases = self.filter_specific_sharings_phases(time_filter=time_filter)
+        phases_list = list()
+        for phase in specific_sharings_phases:
+            row = list()
+            row.append(phase.id) # row.0
+            row.append(phase.active) # row.1
+            row.append(phase.start) # row.2
+            row.append(phase.end) # row.3
+            row.append("on specific sharings") # row.4 (mode)
+            row.append(str(phase.rate)+"x") # row.5
+            row.append(phase.comment) # row.6
+            row.append("") # row.7 (time period)
+            row.append("") # row.8 (next performance)
+            row.append("") # row.9 (previous performance)
+            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10
+            row.append("") # row.11 (no fixed recipient)
+            phases_list.append(row)
+        return phases_list
+
+    def filter_specific_sharings_phases(self, time_filter): # filter = 'current' or 'former' or 'future'
+        if time_filter == "current":
+            specific_sharings_phases = [phase for phase in SpecificSharingsMembershipPhase.objects.all() if phase.current(self.date) == True]
+            # for phase in SpecificSharingsMembershipPhase.objects.all():
+            #     if phase.current(self.date) == True:
+            #         specific_sharings_phases.append(phase)
+        elif time_filter == "future":
+            specific_sharings_phases = SpecificSharingsMembershipPhase.objects.filter(Q(start__gt=datetime.datetime.now()))
+        elif time_filter == "former":
+            specific_sharings_phases = SpecificSharingsMembershipPhase.objects.filter(Q(end__lt=datetime.datetime.now()))
+
+        if self.account:
+            specific_sharings_phases = [phase for phase in specific_sharings_phases if phase.account == self.account]
+
+        return specific_sharings_phases
+
+    def list_general_phases(self, time_filter):
+        general_phases = self.filter_general_phases(time_filter=time_filter)
+        phases_list = list()
+        for phase in general_phases:
+            row = list()
+            row.append(phase.id) # row.0
+            row.append(phase.active) # row.1
+            row.append(phase.start) # row.2
+            row.append(phase.end) # row.3
+            row.append("general fee: "+str(phase.fee.label)) # row.4 (mode)
+            row.append(str(phase.rate)+"x ("+format(phase.calc_amount(date=self.date),'.2f')+" €)") # row.5
+            row.append(phase.comment) # row.6
+            if phase.fee.time_period_multiplicator == 1 and phase.fee.time_period.adjective:
+                period_str = phase.fee.time_period.adjective
+            else:
+                period_str = "every {} {}".format(remove_zeros(phase.fee.time_period_multiplicator), phase.fee.time_period.plural)
+            account_main_period = phase.account.get_time_period_for_membership_fees()
+            if not account_main_period.days == phase.fee.time_period.days * phase.fee.time_period_multiplicator:
+                period_str += " ({} € per {})".format(format(phase.calc_amount(date=self.date, per_period=account_main_period),'.2f'), account_main_period.singular)
+            row.append(period_str) # row.7 (time period)
+            row.append(phase.fee.next_performance) # row.8 (next performance)
+            row.append(phase.fee.previous_performance) # row.9 (previous performance)
+            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10
+            row.append(any_detail_str(object=phase.fee, attribute="recipient_account")) # row.11
+            phases_list.append(row)
+        return phases_list
+
+    def filter_general_phases(self, time_filter): # filter = 'current' or 'former' or 'future'
+        if time_filter == "current":
+            general_phases = [phase for phase in GeneralMembershipFeePhase.objects.all() if phase.current(self.date)]
+        elif time_filter == "future":
+            general_phases = GeneralMembershipFeePhase.objects.filter(Q(start__gt=datetime.datetime.now()))
+        elif time_filter == "former":
+            general_phases = GeneralMembershipFeePhase.objects.filter(Q(end__lt=datetime.datetime.now()))
+
+        if self.account:
+            general_phases = [phase for phase in general_phases if phase.account == self.account]
+        if self.fee:
+            general_phases = [phase for phase in general_phases if phase.fee == self.fee]
+        if self.hide_inactive:
+            general_phases = [phase for phase in general_phases if active]
+
+        return general_phases
+
+    def list_custom_phases(self, time_filter):
+        custom_phases = self.filter_custom_phases(time_filter=time_filter)
+        phases_list = list()
+        for phase in custom_phases:
+            row = list()
+            row.append(phase.id) # row.0
+            row.append(phase.active) # row.1
+            row.append(phase.start) # row.2
+            row.append(phase.end) # row.3
+            row.append("custom fee: "+str(phase.label)) # row.4 (mode)
+            row.append(format(phase.rate,'.2f')+" €") # row.5
+            row.append(phase.comment) # row.6
+            if phase.time_period_multiplicator == 1 and phase.time_period.adjective:
+                period_str = phase.time_period.adjective
+            else:
+                period_str = "every {} {}".format(phase.time_period_multiplicator, phase.time_period.plural)
+            account_main_period = phase.account.get_time_period_for_membership_fees()
+            if not account_main_period.days == phase.time_period.days * phase.time_period_multiplicator:
+                period_str += " ({} € per {})".format(format(phase.calc_amount(date=self.date, per_period=account_main_period),'.2f'), account_main_period.singular)
+            row.append(period_str) # row.7 (time period)
+            row.append(phase.next_performance) # row.8 (next performance)
+            row.append(phase.previous_performance) # row.9 (previous performance)
+            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10
+            row.append(any_detail_str(object=phase, attribute="recipient_account")) # row.11
+            phases_list.append(row)
+        return phases_list
+
+    def filter_custom_phases(self, time_filter): # filter = 'current' or 'former' or 'future'
+        if time_filter == "current":
+            custom_phases = [phase for phase in CustomMembershipFeePhase.objects.all() if phase.current(self.date)]
+        elif time_filter == "future":
+            custom_phases = CustomMembershipFeePhase.objects.filter(Q(start__gt=datetime.datetime.now()))
+        elif time_filter == "former":
+            custom_phases = CustomMembershipFeePhase.objects.filter(Q(end__lt=datetime.datetime.now()))
+
+        if self.account:
+            custom_phases = [phase for phase in custom_phases if phase.account == self.account]
+        if self.hide_inactive:
+            custom_phases = [phase for phase in custom_phases if active]
+
+        return custom_phases
 
 class ProductCategoryTable:
     def __init__(self, objective, account_id=0):

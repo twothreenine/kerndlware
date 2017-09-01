@@ -109,145 +109,12 @@
     <li>Taken: {{ taken }}</li>
     <li>Deposited: {{ deposit }}</li>
   </ul>
-
-  <div class="panel panel-default">
-    <div class="panel-body">
-      <form id="transaction_list_filter" action="/account_transactions" method="POST">
-        {% csrf_token %}
-        <input type="hidden" name="form_name" value="transaction_list_filter">
-        <div>
-          <label for="apply">Filter this list</label>
-          <input name="apply" type="submit" value="Apply" />
-        </div>
-        <div>
-          <label for="transaction_type">Types</label>
-          <select multiple="multiple" name="transaction_type" class="selectpicker" data-actions-box="true">
-            {% for type in transaction_types %}
-            <option value={{ type.no }} {% if type.no in selected_type_nos %}selected{% endif %}>{{ type.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label for="start_date">Start date</label>
-          <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
-        </div>
-        <div>
-          <label for="end_date">End date</label>
-          <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
-        </div>
-        <div>
-          <label for="enterer">Enterer</label>
-          <select name="enterer" class="selectpicker" data-live-search="true">
-            <option value=0>All users</option>
-            <option value="" disabled>Users of this account</option>
-            {% for user in table_users_of_selected_account %}
-            <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
-            {% endfor %}
-            <option value="" disabled><i>Other users</i></option>
-            {% for user in other_table_users %}
-            <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </form>
-    </div>
-  </div>
 </div>
 
-<!--
-<div class="panel-group">
+<form id="transaction_entry_form" action="/account_transactions" method="POST">
+{% csrf_token %}
+<input type="hidden" name="form_name" value="transaction_entry_form">
   <div class="panel panel-default">
-    <div class="panel-body">
-      <div class ="transaction_id">ID</div>
-      <div class ="transaction_date">Date</div>
-      <div class ="transaction_matter">Matter</div>
-      <div class ="transaction_entry_details">Entry details</div>
-      <div class ="transaction_value">Value</div>
-      <div class ="transaction_balance">Balance</div>
-      <div class ="transaction_comment">Comment</div>
-    </div>
-  </div>
-  <div class="panel panel-default" id="transactions">
-    <div class="panel-body">
-      {% for row in account_table.rows %}
-        <p style="background-color: {{ row.0 }}">
-          <div class ="transaction_id">{{ row.2 }}</div>
-          <div class ="transaction_date">{{ row.3 }}</div>
-          <div class ="transaction_matter">{{ row.4 }}{% if row.1 == True %}. <a data-toggle="collapse" href="#details{{ row.2 }}">Show details</a>{% endif %}</div>
-            {% if row.1 == True %}
-              <table id="details{{ row.2 }}" class="collapse">
-                test
-              </table>
-            {% endif %}
-          <div class ="transaction_entry_details">{{ row.5 }}</div>
-          <div class ="transaction_value">{{ row.6 }}</div>
-          <div class ="transaction_balance">{{ row.7 }}</div>
-          <div class ="transaction_comment">{{ row.8 }}</div>
-        </p>
-      {% endfor %}
-    </div>
-  </div>
-</div>
--->
-
-<table class="table"> <!-- id="transactions"; class="table table-condensed" should make it more compact? -->
-  <thead>
-    <th class="transaction_id">Tr No</th>
-    <th class="transaction_date">Date</th>
-    <th class="transaction_matter">Matter</th>
-    <th class="transaction_entry_details">Entry details</th>
-    <th class="transaction_value">Value</th>
-    <th class="transaction_balance">Balance</th>
-    <th class="transaction_comment">Comment</th>
-  </thead>
-  <tbody>
-    {% for row in account_table.rows %}
-      <tr style="background-color: {{ row.0 }}"> <!-- class="{{ row.2|lower }} if transactions.objects.get(pk=int(row.0)).value < 0 }}"negative"  else  "positive" -->
-        <td class="transaction_id"> {{ row.2 }} </td>
-        <td class="transaction_date"> {{ row.3 }} </td>
-        <td class="transaction_matter"> {{ row.4 }}{% if row.1 > 0 %} <a data-toggle="modal" href="#details{{ row.2 }}">{{ row.5 }}</a><div id="details{{ row.2 }}" class="modal fade" role="dialog">
-            <div class="modal-dialog">
-
-              <!-- Modal content-->
-              <div class="modal-content">
-                <div class="modal-header">
-                  <button type="button" class="close" data-dismiss="modal">&times;</button>
-                  <h4 class="modal-title">Details for transaction {{ row.2 }} - {{ row.7 }}</h4>
-                </div>
-                <div class="modal-body">
-                  <table class"table">
-                    <thead></thead>
-                    <tbody>
-                      {% for drow in row.12.rows %}
-                        <tr>
-                          {% for column in drow %}
-                            <td>{{ column }}</td>
-                          {% endfor %}
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                </div>
-              </div>
-
-            </div>
-          </div>{% endif %}{% if row.1 == 2 %}{{ row.6 }}{% endif %}.</td>
-        <td class="transaction_entry_details"> {{ row.8 }} </td>
-        <td class="transaction_value"> {{ row.9 }} </td>
-        <td class="transaction_balance"> {{ row.10 }} </td>
-        <td class="transaction_comment"> {{ row.11 }} </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<div class="panel panel-default" id="bottom">
-  <form id="transaction_entry_form" action="/account_transactions" method="POST">
-    {% csrf_token %}
-    <input type="hidden" name="form_name" value="transaction_entry_form">
     <div class="panel-heading">Enter new transaction <input type="reset" value="Clear fields"/></div>
     <div class="panel-body">
       <div>
@@ -259,20 +126,6 @@
           {% endfor %}
         </select>
       </div>
-<!--       <div>
-        <label for="entered_by">Entering user</label>
-        <select name="entered_by" class="selectpicker" data-live-search="true" required="true">
-          <option value="" disabled selected>Select user</option>
-          <option value="" disabled>Users of this account</option>
-          {% for user in users_of_selected_account %}
-          <option value={{ user.id }} {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
-          {% endfor %}
-          <option value="" disabled>Recent other users</option>
-          {% for user in recent_other_users %}
-          <option value={{ user.id }} {% if user == default_enterer_of_new_transaction %}selected{% endif %}>{{ user }}</option>
-          {% endfor %}
-        </select>
-      </div> -->
       <div>
         <label for="date">Date of transaction</label>
         <input type="date" name="date" placeholder="Select date" required="true" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-today-highlight="true" value="{{ default_date_of_new_transaction }}">
@@ -334,8 +187,144 @@
         <input type="submit" value="Submit" />
       </div>
     </div>
-  </form>
+  </div>
+</form>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    <form id="transaction_list_filter" action="/account_transactions" method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="form_name" value="transaction_list_filter">
+      <div>
+        <label for="apply">Filter this list</label>
+        <input name="apply" type="submit" value="Apply" />
+      </div>
+      <div>
+        <label for="transaction_type">Types</label>
+        <select multiple="multiple" name="transaction_type" class="selectpicker" data-actions-box="true">
+          {% for type in transaction_types %}
+          <option value={{ type.no }} {% if type.no in selected_type_nos %}selected{% endif %}>{{ type.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="start_date">Start date</label>
+        <input name="start_date" value="{{ start_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
+      </div>
+      <div>
+        <label for="end_date">End date</label>
+        <input name="end_date" value="{{ end_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="true" data-date-clear-btn="true" data-date-today-highlight="true" >
+      </div>
+      <div>
+        <label for="enterer">Enterer</label>
+        <select name="enterer" class="selectpicker" data-live-search="true">
+          <option value=0>All users</option>
+          <option value="" disabled>Users of this account</option>
+          {% for user in table_users_of_selected_account %}
+          <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+          {% endfor %}
+          <option value="" disabled><i>Other users</i></option>
+          {% for user in other_table_users %}
+          <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </div>
 </div>
+
+<!--
+<div class="panel-group">
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <div class ="transaction_id">ID</div>
+      <div class ="transaction_date">Date</div>
+      <div class ="transaction_matter">Matter</div>
+      <div class ="transaction_entry_details">Entry details</div>
+      <div class ="transaction_value">Value</div>
+      <div class ="transaction_balance">Balance</div>
+      <div class ="transaction_comment">Comment</div>
+    </div>
+  </div>
+  <div class="panel panel-default" id="transactions">
+    <div class="panel-body">
+      {% for row in account_table.rows %}
+        <p style="background-color: {{ row.0 }}">
+          <div class ="transaction_id">{{ row.2 }}</div>
+          <div class ="transaction_date">{{ row.3 }}</div>
+          <div class ="transaction_matter">{{ row.4 }}{% if row.1 == True %}. <a data-toggle="collapse" href="#details{{ row.2 }}">Show details</a>{% endif %}</div>
+            {% if row.1 == True %}
+              <table id="details{{ row.2 }}" class="collapse">
+                test
+              </table>
+            {% endif %}
+          <div class ="transaction_entry_details">{{ row.5 }}</div>
+          <div class ="transaction_value">{{ row.6 }}</div>
+          <div class ="transaction_balance">{{ row.7 }}</div>
+          <div class ="transaction_comment">{{ row.8 }}</div>
+        </p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+-->
+
+<div>
+  <table class="table"> <!-- id="transactions"; class="table table-condensed" should make it more compact? -->
+    <thead>
+      <th class="transaction_id">Tr No</th>
+      <th class="transaction_date">Date</th>
+      <th class="transaction_matter">Matter</th>
+      <th class="transaction_entry_details">Entry details</th>
+      <th class="transaction_value">Value</th>
+      <th class="transaction_balance">Balance</th>
+      <th class="transaction_comment">Comment</th>
+    </thead>
+    <tbody>
+      {% for row in account_table.rows %}
+        <tr style="background-color: {{ row.0 }}"> <!-- class="{{ row.2|lower }} if transactions.objects.get(pk=int(row.0)).value < 0 }}"negative"  else  "positive" -->
+          <td class="transaction_id"> {{ row.2 }} </td>
+          <td class="transaction_date"> {{ row.3 }} </td>
+          <td class="transaction_matter"> {{ row.4 }}{% if row.1 > 0 %} <a data-toggle="modal" href="#details{{ row.2 }}">{{ row.5 }}</a><div id="details{{ row.2 }}" class="modal fade" role="dialog">
+              <div class="modal-dialog">
+
+                <!-- Modal content-->
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Details for transaction {{ row.2 }} - {{ row.7 }}</h4>
+                  </div>
+                  <div class="modal-body">
+                    <table class"table">
+                      <thead></thead>
+                      <tbody>
+                        {% for drow in row.12.rows %}
+                          <tr>
+                            {% for column in drow %}
+                              <td>{{ column }}</td>
+                            {% endfor %}
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>{% endif %}{% if row.1 == 2 %}{{ row.6 }}{% endif %}.</td>
+          <td class="transaction_entry_details"> {{ row.8 }} </td>
+          <td class="transaction_value"> {{ row.9 }} </td>
+          <td class="transaction_balance"> {{ row.10 }} </td>
+          <td class="transaction_comment"> {{ row.11 }} </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div
+
 
 {% endblock %}
 

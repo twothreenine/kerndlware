@@ -1,5 +1,5 @@
 {% extends "core/base.html" %}
-{% block title %}Add insertion{% endblock %}
+{% block title %}Edit insertion{% endblock %}
 {% block style %}
   div.row {
 
@@ -56,7 +56,9 @@
 {% endblock %}
 {% block content %}
 
-<form id="modify_purchase_list" action="/purchases" method="POST">
+<div id="head">
+  <h1>Add an insertion</h1>
+<form id="edit_insertion" action="/edit_insertion" method="POST">
 {% csrf_token %}
 <div class="panel panel-default">
   <div class="panel-head">
@@ -75,11 +77,11 @@
           <option value=0>Main balance</option>
           <option value="" disabled>Direct payout from money box</option>
           {% for box in money_boxes %}
-          <option value=box{{ box.id }}>{{ box }}</option>
+          <option value="box{{ box.id }}">{{ box }}</option>
           {% endfor %}
           <option value="" disabled>Participant accounts</option>
           {% for account in accounts %}
-          <option value=account{{ account.id }}>{{ account }}</option>
+          <option value="account{{ account.id }}">{{ account }}</option>
           {% endfor %}
         </select>
       </div>

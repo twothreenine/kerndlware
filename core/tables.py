@@ -139,7 +139,7 @@ class AccountTable:
             if rc.originator_account == acc or rc.participating_accounts.filter(pk=self.account_id).count():
                 recoveries.append(rc)
         credits = Credit.objects.filter(originator_account=self.account_id)
-        all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transcriptions_to_balance, payouts, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits)), key=lambda t: (t.date, t.id))
+        all_transactions = sorted(list(itertools.chain(takings, restitutions, inpayments, depositations, transcriptions_to_balance, payouts, transfers, cost_sharings, proceeds_sharings, donations, recoveries, credits)), key=lambda t: (t.date, t.id), reverse=True)
         transactions = []
         for tr in all_transactions:
             if self.start_date == None:

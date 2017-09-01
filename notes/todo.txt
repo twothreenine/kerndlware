@@ -1,4 +1,4 @@
-- ods-Importskript: Inventur (Typ 5/6) als Taking/Restitution bzw. Inventur-Klasse analog zu Insertion? batch, amount
+﻿- ods-Importskript: Inventur (Typ 5/6) als Taking/Restitution bzw. Inventur-Klasse analog zu Insertion? batch, amount
 - wenn alles klappt, dann neu alles importieren und überprüfen
 - Insertion sheet
 - SQL statt Sqlite?
@@ -9,3 +9,7 @@ New menu:
 membership phases:
 - try performance (and at runserver)
 - Timer/schedule
+
+Pre-fill forms (account_transactions, edit_insertion etc)
+https://stackoverflow.com/questions/14070105/pre-fill-form-field-via-url-in-html
+http://fiddle.jshell.net/77xgxgb8/3/

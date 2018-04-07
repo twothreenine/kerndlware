@@ -15,5 +15,3 @@ German translation will be included in the first final version, as we plan to us
 More translations could be contributed by users from around the world, as soon as the program is ready to use.
 
 For more details, take a look into the wiki, there is a [detailed introduction and overview of the planned features](https://github.com/twothreenine/kerndlware/wiki/Introduction-&-feature-overview).
-
-Currently, we are trying to get it ready as best as possible in order to use the programm in our own foodcoop. [Here's the to-do list](https://github.com/twothreenine/kerndlware/milestone/1) for this milestone.

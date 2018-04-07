@@ -19,9 +19,9 @@ from core.config import *
 try:
 
     if not TimePeriod.objects.all():
-        day = TimePeriod(singular="day", plural="days", adjective="daily", days=1, decimals_shown=0)
+        day = TimePeriod(singular="day", plural="days", adjective="daily", days=1, decimals_shown=0, is_day=True)
         day.save()
-        week = TimePeriod(singular="week", plural="weeks", adjective="weekly", days=7, decimals_shown=1)
+        week = TimePeriod(singular="week", plural="weeks", adjective="weekly", days=7, decimals_shown=1, is_week=True)
         week.save()
         month = TimePeriod(singular="month", plural="months", adjective="monthly", days=30.4375, decimals_shown=1, is_month=True)
         month.save()
@@ -592,6 +592,33 @@ def filter_purchases(request):
                 e = User.objects.get(id=int(er))
                 enterers_in_purchase_list.append(e)
 
+def modify_general_settings(request):
+    if request.method == 'POST':
+        set_config("group_title", request.POST.get("group_title"))
+        # set_config(main_language, request.POST.get("main_language"))
+
+        set_config("anchor_currency", request.POST.get("anchor_currency"))
+        if request.POST.get("single_sharings"):
+            set_boolean_config("single_sharings", True)
+        else:
+            set_boolean_config("single_sharings", False)
+
+        if request.POST.get("regular_relative_sharings"):
+            set_boolean_config("regular_relative_sharings", True)
+        else:
+            set_boolean_config("regular_relative_sharings", False)
+
+        if request.POST.get("regular_absolute_sharings"):
+            set_boolean_config("regular_absolute_sharings", True)
+        else:
+            set_boolean_config("regular_absolute_sharings", False)
+        # set_config(regular_relative_sharings, request.POST.get("regular_relative_sharings"))
+        # set_config(regular_absolute_sharings, request.POST.get("regular_absolute_sharings"))
+        set_config("displayed_time_period_for_membership_fees", request.POST.get("displayed_time_period_for_membership_fees"))
+
+
+
+
 def global_context(request):
     global recent_users
     global recent_accounts
@@ -788,7 +815,9 @@ def account_settings(request):
     global selected_account
     users = User.objects.all()
     all_time_periods = TimePeriod.objects.all()
-    context = {"account" : selected_account, "users" : users, "all_time_periods" : all_time_periods}
+    general_displayed_time_period_for_membership_fees = get_config("displayed_time_period_for_membership_fees")
+    context = {"account" : selected_account, "users" : users, "all_time_periods" : all_time_periods, 
+                "general_displayed_time_period_for_membership_fees" : general_displayed_time_period_for_membership_fees, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def suppliers(request):
@@ -913,19 +942,16 @@ def add_insertion(request):
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def general_settings(request):
+    if request.method == 'POST':
+        modify_general_settings(request)
     template = loader.get_template('core/general_settings.html')
 
-    all_currencies = Currency.objects.all()
-    # all_membership_fee_modes = list(MembershipFeeMode) # MembershipFeeMode.__members__.items()
-
-    enabled_membership_fee_modes = list()
-    # for mode in get_config("enabled_membership_fee_modes").split(","):
-    #     enabled_membership_fee_modes.append(MembershipFeeMode.objects.get(id=mode))
     context = { "group_title" : get_config("group_title"),
                 "main_language" : get_config("main_language"),
                 "anchor_currency" : Currency.objects.get(id=get_config("anchor_currency")),
-                "enabled_membership_fee_modes" : enabled_membership_fee_modes,
-                "all_currencies" : all_currencies, "all_membership_fee_modes" : all_membership_fee_modes
+                "all_currencies" : Currency.objects.all(), "all_time_periods" : TimePeriod.objects.all(), 
+                "single_sharings" : get_boolean_config("single_sharings"), "regular_relative_sharings" : get_boolean_config("regular_relative_sharings"), "regular_absolute_sharings" : get_boolean_config("regular_absolute_sharings"), 
+                "displayed_time_period_for_membership_fees" : TimePeriod.objects.filter(singular=get_config("displayed_time_period_for_membership_fees"))[0]
                 }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 

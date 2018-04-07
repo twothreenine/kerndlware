@@ -34,12 +34,12 @@
       </div>
       <div>
         <label for="active">Active</label>
-        <input type="checkbox" {% if account.active == True %} checked {% endif %} name="active" value="yes"> <!--  -->
+        <input type="checkbox" {% if account.active == True %} checked {% endif %} name="active" value="yes">
       </div>
       <div>
         <label for="displayed_time_period_for_membership_fees">Displayed time period for membership fees</label>
         <select name="displayed_time_period_for_membership_fees" class="selectpicker">
-          <option {% if not time_period.displayed_time_period_for_membership_fees %}selected{% endif %} value="0">Use general setting</option>
+          <option {% if not time_period.displayed_time_period_for_membership_fees %}selected{% endif %} value="0">Use general setting ({{ general_displayed_time_period_for_membership_fees }})</option>
           {% for time_period in all_time_periods %}
           <option value="{{ time_period.id }}" {% if time_period == account.displayed_time_period_for_membership_fees %}selected{% endif %}>{{ time_period }}</option>
           {% endfor %}

@@ -154,12 +154,12 @@ class Account(models.Model):
         return rate
 
     def get_time_period_for_membership_fees(self):
-        config_name_periods = TimePeriod.objects.filter(singular=get_config("time_period_for_membership_fee_sum"))
+        config_name_periods = TimePeriod.objects.filter(singular=get_config("displayed_time_period_for_membership_fees"))
         if self.displayed_time_period_for_membership_fees:
             return self.displayed_time_period_for_membership_fees
         elif config_name_periods:
             return config_name_periods[0]
-        elif TimePeriod.objects.filter(is_month=True):
+        elif TimePeriod.objects.filter(is_month=True): # alternatively, filter for singular="month", if you want to delete the is_month attribute
             return TimePeriod.objects.filter(is_month=True)[0]
         else:
             return None

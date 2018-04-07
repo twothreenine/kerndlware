@@ -28,16 +28,40 @@
         </select>
       </div>
       <div>
-        <label for="membership_fee_modes">Enabled modes for membership fee</label>
-        <select multiple="multiple" name="membership_fee_modes" class="selectpicker" data-actions-box="true" data-live-search="true">
-          <option value="" disabled>Select modes</option>
-          {% for mode in all_membership_fee_modes %}
-          <option value="{{ mode.value }}" {% if mode in enabled_membership_fee_modes %}selected{% endif %}>{{ mode.name }}</option>
+        <label for="single_sharings">Single sharings</label>
+        <input type="checkbox" {% if single_sharings == True %} checked {% endif %} name="single_sharings">
+        <a href="#" data-toggle="popover" title="Single sharings" data-content="If enabled, members can share specific amounts of costs/benefits among themselves.">info</a>
+      </div>
+      <div>
+        <label for="regular_relative_sharings">Regular relative sharings</label>
+        <input type="checkbox" {% if regular_relative_sharings == True %} checked {% endif %} name="regular_relative_sharings">
+        <a href="#" data-toggle="popover" title="Regular relative sharings" data-content="If enabled, members can define .">info</a>
+      </div>
+      <div>
+        <label for="regular_absolute_sharings">Regular absolute sharings</label>
+        <input type="checkbox" {% if regular_absolute_sharings == True %} checked {% endif %} name="regular_absolute_sharings">
+        <a href="#" data-toggle="popover" title="Single sharings" data-content="If enabled, members can share specific amounts of costs/benefits among themselves.">info</a>
+      </div>
+      <div>
+        <label for="displayed_time_period_for_membership_fees">Displayed time period for membership fees (preset)</label>
+        <select name="displayed_time_period_for_membership_fees" class="selectpicker">
+          {% for time_period in all_time_periods %}
+          <option value="{{ time_period.singular }}" {% if time_period == displayed_time_period_for_membership_fees %}selected{% endif %}>{{ time_period }}</option>
           {% endfor %}
         </select>
       </div>
     </div>
   </form>
 </div>
+
+{% endblock %}
+
+{% block script %}
+
+<script>
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover();
+});
+</script>
 
 {% endblock %}

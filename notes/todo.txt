@@ -1,6 +1,17 @@
-﻿- ods-Importskript: Inventur (Typ 5/6) als Taking/Restitution bzw. Inventur-Klasse analog zu Insertion? batch, amount
-- wenn alles klappt, dann neu alles importieren und überprüfen
+﻿- new classes Invoice & Payment (date -> prepaid expense?)
+- Commodity is a Consumable is a Product; Decive is a Durable is a Product
+- Batch/Material/IntangibleAsset/TangibleAsset is an Asset
+- Specific Purchase n...1 Asset
+- Payment n...m SpecificPurchase
+- Invoice n...m SpecificPurchase
+
+- Balance sheet (assets and liabilities)
+
+- ods import script: Stocktaking (type 5/6) -> taking/restitution resp. stocktaking? batch, amount
+- after that: import data anew and check for errors
 - Insertion sheet
+
+- use Django user class instead of own class
 - SQL statt Sqlite?
 
 New menu:

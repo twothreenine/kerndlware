@@ -28,6 +28,31 @@
         </select>
       </div>
       <div>
+        <label for="short_date_format">Default short date format</label>
+        <select name="short_date_format" class="selectpicker" onchange="show_custom_short_date_format_field(); hide_custom_short_date_example()">
+          <option value="custom" {% if short_date_format not in date_formats.keys %}selected{% endif %}>Custom</option>
+          {% for code, example in date_formats.items %}
+          <option value="{{ code }}" {% if code == short_date_format %}selected{% endif %}>{{ code }} ({{ example }})</option>
+          {% endfor %}
+        </select>
+        <input type="text" id="custom_short_date_format" name="custom_short_date_format" {% if short_date_format not in date_formats.keys %} value="{{ short_date_format }}"{% else %} style="display: none" {% endif %} 
+        onchange="hide_custom_short_date_example()">
+        <span name="short_date_format_example" {% if short_date_format in date_formats.keys %} style="display: none" {% endif %}>{{ short_date_format_example }}</span>
+        <a href="#" data-toggle="popover" title="Date format" data-content="List of directives: https://docs.python.org/3.5/library/time.html#time.strftime">info</a>
+      </div>
+      <div>
+        <label for="long_date_format">Default long date format, for example for documents</label>
+        <select name="long_date_format" class="selectpicker" onchange="show_custom_long_date_format_field(); hide_custom_long_date_example()">
+          <option value="custom" {% if long_date_format not in date_formats.keys %}selected{% endif %}>Custom</option>
+          {% for code, example in date_formats.items %}
+          <option value="{{ code }}" {% if code == long_date_format %}selected{% endif %}>{{ code }} ({{ example }})</option>
+          {% endfor %}
+        </select>
+        <input type="text" id="custom_long_date_format" name="custom_long_date_format" {% if long_date_format not in date_formats.keys %} value="{{ long_date_format }}"{% else %} style="display: none" {% endif %} 
+        onchange="hide_custom_long_date_example()">
+        <span name="long_date_format_example" {% if long_date_format in date_formats.keys %} style="display: none" {% endif %}>{{ long_date_format_example }}</span>
+      </div>
+      <div>
         <label for="single_sharings">Single sharings</label>
         <input type="checkbox" {% if single_sharings == True %} checked {% endif %} name="single_sharings">
         <a href="#" data-toggle="popover" title="Single sharings" data-content="If enabled, members can share specific amounts of costs/benefits among themselves.">info</a>
@@ -62,6 +87,31 @@
 $(document).ready(function(){
     $('[data-toggle="popover"]').popover();
 });
+
+function show_custom_short_date_format_field() {
+  if ($("select[name=short_date_format]").val()=='custom') {
+    $("#custom_short_date_format").css("display", "")
+  } else {
+    $("#custom_short_date_format").hide();
+  }
+}
+
+function hide_custom_short_date_example() {
+  $("span[name=short_date_format_example]").hide()
+}
+
+function show_custom_long_date_format_field() {
+  if ($("select[name=long_date_format]").val()=='custom') {
+    $("#custom_long_date_format").css("display", "")
+  } else {
+    $("#custom_long_date_format").hide();
+  }
+}
+
+function hide_custom_long_date_example() {
+  $("span[name=long_date_format_example]").hide()
+}
+
 </script>
 
 {% endblock %}

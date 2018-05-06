@@ -9,11 +9,11 @@
 <div class="panel panel-default">
   <form id="register_form" action="/register_user" method="POST">
     {% csrf_token %}
-    <div class="panel-heading">This page is incomplete: Add person/virtualuser check and person fields</div>
+    <div class="panel-heading"></div>
     <div class="panel-body">
       <div>
         <input type="text" name="name" placeholder="Name of new user" required="true">
-        <input type="checkbox" name="is_non_real" onclick="hide_person_fields();"> is not a real person
+        <input type="checkbox" id="is_non_real" onchange="hide_person_fields()"> is not a real person
       </div>
       <div>
         <label for="users">Select associated accounts if they already exist</label>
@@ -71,7 +71,7 @@
 {% block script %}
   <script>
     function hide_person_fields() { // TODO: doesn't work!
-      if (document.getElementById("is_non_real").checked) { 
+      if ($("#is_non_real").is(":checked")) {
         $("#person_fields").hide()
       } else {
         $("#person_fields").show();

@@ -64,23 +64,54 @@ class TimePeriod(models.Model):
         return into.days / self.days
 
 class Currency(models.Model):
-    name = models.CharField(max_length=10)
-    conversion_rate = models.FloatField(default=1) # into anchor currency
-    full_name = models.CharField(max_length=50, blank=True)
+    full_name = models.CharField(max_length=100) # for example 'Euro', 'United States dollar'
+    short_name = models.CharField(max_length=30, blank=True) # for example 'US dollar'
+    iso_code = models.CharField(max_length=3, blank=True) # ISO 4217, for example 'EUR', 'USD'
+    iso_num = models.CharField(max_length=3, blank=True) # ISO 4217, for example '978', '840'
+    symbol = models.CharField(max_length=10, blank=True) # for example '€', '$', '$ (US)'
     description = models.TextField(blank=True)
     comment = models.TextField(blank=True)
+    conversion_rate = models.FloatField(default=1, blank=True, null=True) # into anchor currency
 
-    @classmethod
-    def create(name, conversion_rate=1, full_name='', description='', comment=''):
-        self = Currency(name=name, conversion_rate=conversion_rate, full_name=full_name, description=description, comment=comment)
-        self.save()
-        for mb in MoneyBox.objects.all():
-            mbs = MoneyBoxStock(money_box=mb, currency=self)
-            mbs.save()
-        return self
+    # @classmethod
+    # def create(name, conversion_rate=1, full_name='', description='', comment=''):
+    #     self = Currency(name=name, conversion_rate=conversion_rate, full_name=full_name, description=description, comment=comment)
+    #     self.save() 
+    #     for mb in MoneyBox.objects.all():
+    #         mbs = MoneyBoxStock(money_box=mb, currency=self)
+    #         mbs.save()
+    #     return self
 
     def __str__(self):
-        return "{} ({})".format(self.name, self.full_name)
+        if self.short_name:
+            name = self.short_name
+        else:
+            name = self.full_name
+        short = None
+        if self.symbol:
+            short = self.symbol
+        elif self.iso_code:
+            short = self.iso_code
+        if short:
+            return "{} ({})".format(short, name)
+        else:
+            return name
+
+    def short_str(self):
+        if self.short_name:
+            return self.short_name
+        else:
+            return self.full_name
+
+    def symbol_str(self):
+        if self.symbol:
+            return self.symbol
+        elif self.iso_code:
+            return self.iso_code
+        elif self.short_name:
+            return self.short_name
+        else:
+            return self.name
         
 class Role(models.Model):
     name = models.CharField(max_length=50)
@@ -93,6 +124,8 @@ class User(models.Model):
     notice = models.TextField(blank=True)
     accounts = models.ManyToManyField('Account', blank=True, related_name="accounts")
     primary_account = models.ForeignKey('Account', blank=True, null=True, related_name="primary_account")
+    short_date_format = models.CharField(max_length=50, blank=True, default="")
+    long_date_format = models.CharField(max_length=50, blank=True, default="")
 
     def __str__(self):
         return "{} - {}".format(str(self.id), self.name)
@@ -445,9 +478,19 @@ class Engagement(models.Model):
     role = models.ForeignKey('Role')
     comment = models.TextField(blank=True)
 
-class MoneyBox(models.Model):
+class MoneyBoxType(models.Model): # like "cash", "bank account", "customer account" (for a specific supplier) etc.
     name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+class MoneyBox(models.Model):
+    name = models.CharField(max_length=100)
     stock_value = models.FloatField(default=0)
+    money_boy_type = models.ForeignKey('MoneyBoxType', blank=True, null=True)
+    currency = models.ForeignKey('Currency')
+    #stock = models.FloatField(default=0)
+
     #inpayment_fee = models.FloatField(default=0)
     #inpayment_percentage_fee = models.FloatField(default=0)
     #payout_fee = models.FloatField(default=0)
@@ -455,43 +498,41 @@ class MoneyBox(models.Model):
 
     # TODO: Methode zum Berechnen des stock_value
 
-    @classmethod
-    def create(self, name, stock_value=0):
-        self = MoneyBox(name=name, stock_value=stock_value)
-        self.save()
-        for c in Currency.objects.all():
-            mbs = MoneyBoxStock(money_box=self, currency=c)
-            mbs.save()
-        return self
+    # @classmethod
+    # def create(self, name, stock_value=0):
+    #     self = MoneyBox(name=name, stock_value=stock_value)
+    #     self.save()
+    #     for c in Currency.objects.all():
+    #         mbs = MoneyBoxStock(money_box=self, currency=c)
+    #         mbs.save()
+    #     return self
 
     def __str__(self):
-        return "{}".format(self.name)
+        return "{} ({})".format(self.name, self.currency.short_str())
 
-    def calc_stock_value(self):
-        stocks = MoneyBoxStock.objects.filter(money_box=self)
-        value = 0
-        for moneyboxstock in stocks:
-            value += moneyboxstock.stock * moneyboxstock.currency.conversion_rate
-        self.stock_value = value
-        self.save()
+    # def calc_stock_value(self):
+    #     stocks = MoneyBoxStock.objects.filter(money_box=self)
+    #     value = 0
+    #     for moneyboxstock in stocks:
+    #         value += moneyboxstock.stock * moneyboxstock.currency.conversion_rate
+    #     self.stock_value = value
+    #     self.save()
 
-class MoneyBoxStock(models.Model):
-    money_box = models.ForeignKey('MoneyBox')
-    currency = models.ForeignKey('Currency')
-    stock = models.FloatField(default=0)
+    # def inpayment(self, amount):
+    #     self.stock += amount
 
-    def inpayment(self, amount):
-        self.stock += amount
+    # def payout(self, amount):
+    #     self.stock -= amount
 
-    def payout(self, amount):
-        self.stock -= amount
+    # def transfer(self, amount, recipient):
+    #     self.payout(amount)
+    #     recipient.inpayment(amount)
 
-    def transfer(self, amount, recipient):
-        self.payout(amount)
-        recipient.inpayment(amount)
+# class MoneyBoxStock(models.Model):
+#     money_box = models.ForeignKey('MoneyBox')
 
-    def __str__(self):
-        return "{}: {}".format(self.money_box, self.currency)
+#     def __str__(self):
+#         return "{}: {}".format(self.money_box, self.currency)
 
 class StorageCondition(models.Model):
     name = models.CharField(max_length=30)
@@ -870,10 +911,13 @@ class Device(Durable):
     active = models.BooleanField(default=True)
 
 class DeviceByInstalments(Device):
-    interval_months = models.FloatField(default=1) # months and days will be added
-    interval_days = models.FloatField(default=0) # months and days will be added
+    time_period = models.ForeignKey("TimePeriod")
+    time_period_multiplicator = models.FloatField(default=1)
     number_of_instalments = models.IntegerField(blank=True, null=True)
     deducted = models.FloatField(default=0) # amount that already has been deducted
+
+    def interval(self):
+        return self.time_period.days * self.time_period_multiplicator
 
 class Instalment(models.Model):
     account = models.ForeignKey('Account')
@@ -1285,9 +1329,8 @@ class Transaction(models.Model):
         else:
             return "'{}'".format(self.comment)
 
-    @property
-    def entry_details_str(self):
-        return "entered on {} by {}".format(self.entry_date, self.entered_by_user.name)
+    def entry_details_str(self, short_date_format):
+        return "entered on {} by {}".format(self.entry_date.strftime(short_date_format), self.entered_by_user.name)
     
     def value_str(self, account=0):
         # Returns the value of a transaction affecting the selected account, in the anchor currency, as a string.
@@ -1471,7 +1514,7 @@ class Inpayment(Transaction): # insertion of money to balance
     confirmation_comment = models.TextField(blank=True)
 
     def __str__(self):
-        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency, self.entered_by_user.name)
+        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency.symbol_str, self.entered_by_user.name)
 
     @property
     def type(self):
@@ -1484,9 +1527,9 @@ class Inpayment(Transaction): # insertion of money to balance
         self.transaction_type = TransactionType.objects.get(no=3)
         self.save()
         self.value = self.amount * self.currency.conversion_rate
-        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
-        moneyboxstock.inpayment(self.amount)
-        moneyboxstock.save()
+        # moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
+        # moneyboxstock.inpayment(self.amount)
+        # moneyboxstock.save()
         #self.originator_account.add_balance(value)
         #self.originator_account.save()
         self.save()
@@ -1498,10 +1541,10 @@ class Inpayment(Transaction): # insertion of money to balance
             originator = self.originator_account.name
         else:
             originator = "You"
-        if self.currency.name == "€":
+        if self.currency.symbol_str == "€":
             return "{} paid in {} € via {}".format(originator, format(self.amount,'.2f'), self.money_box.name), "", ""
         else:
-            return "{} paid in {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'), self.money_box.name), "", ""
+            return "{} paid in {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.symbol_str, format(self.value,'.2f'), self.money_box.name), "", ""
 
     # @property
     # def type_name(self):
@@ -1509,10 +1552,10 @@ class Inpayment(Transaction): # insertion of money to balance
 
     # @property
     # def amount_str(self):
-    #     if self.currency.name == "€":
-    #         return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+    #     if self.currency.symbol_str == "€":
+    #         return "{} {} ->".format(format(self.amount,'.2f'), self.currency.symbol_str)
     #     else:
-    #         return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+    #         return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.symbol_str, format(self.value,'.2f'))
 
     # def matter_str(self, account):
     #     if self.confirmed_by == None:
@@ -1528,9 +1571,9 @@ class Payout(Transaction): # payout of money from balance
         self.transaction_type = TransactionType.objects.get(no=4)
         self.save()
         self.value = self.amount * self.currency.conversion_rate * (-1)
-        moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
-        moneyboxstock.payout(self.amount)
-        moneyboxstock.save()
+        # moneyboxstock = MoneyBoxStock.objects.get(money_box=self.money_box, currency=self.currency) # foreign key?
+        # moneyboxstock.payout(self.amount)
+        # moneyboxstock.save()
         self.save()
         charge = Charge(transaction=self, account=self.originator_account, value=self.value, to_balance=True, date=self.date)
         charge.save()
@@ -1547,10 +1590,10 @@ class Payout(Transaction): # payout of money from balance
             originator = self.originator_account.name+" was"
         else:
             originator = "You were"
-        if self.currency.name == "€":
+        if self.currency.symbol_str == "€":
             return "{} paid out {} € via {}".format(originator, format(self.amount,'.2f'), self.money_box.name), "", ""
         else:
-            return "{} paid out {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'), self.money_box.name), "", ""
+            return "{} paid out {} {} ({} €) via {}".format(originator, format(self.amount,'.2f'), self.currency.symbol_str, format(self.value,'.2f'), self.money_box.name), "", ""
 
 class Depositation(Transaction): # transcription from balance to deposit
     pass
@@ -1590,10 +1633,10 @@ class Depositation(Transaction): # transcription from balance to deposit
 
     # @property
     # def amount_str(self):
-    #     if self.currency.name == "€":
-    #         return "{} {} ->".format(format(self.amount,'.2f'), self.currency.name)
+    #     if self.currency.symbol_str == "€":
+    #         return "{} {} ->".format(format(self.amount,'.2f'), self.currency.symbol_str)
     #     else:
-    #         return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.name, format(self.value,'.2f'))
+    #         return "{} {} ({} €) ->".format(format(self.amount,'.2f'), self.currency.symbol_str, format(self.value,'.2f'))
 
     # def matter_str(self, account):
     #     if self.confirmed_by == None:
@@ -1915,7 +1958,7 @@ class Purchase(models.Model):
 
 class SpecificPurchase(models.Model):
     purchase = models.ForeignKey('Purchase')
-    batch = models.ForeignKey('Batch')
+    batch = models.ForeignKey('Batch') # TODO: change to Asset
     amount = models.FloatField()
     total_cost = models.FloatField(null=True, blank=True) #MoneyField; 
     total_price = models.FloatField(null=True, blank=True) #MoneyField; 
@@ -1951,9 +1994,8 @@ class SpecificPurchase(models.Model):
         #     unit = self.batch.unit.abbr
         return "{} were inserted{}, credited to {}".format(self.batch.unit.display(self.amount, show_contents), batch, credited_to), "", ""
 
-    @property
-    def entry_details_str(self):
-        return "entered on {} by {}".format(self.purchase.entry_date, self.purchase.entered_by_user.name)
+    def entry_details_str(self, short_date_format):
+        return "entered on {} by {}".format(self.purchase.entry_date.strftime(short_date_format), self.purchase.entered_by_user.name)
 
     @property
     def comment_str(self):

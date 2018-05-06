@@ -3,6 +3,7 @@ from decimal import Decimal
 import math
 from collections import Counter
 import datetime
+from core.config import *
 
 def remove_zeros(f):
     d = Decimal(str(f));
@@ -37,16 +38,16 @@ def list_str(my_list, sorted_by_attribute=None, descending=True, displayed_attri
     Returns a string from a list of strings like "x, y, and n-2 other [type]s" or "n [type]s".
     If the list consists of objects, they can be sorted by one of their attributes given as sorted_by_attribute;
     and to represent them by a different attribute than their name, you can give that attribute as displayed_attribute.
-    We need to know how to call the list elements them in plural. You can give that plural manually as type_plural; else, for objects, this function will get the class name and append an "s".
+    We need to know how to call the list elements in plural. You can give that plural manually as type_plural; else, for objects, this function will get the class name and append an "s".
     The parameter "elements" sets a maximum of objects to be written, including the "and n others". Use elements=0 to write them all without maximum.
     """
     count = len(my_list)
 
     if not count:
         if type_plural == "":
-            return "none"
+            return "None"
         else:
-            return "no "+type_plural
+            return "No "+type_plural
 
     else:
         if type_plural == "":
@@ -73,7 +74,7 @@ def list_str(my_list, sorted_by_attribute=None, descending=True, displayed_attri
                 elements_written += 1
             left_to_write = count - elements_written
             if count > 2 and (elements > 2 or elements == 0):
-                obj_names += ","
+                obj_names += "," # Last comma before 'and'. Replace this with a variable for multilingual support which can be "," or ""
             if left_to_write == 1:
                 obj_names += " and "+str(eval("my_list[-1]."+displayed_attribute))
             else:
@@ -96,3 +97,24 @@ def calc_next_date(obj):
         return obj.next_performance.replace(year=obj.next_performance.year+obj.time_period_multiplicator)
     else:
         return obj.next_performance + datetime.timedelta(days=obj.time_period.days*obj.time_period_multiplicator)
+
+def date_format(user=None, style='short'):
+    if style == 'short':
+        if user:
+            if user.short_date_format:
+                return user.short_date_format
+            else:
+                return get_config("short_date_format")
+        else:
+            return get_config("short_date_format")
+    elif style == 'long':
+        if user:
+            if user.long_date_format:
+                return user.long_date_format
+            else:
+                return get_config("long_date_format")
+        else:
+            return get_config("long_date_format")
+
+def bootstrap_date_format(date_format):
+    return date_format.replace('%a', 'D').replace('%A', 'DD').replace('%b', 'M').replace('%B', 'MM').replace('%d', 'dd').replace('%m', 'mm').replace('%y', 'yy').replace('%Y', 'yyyy')

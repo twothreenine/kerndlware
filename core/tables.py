@@ -2,16 +2,15 @@ from django.db import models
 from django.db.models import Q
 import datetime
 from .fields import PercentField
-import datetime
 import itertools
 from .models import *
 from .functions import *
-import datetime
 from .config import *
 
 class BatchTransactionTable:
-    def __init__(self, batch_no):
+    def __init__(self, batch_no, short_date_format):
         self.batch = Batch.objects.get(no=batch_no)
+        self.short_date_format = short_date_format
         self.rows = list()
         self.generate()
 
@@ -28,20 +27,21 @@ class BatchTransactionTable:
             transaction = transactions[i]
             row = list()
             row.append(transaction.id)
-            row.append(transaction.date)
+            row.append(transaction.date.strftime(self.short_date_format))
             matter, participants, share = transaction.matter_str(show_contents=False, show_batch=False)
             row.append(matter)
-            row.append(transaction.entry_details_str)
+            row.append(transaction.entry_details_str(self.short_date_format))
             row.append(transaction.value_str())
             row.append(batch_stock_str(transaction))
             row.append(transaction.comment_str)
             self.rows.append(row)
 
 class ConsumableTransactionTable:
-    def __init__(self, consumable_id):
+    def __init__(self, consumable_id, short_date_format):
         self.consumable_id = consumable_id
         consumable = Consumable.objects.get(pk=consumable_id)
-        batches = Batch.objects.filter(consumable=consumable)
+        batches = Batch.objects.filter(consumable=consumable) # what's done with this??
+        self.short_date_format = short_date_format
         self.rows = list()
         self.generate()
 
@@ -62,17 +62,18 @@ class ConsumableTransactionTable:
             transaction = transactions[i]
             row = list()
             row.append(transaction.id)
-            row.append(transaction.date)
+            row.append(transaction.date.strftime(self.short_date_format))
             matter, participants, share = transaction.matter_str()
             row.append(matter)
-            row.append(transaction.entry_details_str)
+            row.append(transaction.entry_details_str(self.short_date_format))
             row.append(transaction.value_str())
             row.append(consumable_stock_str(transaction))
             row.append(transaction.comment_str)
             self.rows.append(row)
 
 class TransactionTable:
-    def __init__(self):
+    def __init__(self, short_date_format):
+        self.short_date_format = short_date_format
         self.rows = list()
         self.generate()
 
@@ -94,20 +95,21 @@ class TransactionTable:
             transaction = transactions[i]
             row = list()
             row.append(transaction.id)
-            row.append(transaction.date)
+            row.append(transaction.date.strftime(self.short_date_format))
             matter, participants, share = transaction.matter_str(account=0)
             row.append(matter + participants)
-            row.append(transaction.entry_details_str)
+            row.append(transaction.entry_details_str(self.short_date_format))
             row.append(transaction.value_str(account=0))
             row.append(transaction.comment_str)
             self.rows.append(row)
 
 class AccountTable:
-    def __init__(self, account_id, types, start_date, end_date, enterer):
+    def __init__(self, account_id, types, start_date, end_date, short_date_format, enterer):
         self.account_id = account_id
         self.types = types
         self.start_date = start_date
         self.end_date = end_date
+        self.short_date_format = short_date_format
         self.enterer = enterer
         self.occuring_users = []
         self.rows = list()
@@ -181,12 +183,12 @@ class AccountTable:
                 show_details = 0
             row.append(show_details) # 1
             row.append(transaction.id) # 2
-            row.append(transaction.date) # 3
+            row.append(transaction.date.strftime(self.short_date_format)) # 3
             row.append(matter) # 4
             row.append(details1) # 5
             row.append(details2) # 6
             row.append(transaction.transaction_type) # 7
-            row.append(transaction.entry_details_str) # 8
+            row.append(transaction.entry_details_str(self.short_date_format)) # 8
             row.append(transaction.value_str(account=self.account_id)) # 9
             row.append(transaction.balance_str(account=self.account_id)) # 10
             row.append(transaction.comment_str) # 11
@@ -235,9 +237,10 @@ class TrDetailsTable:
             pass
 
 class MembershipFeePhaseTable:
-    def __init__(self, account=None, date=datetime.date.today(), fee=None, hide_inactive=False):
+    def __init__(self, short_date_format, account=None, date=datetime.date.today(), fee=None, hide_inactive=False):
         self.account = account
         self.date = date
+        self.short_date_format = short_date_format
         self.fee = fee
         self.hide_inactive = hide_inactive
 
@@ -365,15 +368,21 @@ class MembershipFeePhaseTable:
             row = list()
             row.append(phase.id) # row.0
             row.append(phase.active) # row.1
-            row.append(phase.start) # row.2
-            row.append(phase.end) # row.3
+            if phase.start:
+                row.append(phase.start.strftime(self.short_date_format)) # row.2
+            else:
+                row.append("") # row.2
+            if phase.end:
+                row.append(phase.end.strftime(self.short_date_format)) # row.3
+            else:
+                row.append("") # row.3
             row.append("on specific sharings") # row.4 (mode)
             row.append(str(phase.rate)+"x") # row.5
             row.append(phase.comment) # row.6
             row.append("") # row.7 (time period)
             row.append("") # row.8 (next performance)
             row.append("") # row.9 (previous performance)
-            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10
+            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on.strftime(self.short_date_format))) # row.10
             row.append("") # row.11 (no fixed recipient)
             phases_list.append(row)
         return phases_list
@@ -401,8 +410,14 @@ class MembershipFeePhaseTable:
             row = list()
             row.append(phase.id) # row.0
             row.append(phase.active) # row.1
-            row.append(phase.start) # row.2
-            row.append(phase.end) # row.3
+            if phase.start:
+                row.append(phase.start.strftime(self.short_date_format)) # row.2
+            else:
+                row.append("") # row.2
+            if phase.end:
+                row.append(phase.end.strftime(self.short_date_format)) # row.3
+            else:
+                row.append("") # row.3
             row.append("general fee: "+str(phase.fee.label)) # row.4 (mode)
             row.append(str(phase.rate)+"x ("+format(phase.calc_amount(date=self.date),'.2f')+" €)") # row.5
             row.append(phase.comment) # row.6
@@ -414,9 +429,15 @@ class MembershipFeePhaseTable:
             if not account_main_period.days == phase.fee.time_period.days * phase.fee.time_period_multiplicator:
                 period_str += " ({} € per {})".format(format(phase.calc_amount(date=self.date, per_period=account_main_period),'.2f'), account_main_period.singular)
             row.append(period_str) # row.7 (time period)
-            row.append(phase.fee.next_performance) # row.8 (next performance)
-            row.append(phase.fee.previous_performance) # row.9 (previous performance)
-            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10
+            if phase.fee.next_performance:
+                row.append(phase.fee.next_performance.strftime(self.short_date_format)) # row.8 (next performance)
+            else:
+                row.append("") # row.8 (next performance)
+            if phase.fee.previous_performance:
+                row.append(phase.fee.previous_performance.strftime(self.short_date_format)) # row.9 (previous performance)
+            else:
+                row.append("") # row.9 (previous performance)
+            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on.strftime(self.short_date_format))) # row.10
             row.append(any_detail_str(object=phase.fee, attribute="recipient_account")) # row.11
             phases_list.append(row)
         return phases_list
@@ -445,8 +466,14 @@ class MembershipFeePhaseTable:
             row = list()
             row.append(phase.id) # row.0
             row.append(phase.active) # row.1
-            row.append(phase.start) # row.2
-            row.append(phase.end) # row.3
+            if phase.start:
+                row.append(phase.start.strftime(self.short_date_format)) # row.2
+            else:
+                row.append("") # row.2
+            if phase.end:
+                row.append(phase.end.strftime(self.short_date_format)) # row.3
+            else:
+                row.append("") # row.3
             row.append("custom fee: "+str(phase.label)) # row.4 (mode)
             row.append(format(phase.rate,'.2f')+" €") # row.5
             row.append(phase.comment) # row.6
@@ -458,9 +485,15 @@ class MembershipFeePhaseTable:
             if not account_main_period.days == phase.time_period.days * phase.time_period_multiplicator:
                 period_str += " ({} € per {})".format(format(phase.calc_amount(date=self.date, per_period=account_main_period),'.2f'), account_main_period.singular)
             row.append(period_str) # row.7 (time period)
-            row.append(phase.next_performance) # row.8 (next performance)
-            row.append(phase.previous_performance) # row.9 (previous performance)
-            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on)) # row.10
+            if phase.next_performance:
+                row.append(phase.next_performance.strftime(self.short_date_format)) # row.8 (next performance)
+            else:
+                row.append("") # row.8 (next performance)
+            if phase.previous_performance:
+                row.append(phase.previous_performance.strftime(self.short_date_format)) # row.9 (previous performance)
+            else:
+                row.append("") # row.9 (previous performance)
+            row.append("by {} on {}".format(phase.last_edited_by, phase.last_edited_on.strftime(self.short_date_format))) # row.10
             row.append(any_detail_str(object=phase, attribute="recipient_account")) # row.11
             phases_list.append(row)
         return phases_list
@@ -670,11 +703,12 @@ class SupplierSubsubtable: # ssst
             self.rows.append(row)
 
 class PurchaseListTable:
-    def __init__(self, statuses, start_date, end_date, enterers):
+    def __init__(self, statuses, start_date, end_date, short_date_format, enterers):
         self.rows = list()
         self.statuses = statuses
         self.start_date = start_date
         self.end_date = end_date
+        self.short_date_format = short_date_format
         self.enterers = enterers
         self.generate()
 
@@ -714,10 +748,40 @@ class PurchaseListTable:
         for p in purchases:
             row = list()
             row.append(p.id) # row.0
-            row.append(p.date) # row.1
+            row.append(p.date.strftime(self.short_date_format)) # row.1
             row.append(p.batches_str()) # row.2
             row.append(p.suppliers_str()) # row.3
             row.append(p.status_str()) # row.4
             row.append(p.entered_by_user.name) # row.5
             row.append(p.credited_accounts) # row.6
             self.rows.append(row)
+
+class BalanceSheet:
+    def __init__(self, date=datetime.date.today()):
+        self.date = date
+
+        self.total_assets = float()
+        self.total_current_assets = float()
+        self.total_cash = float()
+        self.total_inventories = float()
+        self.total_prepaid_inventories = float()
+        self.total_accounts_receivable = float()
+        self.total_prepaid_expenses = float()
+        self.total_non_current_assets = float()
+        self.total_property_and_equipment = float()
+        self.total_other_non_current_assets = float()
+
+        self.cash = list()
+        self.inventories = list()
+        self.prepaid_inventories = list()
+        self.accounts_receivable = list()
+        self.prepaid_expences = list()
+        self.properties_and_equipment = list()
+        self.other_non_current_assets = list()
+
+        # liabilities and stockholders' equity
+
+        self.generate()
+
+    def generate(self):
+        pass

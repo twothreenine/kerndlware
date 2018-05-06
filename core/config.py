@@ -1,6 +1,6 @@
 import configparser
 
-config = configparser.ConfigParser()
+config = configparser.ConfigParser(interpolation=None)
 config.read('core/config.ini')
 
 def get_config(attribute):

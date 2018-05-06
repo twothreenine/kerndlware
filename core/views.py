@@ -29,6 +29,9 @@ try:
         year.save()
 
     selected_user = None
+    short_date_format = date_format(user=selected_user, style="short")
+    long_date_format = date_format(user=selected_user, style="long")
+    date_format_codes = ['%Y/%m/%d', '%d.%m.%Y', '%d.%m.%y', '%A, %d. %B %Y', '%A, %B %d, %Y', '%B %d, %Y']
     accounts = Account.objects.all()
     if accounts:
         selected_account = accounts[0]
@@ -227,13 +230,17 @@ def select_user(request):
         user_id = request.POST.get("user_id")
         if user_id:
             global selected_user
+            global short_date_format
+            global long_date_format
             if int(user_id) == 0:
                 selected_user = None
+                short_date_format = date_format(user=None, style="short")
+                long_date_format = date_format(user=None, style="long")
             else:
                 selected_user = User.objects.get(pk=int(user_id))
+                short_date_format = date_format(user=selected_user, style="short")
+                long_date_format = date_format(user=selected_user, style="long")
                 global recent_users
-                # print(recent_users)
-                # matching_user = [user for user in recent_users if user.id == int(user_id)]
                 i = recent_users.index(selected_user)
                 recent_users.insert(0, recent_users.pop(i))
 
@@ -319,6 +326,22 @@ def modify_user(request, selected_user_is_person):
             selected_user.active = True
         else:
             selected_user.active = False
+        
+        if request.POST.get("short_date_format") == 'custom':
+            if request.POST.get("custom_short_date_format"):
+                selected_user.short_date_format = request.POST.get("custom_short_date_format")
+        elif request.POST.get("short_date_format") == 'default':
+            selected_user.short_date_format = ''
+        else:
+            selected_user.short_date_format = request.POST.get("short_date_format")
+
+        if request.POST.get("long_date_format") == 'custom':
+            if request.POST.get("custom_long_date_format"):
+                selected_user.long_date_format =  request.POST.get("custom_long_date_format")
+        elif request.POST.get("long_date_format") == 'default':
+            selected_user.long_date_format = ''
+        else:
+            selected_user.long_date_format = request.POST.get("long_date_format")
         selected_user.save()
 
 def select_account(request):
@@ -356,6 +379,7 @@ def select_consumable_for_consumabletransactiontable(request):
             selected_consumable_in_consumabletransactiontable = Consumable.objects.get(pk=consumable_id)
 
 def filter_account_transactions(request):
+    global short_date_format
     if request.method == 'POST':
         transaction_types = request.POST.getlist("transaction_type")
         global selected_types_in_account_transactions
@@ -368,13 +392,13 @@ def filter_account_transactions(request):
         start_date = request.POST.get("start_date")
         global start_date_in_account_transactions
         if start_date:
-            start_date_in_account_transactions = datetime.datetime.strptime(start_date , '%Y-%m-%d').date()
+            start_date_in_account_transactions = datetime.datetime.strptime(start_date, short_date_format).date()
         else:
             start_date_in_account_transactions = None
         end_date = request.POST.get("end_date")
         global end_date_in_account_transactions
         if end_date:
-            end_date_in_account_transactions = datetime.datetime.strptime(end_date , '%Y-%m-%d').date()
+            end_date_in_account_transactions = datetime.datetime.strptime(end_date, short_date_format).date()
         else:
             end_date_in_account_transactions = None
         enterer = request.POST.get("enterer")
@@ -389,6 +413,7 @@ def filter_account_transactions(request):
             enterer_in_account_transactions = None
 
 def enter_new_transaction(request):
+    global short_date_format
     if request.method == 'POST':
         transaction_type = request.POST.get("type")
         if transaction_type:
@@ -405,7 +430,7 @@ def enter_new_transaction(request):
         #     recent_users.insert(0, recent_users.pop(i))
         date = request.POST.get("date")
         if date:
-            t_date = datetime.datetime.strptime(date , '%Y-%m-%d').date()
+            t_date = datetime.datetime.strptime(date, short_date_format).date()
             global default_date_of_new_transaction
             default_date_of_new_transaction = date
         amount = request.POST.get("amount")
@@ -564,6 +589,7 @@ def modify_consumablelist(request):
             consumable.save()
 
 def filter_purchases(request):
+    global short_date_format
     if request.method == 'POST':
         purchase_statuses = request.POST.getlist("purchase_statuses")
         global selected_statuses_in_purchase_list
@@ -575,13 +601,13 @@ def filter_purchases(request):
         start_date = request.POST.get("start_date")
         global start_date_in_purchase_list
         if start_date:
-            start_date_in_purchase_list = datetime.datetime.strptime(start_date , '%Y-%m-%d').date()
+            start_date_in_purchase_list = datetime.datetime.strptime(start_date , short_date_format).date()
         else:
             start_date_in_purchase_list = None
         end_date = request.POST.get("end_date")
         global end_date_in_purchase_list
         if end_date:
-            end_date_in_purchase_list = datetime.datetime.strptime(end_date , '%Y-%m-%d').date()
+            end_date_in_purchase_list = datetime.datetime.strptime(end_date , short_date_format).date()
         else:
             end_date_in_purchase_list = None
         enterers = request.POST.getlist("enterers")
@@ -598,6 +624,19 @@ def modify_general_settings(request):
         # set_config(main_language, request.POST.get("main_language"))
 
         set_config("anchor_currency", request.POST.get("anchor_currency"))
+        
+        if request.POST.get("short_date_format") == 'custom':
+            if request.POST.get("custom_short_date_format"):
+                set_config("short_date_format", request.POST.get("custom_short_date_format"))
+        else:
+            set_config ("short_date_format", request.POST.get("short_date_format"))
+
+        if request.POST.get("long_date_format") == 'custom':
+            if request.POST.get("custom_long_date_format"):
+                set_config("long_date_format", request.POST.get("custom_long_date_format"))
+        else:
+            set_config ("long_date_format", request.POST.get("long_date_format"))
+
         if request.POST.get("single_sharings"):
             set_boolean_config("single_sharings", True)
         else:
@@ -624,6 +663,7 @@ def global_context(request):
     global recent_accounts
     global selected_user
     global selected_account
+    global short_date_format
     accounts_of_selected_user = []
     recent_other_accounts = []
     if selected_user:
@@ -639,7 +679,10 @@ def global_context(request):
     accounts = Account.objects.all()
     balance = selected_account.balance_str
     current_path = request.get_full_path()
-    context = {"recent_users" : recent_users, "selected_user" : selected_user, "accounts_of_selected_user": accounts_of_selected_user, "recent_other_accounts" : recent_other_accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path, }
+    context = { "recent_users" : recent_users, "selected_user" : selected_user, "accounts_of_selected_user": accounts_of_selected_user, 
+                "recent_other_accounts" : recent_other_accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path, 
+                "bootstrap_date_format" : bootstrap_date_format(short_date_format), 
+                }
     return context
 
 def base(request):
@@ -666,6 +709,10 @@ def register_user(request):
 def user_settings(request):
     global selected_user
     selected_user_is_person = False
+    short_date_format = None
+    long_date_format = None
+    short_date_format_example = None
+    long_date_format_example = None
     if selected_user:
         try:
             sup = selected_user.person
@@ -674,13 +721,31 @@ def user_settings(request):
             pass
         except:
             raise
+        short_date_format = selected_user.short_date_format
+        long_date_format = selected_user.long_date_format
+        if short_date_format:
+            short_date_format_example = datetime.date.today().strftime(short_date_format)
+        if long_date_format:
+            long_date_format_example = datetime.date.today().strftime(long_date_format)
     modify_user(request, selected_user_is_person)
     template = loader.get_template('core/user_settings.html')
     accounts = Account.objects.all()
-    context = {"selected_user" : selected_user, "accounts" : accounts, "selected_user_is_person" : selected_user_is_person}
+
+    global date_format_codes
+    date_formats = dict()
+    for code in date_format_codes:
+        date_formats[code] = datetime.date.today().strftime(code)
+
+    context = { "selected_user" : selected_user, "accounts" : accounts, "selected_user_is_person" : selected_user_is_person, 
+                "date_formats" : date_formats, "short_date_format" : short_date_format, "long_date_format" : long_date_format,
+                "short_date_format_example" : short_date_format_example, "long_date_format_example" : long_date_format_example,
+                "default_short_date_format" : get_config("short_date_format"), "default_long_date_format" : get_config("long_date_format"),
+                "default_short_date_format_example" : datetime.date.today().strftime(get_config("short_date_format")), "default_long_date_format_example" : datetime.date.today().strftime(get_config("long_date_format")), 
+                }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def account_transactions(request):
+    global short_date_format
     if request.method == 'POST':
         if request.POST["form_name"] == "transaction_list_filter":
             filter_account_transactions(request) 
@@ -697,18 +762,18 @@ def account_transactions(request):
         selected_type_nos.append(ttype.no)
     global start_date_in_account_transactions
     if not start_date_in_account_transactions == None:
-        start_date = start_date_in_account_transactions.strftime("%Y-%m-%d")
+        start_date = start_date_in_account_transactions.strftime(date_format(user=selected_user))
     else:
         start_date = ''
     global end_date_in_account_transactions
     if not end_date_in_account_transactions == None:
-        end_date = end_date_in_account_transactions.strftime("%Y-%m-%d")
+        end_date = end_date_in_account_transactions.strftime(date_format(user=selected_user))
     else:
         end_date = ''
     global enterer_in_account_transactions
     transactions = Transaction.objects.all()
     account_table = AccountTable(account_id = selected_account.id, types = selected_types_in_account_transactions, start_date = start_date_in_account_transactions, end_date = end_date_in_account_transactions, 
-                                enterer = enterer_in_account_transactions)
+                                 short_date_format = short_date_format, enterer = enterer_in_account_transactions)
     if request.method == 'POST':
         entry_form = TransactionEntryForm(request.POST)
         if entry_form.is_valid():
@@ -750,6 +815,7 @@ def account_transactions(request):
     accounts = Account.objects.all()
     accounts_except_itself = Account.objects.exclude(id=selected_account.id)
     global default_date_of_new_transaction
+
     context = {
         "account_table" : account_table, "deposit" : deposit,
         "taken" : taken, "entry_form" : entry_form, "entry_types" : entry_types,
@@ -805,7 +871,7 @@ def account_consumption(request):
 def account_membership_fees(request):
     template = loader.get_template('core/account_membership_fees.html')
     global selected_account
-    table = MembershipFeePhaseTable(account=selected_account)
+    table = MembershipFeePhaseTable(short_date_format, account=selected_account)
     context = {"account" : selected_account, "table" : table}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
@@ -829,14 +895,14 @@ def suppliers(request):
 
 def transactionlist(request):
     template = loader.get_template('core/transactionlist.html')
-    transaction_table = TransactionTable()
+    transaction_table = TransactionTable(short_date_format)
     context = {"transaction_table" : transaction_table}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def batchtransactiontable(request):
     select_batch_for_batchtransactiontable(request)
     global selected_batch_in_batchtransactiontable
-    batch_transaction_table = BatchTransactionTable(selected_batch_in_batchtransactiontable.no)
+    batch_transaction_table = BatchTransactionTable(selected_batch_in_batchtransactiontable.no, short_date_format)
     batches = Batch.objects.all()
     stock = selected_batch_in_batchtransactiontable.stock_str_long(show_contents=False)
     price = selected_batch_in_batchtransactiontable.price_str_long()
@@ -848,7 +914,7 @@ def batchtransactiontable(request):
 def consumabletransactiontable(request):
     select_consumable_for_consumabletransactiontable(request)
     global selected_consumable_in_consumabletransactiontable
-    consumable_transaction_table = ConsumableTransactionTable(selected_consumable_in_consumabletransactiontable.id)
+    consumable_transaction_table = ConsumableTransactionTable(selected_consumable_in_consumabletransactiontable.id, short_date_format)
     consumables = Consumable.objects.all()
     stock = selected_consumable_in_consumabletransactiontable.stock_str_long(show_contents=False)
     unit_weight = selected_consumable_in_consumabletransactiontable.unit_weight_str()
@@ -903,6 +969,7 @@ def consumablelist_modify(request):
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def purchases(request):
+    global short_date_format
     if request.method == 'POST':
         if request.POST["form_name"] == "purchase_list_filter":
             filter_purchases(request) 
@@ -913,16 +980,16 @@ def purchases(request):
     global selected_statuses_in_purchase_list
     global start_date_in_purchase_list
     if not start_date_in_purchase_list == None:
-        start_date = start_date_in_purchase_list.strftime("%Y-%m-%d")
+        start_date = start_date_in_purchase_list.strftime(short_date_format)
     else:
         start_date = ''
     global end_date_in_purchase_list
     if not end_date_in_purchase_list == None:
-        end_date = end_date_in_purchase_list.strftime("%Y-%m-%d")
+        end_date = end_date_in_purchase_list.strftime(short_date_format)
     else:
         end_date = ''
     global enterers_in_purchase_list
-    purchases = PurchaseListTable(statuses=selected_statuses_in_purchase_list, start_date=start_date_in_purchase_list, end_date=end_date_in_purchase_list, enterers=enterers_in_purchase_list)
+    purchases = PurchaseListTable(statuses=selected_statuses_in_purchase_list, start_date=start_date_in_purchase_list, end_date=end_date_in_purchase_list, short_date_format=short_date_format, enterers=enterers_in_purchase_list)
     purchase_enterers = []
     for p in Purchase.objects.all():
         if not p.entered_by_user in purchase_enterers:
@@ -946,10 +1013,17 @@ def general_settings(request):
         modify_general_settings(request)
     template = loader.get_template('core/general_settings.html')
 
+    global date_format_codes
+    date_formats = dict()
+    for code in date_format_codes:
+        date_formats[code] = datetime.date.today().strftime(code)
+
     context = { "group_title" : get_config("group_title"),
                 "main_language" : get_config("main_language"),
                 "anchor_currency" : Currency.objects.get(id=get_config("anchor_currency")),
                 "all_currencies" : Currency.objects.all(), "all_time_periods" : TimePeriod.objects.all(), 
+                "date_formats" : date_formats, "short_date_format" : get_config("short_date_format"), "long_date_format" : get_config("long_date_format"),
+                "short_date_format_example" : datetime.date.today().strftime(get_config("short_date_format")), "long_date_format_example" : datetime.date.today().strftime(get_config("long_date_format")), 
                 "single_sharings" : get_boolean_config("single_sharings"), "regular_relative_sharings" : get_boolean_config("regular_relative_sharings"), "regular_absolute_sharings" : get_boolean_config("regular_absolute_sharings"), 
                 "displayed_time_period_for_membership_fees" : TimePeriod.objects.filter(singular=get_config("displayed_time_period_for_membership_fees"))[0]
                 }

@@ -28,9 +28,9 @@ try:
         year = TimePeriod(singular="year", plural="years", adjective="annual", days=365.25, decimals_shown=2, is_year=True)
         year.save()
 
-    selected_user = None
-    short_date_format = date_format(user=selected_user, style="short")
-    long_date_format = date_format(user=selected_user, style="long")
+    selected_profile = None
+    short_date_format = date_format(profile=selected_profile, style="short")
+    long_date_format = date_format(profile=selected_profile, style="long")
     date_format_codes = ['%Y/%m/%d', '%d.%m.%Y', '%d.%m.%y', '%A, %d. %B %Y', '%A, %B %d, %Y', '%B %d, %Y']
     accounts = Account.objects.all()
     if accounts:
@@ -54,7 +54,7 @@ try:
         selected_consumable_in_consumabletransactiontable.save()
 
     # General
-    recent_users = list(User.objects.all())
+    recent_profiles = list(Profile.objects.all())
     recent_accounts = Account.objects.all()
 
     # participate/transactions list filter
@@ -63,7 +63,7 @@ try:
     start_date_in_account_transactions = None # datetime.datetime.strptime('2014-01-01' , '%Y-%m-%d')
     end_date_in_account_transactions = models.DateField(blank=True, null=True)
     end_date_in_account_transactions = None
-    enterer_in_account_transactions = models.ForeignKey('User', blank=True, null=True)
+    enterer_in_account_transactions = models.ForeignKey('Profile', blank=True, null=True)
     enterer_in_account_transactions = None
 
     # purchases list filter
@@ -74,16 +74,16 @@ try:
     end_date_in_purchase_list = None
     enterers_in_purchase_list = list()
     for p in Purchase.objects.all():
-        if not p.entered_by_user in enterers_in_purchase_list:
-            enterers_in_purchase_list.append(p.entered_by_user)
+        if not p.entered_by_profile in enterers_in_purchase_list:
+            enterers_in_purchase_list.append(p.entered_by_profile)
 
 
     # participate/transactions entry form
     default_date_of_new_transaction = models.CharField()
     default_date_of_new_transaction = ""
 
-    if not VirtualUser.objects.filter(name="Bot"):
-        bot = VirtualUser(name="Bot", active=False)
+    if not VirtualProfile.objects.filter(name="Bot"):
+        bot = VirtualProfile(name="Bot", active=False)
         bot.save()
 
     if not TransactionType.objects.all():
@@ -225,31 +225,31 @@ except OperationalError:
 # TODO: Timer/schedule
 
 
-def select_user(request):
+def select_profile(request):
     if request.method == 'POST':
-        user_id = request.POST.get("user_id")
-        if user_id:
-            global selected_user
+        profile_id = request.POST.get("profile_id")
+        if profile_id:
+            global selected_profile
             global short_date_format
             global long_date_format
-            if int(user_id) == 0:
-                selected_user = None
-                short_date_format = date_format(user=None, style="short")
-                long_date_format = date_format(user=None, style="long")
+            if int(profile_id) == 0:
+                selected_profile = None
+                short_date_format = date_format(profile=None, style="short")
+                long_date_format = date_format(profile=None, style="long")
             else:
-                selected_user = User.objects.get(pk=int(user_id))
-                short_date_format = date_format(user=selected_user, style="short")
-                long_date_format = date_format(user=selected_user, style="long")
-                global recent_users
-                i = recent_users.index(selected_user)
-                recent_users.insert(0, recent_users.pop(i))
+                selected_profile = Profile.objects.get(pk=int(profile_id))
+                short_date_format = date_format(profile=selected_profile, style="short")
+                long_date_format = date_format(profile=selected_profile, style="long")
+                global recent_profiles
+                i = recent_profiles.index(selected_profile)
+                recent_profiles.insert(0, recent_profiles.pop(i))
 
-def create_user(request):
+def create_profile(request):
     if request.method == 'POST':
         name = str(request.POST.get("name"))
         notice = str(request.POST.get("notice"))
         if request.POST.get("is_non_real"):
-            u = VirtualUser(name=name, notice=notice)
+            u = VirtualProfile(name=name, notice=notice)
             u.save()
         else:
             u = Person(name=name, notice=notice)
@@ -269,7 +269,7 @@ def create_user(request):
         if request.POST.getlist("accounts"):
             for acc in request.POST.getlist("accounts"):
                 acc = Account.objects.get(pk=int(acc))
-                acc.users.add(u)
+                acc.profiles.add(u)
                 acc.save()
                 u.accounts.add(acc)
                 u.save()
@@ -278,71 +278,71 @@ def create_user(request):
             a.save()
             u.accounts.add(a)
             u.save()
-            a.users.add(u)
-        global selected_user
-        selected_user = u
+            a.profiles.add(u)
+        global selected_profile
+        selected_profile = u
 
-def modify_user(request, selected_user_is_person):
+def modify_profile(request, selected_profile_is_person):
     if request.method == 'POST':
-        global selected_user
-        selected_user.name = str(request.POST.get("name"))
-        selected_user.notice = str(request.POST.get("notice"))
-        if selected_user_is_person:
-            selected_user.person.first_name = str(request.POST.get("first_name"))
-            selected_user.person.last_name = str(request.POST.get("last_name"))
-            selected_user.person.streetname = str(request.POST.get("streetname"))
-            selected_user.person.streetnumber = str(request.POST.get("streetnumber"))
-            selected_user.person.zipcode = str(request.POST.get("zipcode"))
-            selected_user.person.town = str(request.POST.get("town"))
-            selected_user.person.country = str(request.POST.get("country"))
-            selected_user.person.address_notice = str(request.POST.get("address_notice"))
-            selected_user.person.email = str(request.POST.get("email"))
-            selected_user.person.website = str(request.POST.get("website"))
-            selected_user.person.telephone1 = str(request.POST.get("telephone1"))
-            selected_user.person.telephone2 = str(request.POST.get("telephone2"))
-            selected_user.person.save()
+        global selected_profile
+        selected_profile.name = str(request.POST.get("name"))
+        selected_profile.notice = str(request.POST.get("notice"))
+        if selected_profile_is_person:
+            selected_profile.person.first_name = str(request.POST.get("first_name"))
+            selected_profile.person.last_name = str(request.POST.get("last_name"))
+            selected_profile.person.streetname = str(request.POST.get("streetname"))
+            selected_profile.person.streetnumber = str(request.POST.get("streetnumber"))
+            selected_profile.person.zipcode = str(request.POST.get("zipcode"))
+            selected_profile.person.town = str(request.POST.get("town"))
+            selected_profile.person.country = str(request.POST.get("country"))
+            selected_profile.person.address_notice = str(request.POST.get("address_notice"))
+            selected_profile.person.email = str(request.POST.get("email"))
+            selected_profile.person.website = str(request.POST.get("website"))
+            selected_profile.person.telephone1 = str(request.POST.get("telephone1"))
+            selected_profile.person.telephone2 = str(request.POST.get("telephone2"))
+            selected_profile.person.save()
         new_accountlist = list()
         for acc in request.POST.getlist("accounts"):
             acc = Account.objects.get(pk=int(acc))
             new_accountlist.append(acc)
-        old_accountlist = selected_user.accounts.all()
+        old_accountlist = selected_profile.accounts.all()
         accounts_to_add = [acc for acc in new_accountlist if acc not in old_accountlist]
         accounts_to_remove = [acc for acc in old_accountlist if acc not in new_accountlist]
         for acc in accounts_to_add:
-            acc.users.add(selected_user)
+            acc.profiles.add(selected_profile)
             acc.save()
-            selected_user.accounts.add(acc)
+            selected_profile.accounts.add(acc)
         for acc in accounts_to_remove:
-            acc.users.remove(selected_user)
+            acc.profiles.remove(selected_profile)
             acc.save()
-            selected_user.accounts.remove(acc)
+            selected_profile.accounts.remove(acc)
         pacc = request.POST.get("primary_account")
         if pacc:
             if int(pacc) == 0:
-                selected_user.primary_account = None
+                selected_profile.primary_account = None
             else:
-                selected_user.primary_account = Account.objects.get(pk=int(pacc))
+                selected_profile.primary_account = Account.objects.get(pk=int(pacc))
         if str(request.POST.get("active")) == "yes":
-            selected_user.active = True
+            selected_profile.active = True
         else:
-            selected_user.active = False
+            selected_profile.active = False
         
         if request.POST.get("short_date_format") == 'custom':
             if request.POST.get("custom_short_date_format"):
-                selected_user.short_date_format = request.POST.get("custom_short_date_format")
+                selected_profile.short_date_format = request.POST.get("custom_short_date_format")
         elif request.POST.get("short_date_format") == 'default':
-            selected_user.short_date_format = ''
+            selected_profile.short_date_format = ''
         else:
-            selected_user.short_date_format = request.POST.get("short_date_format")
+            selected_profile.short_date_format = request.POST.get("short_date_format")
 
         if request.POST.get("long_date_format") == 'custom':
             if request.POST.get("custom_long_date_format"):
-                selected_user.long_date_format =  request.POST.get("custom_long_date_format")
+                selected_profile.long_date_format =  request.POST.get("custom_long_date_format")
         elif request.POST.get("long_date_format") == 'default':
-            selected_user.long_date_format = ''
+            selected_profile.long_date_format = ''
         else:
-            selected_user.long_date_format = request.POST.get("long_date_format")
-        selected_user.save()
+            selected_profile.long_date_format = request.POST.get("long_date_format")
+        selected_profile.save()
 
 def select_account(request):
     if request.method == 'POST':
@@ -350,14 +350,14 @@ def select_account(request):
         primary = request.POST.get("primary_account")
         global selected_account
         if primary:
-            global selected_user
-            if selected_user:
-                if selected_user.primary_account:
-                    selected_account = selected_user.primary_account
-                elif selected_user.accounts.all():
-                    selected_account = selected_user.accounts.all()[0]
+            global selected_profile
+            if selected_profile:
+                if selected_profile.primary_account:
+                    selected_account = selected_profile.primary_account
+                elif selected_profile.accounts.all():
+                    selected_account = selected_profile.accounts.all()[0]
                 else:
-                    print("Error: User {} has no associated accounts.".format(str(selected_user)))
+                    print("Error: Profile {} has no associated accounts.".format(str(selected_profile)))
         elif account_id:
             account_id = int(account_id)
             selected_account = Account.objects.get(pk=account_id)
@@ -408,7 +408,7 @@ def filter_account_transactions(request):
             if enterer_id == 0:
                 enterer_in_account_transactions = None
             else:
-                enterer_in_account_transactions = User.objects.get(pk=enterer_id)
+                enterer_in_account_transactions = Profile.objects.get(pk=enterer_id)
         else:
             enterer_in_account_transactions = None
 
@@ -422,12 +422,12 @@ def enter_new_transaction(request):
             t_type = None
         # entered_by = request.POST.get("entered_by")
         # if entered_by:
-        #     t_enterer = User.objects.get(pk=int(entered_by))
+        #     t_enterer = Profile.objects.get(pk=int(entered_by))
         #     global default_enterer_of_new_transaction
         #     default_enterer_of_new_transaction = t_enterer
-        #     global recent_users
-        #     i = recent_users.index(t_enterer)
-        #     recent_users.insert(0, recent_users.pop(i))
+        #     global recent_profiles
+        #     i = recent_profiles.index(t_enterer)
+        #     recent_profiles.insert(0, recent_profiles.pop(i))
         date = request.POST.get("date")
         if date:
             t_date = datetime.datetime.strptime(date, short_date_format).date()
@@ -448,7 +448,7 @@ def enter_new_transaction(request):
                 if batch_no:
                     t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
-                    t = Taking(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t = Taking(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.save()
                     t.perform()
             elif t_type.no == 2: # restitution
@@ -456,7 +456,7 @@ def enter_new_transaction(request):
                 if batch_no:
                     t_batch = Batch.objects.get(no=int(batch_no))
                 if t_date and t_amount and t_batch:
-                    t = Restitution(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, batch=t_batch)
+                    t = Restitution(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment, batch=t_batch)
                     t.save()
                     t.perform()
             elif t_type.no == 3: # inpayment
@@ -469,17 +469,17 @@ def enter_new_transaction(request):
                 if money_box:
                     t_money_box = MoneyBox.objects.get(pk=int(money_box))
                 if t_date and t_amount and t_currency and t_money_box:
-                    t = Inpayment(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
+                    t = Inpayment(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment, currency=t_currency, money_box=t_money_box)
                     t.save()
                     t.perform()
             elif t_type.no == 4: # depositation
                 if t_date and t_amount:
-                    t = Depositation(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
+                    t = Depositation(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment)
                     t.save()
                     t.perform()
             # elif t_type.no == 5: # transcription of balance (currently not an entry type)
             #     if t_date and t_amount:
-            #         t = Transcription_to_balance(originator_account=selected_account, date=t_date, entered_by_user=t_enterer, amount=t_amount, comment=t_comment)
+            #         t = Transcription_to_balance(originator_account=selected_account, date=t_date, entered_by_profile=t_enterer, amount=t_amount, comment=t_comment)
             #         t.save()
             #         t.perform()
             elif t_type.no == 7: # transfer
@@ -487,7 +487,7 @@ def enter_new_transaction(request):
                 if recipient_account:
                     t_recipient_account = Account.objects.get(pk=int(recipient_account))
                 if t_date and t_amount and t_recipient_account:
-                    t = Transfer(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment, recipient_account=t_recipient_account)
+                    t = Transfer(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment, recipient_account=t_recipient_account)
                     t.save()
                     t.perform()
             elif t_type.no == 8 or t_type.no == 9 or t_type.no == 10 or t_type.no == 11: # cost sharing, proceeds sharing, donation, recovery
@@ -499,13 +499,13 @@ def enter_new_transaction(request):
                         t_participating_accounts.append(pa)
                 if t_date and t_amount and t_participating_accounts:
                     if t_type.no == 8:
-                        t = CostSharing(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
+                        t = CostSharing(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment)
                     if t_type.no == 9:
-                        t = ProceedsSharing(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
+                        t = ProceedsSharing(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment)
                     if t_type.no == 10:
-                        t = Donation(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
+                        t = Donation(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment)
                     if t_type.no == 11:
-                        t = Recovery(originator_account=selected_account, date=t_date, entered_by_user=selected_user, amount=t_amount, comment=t_comment)
+                        t = Recovery(originator_account=selected_account, date=t_date, entered_by_profile=selected_profile, amount=t_amount, comment=t_comment)
                     t.save()
                     t.perform(transaction_type_no=t_type.no, participating_accounts=t_participating_accounts)
 
@@ -513,59 +513,59 @@ def create_account(request):
     if request.method == 'POST':
         a = Account(name=str(request.POST.get("name")))
         a.save()
-        if request.POST.getlist("users"):
-            for us in request.POST.getlist("users"):
-                us = User.objects.get(pk=int(us))
+        if request.POST.getlist("profiles"):
+            for us in request.POST.getlist("profiles"):
+                us = Profile.objects.get(pk=int(us))
                 us.save()
                 us.accounts.add(a)
                 us.save()
-                a.users.add(us)
+                a.profiles.add(us)
                 a.save()
-        if not request.POST.get("new_user") == '':
+        if not request.POST.get("new_profile") == '':
             if request.POST.get("is_non_real") == True:
-                u = User(name=str(request.POST.get("new_user")))
+                u = Profile(name=str(request.POST.get("new_profile")))
             else:
-                u = Person(name=str(request.POST.get("new_user")), last_name='', first_name='')
+                u = Person(name=str(request.POST.get("new_profile")), last_name='', first_name='')
             u.save()
             u.accounts.add(a)
             u.save()
-            a.users.add(u)
+            a.profiles.add(u)
             a.save()
 
 def modify_account(request):
     if request.method == 'POST':
         global selected_account
         selected_account.name = str(request.POST.get("name"))
-        # selected_user.accounts.clear()
+        # selected_profile.accounts.clear()
         # for acc in request.POST.getlist("accounts"):
         #     acc = Account.objects.get(pk=int(acc))
-        #     acc.users.add(selected_user)
+        #     acc.profiles.add(selected_profile)
         #     acc.save()
-        #     selected_user.accounts.add(acc)
-        new_userlist = list()
-        for us in request.POST.getlist("users"):
-            us = User.objects.get(pk=int(us))
-            new_userlist.append(us)
-        old_userlist = selected_account.users.all()
-        users_to_add = [user for user in new_userlist if user not in old_userlist]
-        users_to_remove = [user for user in old_userlist if user not in new_userlist]
-        for user in users_to_add:
-            user.accounts.add(selected_account)
-            user.save()
-            selected_account.users.add(user)
-        for user in users_to_remove:
-            user.accounts.remove(selected_account)
-            user.save()
-            selected_account.users.remove(user)
-        if not request.POST.get("new_user") == '':
+        #     selected_profile.accounts.add(acc)
+        new_profilelist = list()
+        for us in request.POST.getlist("profiles"):
+            us = Profile.objects.get(pk=int(us))
+            new_profilelist.append(us)
+        old_profilelist = selected_account.profiles.all()
+        profiles_to_add = [profile for profile in new_profilelist if profile not in old_profilelist]
+        profiles_to_remove = [profile for profile in old_profilelist if profile not in new_profilelist]
+        for profile in profiles_to_add:
+            profile.accounts.add(selected_account)
+            profile.save()
+            selected_account.profiles.add(profile)
+        for profile in profiles_to_remove:
+            profile.accounts.remove(selected_account)
+            profile.save()
+            selected_account.profiles.remove(profile)
+        if not request.POST.get("new_profile") == '':
             if request.POST.get("is_non_real"):
-                u = VirtualUser(name=str(request.POST.get("new_user")))
+                u = VirtualProfile(name=str(request.POST.get("new_profile")))
             else:
-                u = Person(name=str(request.POST.get("new_user")))
+                u = Person(name=str(request.POST.get("new_profile")))
             u.save()
             u.accounts.add(selected_account)
             u.save()
-            selected_account.users.add(u)
+            selected_account.profiles.add(u)
         if str(request.POST.get("active")) == "yes":
             selected_account.active = True
         else:
@@ -615,7 +615,7 @@ def filter_purchases(request):
         enterers_in_purchase_list = []
         if enterers:
             for er in enterers:
-                e = User.objects.get(id=int(er))
+                e = Profile.objects.get(id=int(er))
                 enterers_in_purchase_list.append(e)
 
 def modify_general_settings(request):
@@ -659,18 +659,18 @@ def modify_general_settings(request):
 
 
 def global_context(request):
-    global recent_users
+    global recent_profiles
     global recent_accounts
-    global selected_user
+    global selected_profile
     global selected_account
     global short_date_format
-    accounts_of_selected_user = []
+    accounts_of_selected_profile = []
     recent_other_accounts = []
-    if selected_user:
+    if selected_profile:
         for account in recent_accounts:
-            if selected_user:
-                if account.users.filter(id=selected_user.id).count(): # if selected_user is a user related to account
-                    accounts_of_selected_user.append(account)
+            if selected_profile:
+                if account.profiles.filter(id=selected_profile.id).count(): # if selected_profile is a profile related to account
+                    accounts_of_selected_profile.append(account)
                 else:
                     recent_other_accounts.append(account)
     else:
@@ -679,7 +679,7 @@ def global_context(request):
     accounts = Account.objects.all()
     balance = selected_account.balance_str
     current_path = request.get_full_path()
-    context = { "recent_users" : recent_users, "selected_user" : selected_user, "accounts_of_selected_user": accounts_of_selected_user, 
+    context = { "recent_profiles" : recent_profiles, "selected_profile" : selected_profile, "accounts_of_selected_profile": accounts_of_selected_profile, 
                 "recent_other_accounts" : recent_other_accounts, "balance" : balance, "selected_account" : selected_account, "current_path" : current_path, 
                 "bootstrap_date_format" : bootstrap_date_format(short_date_format), 
                 }
@@ -687,8 +687,8 @@ def global_context(request):
 
 def base(request):
     if request.method == 'POST':
-        if request.POST["form_name"] == "user_selection_form":
-            select_user(request)
+        if request.POST["form_name"] == "profile_selection_form":
+            select_profile(request)
         if request.POST["form_name"] == "account_selection_form":
             select_account(request)
     return HttpResponseRedirect(request.POST['current_path'])
@@ -699,36 +699,36 @@ def index(request):
     context = { }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
-def register_user(request):
-    create_user(request)
-    template = loader.get_template('core/register_user.html')
+def register_profile(request):
+    create_profile(request)
+    template = loader.get_template('core/register_profile.html')
     accounts = Account.objects.all()
     context = {"accounts" : accounts}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
-def user_settings(request):
-    global selected_user
-    selected_user_is_person = False
+def profile_settings(request):
+    global selected_profile
+    selected_profile_is_person = False
     short_date_format = None
     long_date_format = None
     short_date_format_example = None
     long_date_format_example = None
-    if selected_user:
+    if selected_profile:
         try:
-            sup = selected_user.person
-            selected_user_is_person = True
+            sup = selected_profile.person
+            selected_profile_is_person = True
         except ObjectDoesNotExist:
             pass
         except:
             raise
-        short_date_format = selected_user.short_date_format
-        long_date_format = selected_user.long_date_format
+        short_date_format = selected_profile.short_date_format
+        long_date_format = selected_profile.long_date_format
         if short_date_format:
             short_date_format_example = datetime.date.today().strftime(short_date_format)
         if long_date_format:
             long_date_format_example = datetime.date.today().strftime(long_date_format)
-    modify_user(request, selected_user_is_person)
-    template = loader.get_template('core/user_settings.html')
+    modify_profile(request, selected_profile_is_person)
+    template = loader.get_template('core/profile_settings.html')
     accounts = Account.objects.all()
 
     global date_format_codes
@@ -736,7 +736,7 @@ def user_settings(request):
     for code in date_format_codes:
         date_formats[code] = datetime.date.today().strftime(code)
 
-    context = { "selected_user" : selected_user, "accounts" : accounts, "selected_user_is_person" : selected_user_is_person, 
+    context = { "selected_profile" : selected_profile, "accounts" : accounts, "selected_profile_is_person" : selected_profile_is_person, 
                 "date_formats" : date_formats, "short_date_format" : short_date_format, "long_date_format" : long_date_format,
                 "short_date_format_example" : short_date_format_example, "long_date_format_example" : long_date_format_example,
                 "default_short_date_format" : get_config("short_date_format"), "default_long_date_format" : get_config("long_date_format"),
@@ -762,12 +762,12 @@ def account_transactions(request):
         selected_type_nos.append(ttype.no)
     global start_date_in_account_transactions
     if not start_date_in_account_transactions == None:
-        start_date = start_date_in_account_transactions.strftime(date_format(user=selected_user))
+        start_date = start_date_in_account_transactions.strftime(date_format(profile=selected_profile))
     else:
         start_date = ''
     global end_date_in_account_transactions
     if not end_date_in_account_transactions == None:
-        end_date = end_date_in_account_transactions.strftime(date_format(user=selected_user))
+        end_date = end_date_in_account_transactions.strftime(date_format(profile=selected_profile))
     else:
         end_date = ''
     global enterer_in_account_transactions
@@ -784,29 +784,29 @@ def account_transactions(request):
         entry_form = TransactionEntryForm()
     entry_types = TransactionType.objects.filter(is_entry_type=True)
 
-    # users_of_selected_account = selected_account.users.all # list(selected_account.users.all()) ??
-    # global recent_users
-    # users_of_selected_account = []
-    # recent_other_users = []
-    # for user in recent_users:
-    #     if user.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to user
-    #         users_of_selected_account.append(user)
+    # profiles_of_selected_account = selected_account.profiles.all # list(selected_account.profiles.all()) ??
+    # global recent_profiles
+    # profiles_of_selected_account = []
+    # recent_other_profiles = []
+    # for profile in recent_profiles:
+    #     if profile.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to profile
+    #         profiles_of_selected_account.append(profile)
     #     else:
-    #         recent_other_users.append(user)
+    #         recent_other_profiles.append(profile)
 
-    table_users_of_selected_account = []
-    other_table_users = []
-    for user in account_table.occuring_users:
-        if user.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to user
-            table_users_of_selected_account.append(user)
+    table_profiles_of_selected_account = []
+    other_table_profiles = []
+    for profile in account_table.occuring_profiles:
+        if profile.accounts.filter(id=selected_account.id).count(): # if selected_account is an account related to profile
+            table_profiles_of_selected_account.append(profile)
         else:
-            other_table_users.append(user)
+            other_table_profiles.append(profile)
     """
-    for user in list(selected_account.users.all()):
-        users_of_selected_account.append(user)
-        i = recent_other_users.index(user)
-        # recent_other_users.pop(i)
-        print(recent_users)
+    for profile in list(selected_account.profiles.all()):
+        profiles_of_selected_account.append(profile)
+        i = recent_other_profiles.index(profile)
+        # recent_other_profiles.pop(i)
+        print(recent_profiles)
     """
 
     batches = Batch.objects.all()
@@ -823,7 +823,7 @@ def account_transactions(request):
         "batches" : batches, "transaction_types" : transaction_types, "selected_type_nos" : selected_type_nos, 
         "start_date" : start_date, "end_date" : end_date, "enterer_in_account_transactions" : enterer_in_account_transactions,
         "accounts_except_itself" : accounts_except_itself, "accounts" : accounts,
-        "table_users_of_selected_account" : table_users_of_selected_account, "other_table_users" : other_table_users, 
+        "table_profiles_of_selected_account" : table_profiles_of_selected_account, "other_table_profiles" : other_table_profiles, 
         "default_date_of_new_transaction" : default_date_of_new_transaction,
     }
     return HttpResponse(template.render({**global_context(request), **context}, request))
@@ -831,8 +831,8 @@ def account_transactions(request):
 def register_account(request):
     create_account(request)
     template = loader.get_template('core/register_account.html')
-    users = User.objects.all()
-    context = {"users" : users}
+    profiles = Profile.objects.all()
+    context = {"profiles" : profiles}
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
 def account_consumption_form(request):
@@ -879,10 +879,10 @@ def account_settings(request):
     modify_account(request)
     template = loader.get_template('core/account_settings.html')
     global selected_account
-    users = User.objects.all()
+    profiles = Profile.objects.all()
     all_time_periods = TimePeriod.objects.all()
     general_displayed_time_period_for_membership_fees = get_config("displayed_time_period_for_membership_fees")
-    context = {"account" : selected_account, "users" : users, "all_time_periods" : all_time_periods, 
+    context = {"account" : selected_account, "profiles" : profiles, "all_time_periods" : all_time_periods, 
                 "general_displayed_time_period_for_membership_fees" : general_displayed_time_period_for_membership_fees, }
     return HttpResponse(template.render({**global_context(request), **context}, request))
 
@@ -992,8 +992,8 @@ def purchases(request):
     purchases = PurchaseListTable(statuses=selected_statuses_in_purchase_list, start_date=start_date_in_purchase_list, end_date=end_date_in_purchase_list, short_date_format=short_date_format, enterers=enterers_in_purchase_list)
     purchase_enterers = []
     for p in Purchase.objects.all():
-        if not p.entered_by_user in purchase_enterers:
-            purchase_enterers.append(p.entered_by_user)
+        if not p.entered_by_profile in purchase_enterers:
+            purchase_enterers.append(p.entered_by_profile)
     context = {"all_purchase_statuses" : all_purchase_statuses, "purchases" : purchases, "purchase_enterers" : purchase_enterers, "selected_statuses_in_purchase_list" : selected_statuses_in_purchase_list,
              "start_date" : start_date, "end_date" : end_date, "selected_enterers" : enterers_in_purchase_list, }
     return HttpResponse(template.render({**global_context(request), **context}, request))

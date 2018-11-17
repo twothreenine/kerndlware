@@ -6,27 +6,27 @@
 {% endblock %}
 {% block content %}
 
-{% if selected_user %}
+{% if selected_profile %}
 <div class="panel panel-default">
   <div class="panel-heading"></div>
   <div class="panel-body">
-    <form id="user_settings_form" action="/user_settings" method="POST">
+    <form id="profile_settings_form" action="/profile_settings" method="POST">
     {% csrf_token %}
       <div>
         <input type="submit" value="Save changes" />
       </div>
       <div>
         <label for="name">Displayed name</label>
-        <input type="text" name="name" value="{{ selected_user.name }}" required="true">
+        <input type="text" name="name" value="{{ selected_profile.name }}" required="true">
       </div>
-      {% if selected_user_is_person %}
+      {% if selected_profile_is_person %}
       <div>
         <label for="first_name">First name</label>
-        <input type="text" name="first_name" value="{{ selected_user.person.first_name }}">
+        <input type="text" name="first_name" value="{{ selected_profile.person.first_name }}">
       </div>
       <div>
         <label for="last_name">Last name</label>
-        <input type="text" name="last_name" value="{{ selected_user.person.last_name }}">
+        <input type="text" name="last_name" value="{{ selected_profile.person.last_name }}">
       </div>
       {% endif %}
       <div>
@@ -34,7 +34,7 @@
         <select multiple="multiple" name="accounts" class="selectpicker" data-actions-box="true" data-live-search="true">
           <option value="" disabled>Select accounts</option>
           {% for account in accounts %}
-          <option value="{{ account.id }}" {% if account in selected_user.accounts.all %}selected{% endif %}>{{ account }}</option>
+          <option value="{{ account.id }}" {% if account in selected_profile.accounts.all %}selected{% endif %}>{{ account }}</option>
           {% endfor %}
         </select>
       </div>
@@ -42,37 +42,37 @@
         <label for="primary_account">Primary account</label>
         <select name="primary_account" class="selectpicker">
           <option value="0">No primary account</option>
-          <option value="" disabled {% if not selected_user.primary_account %}selected{% endif %}>Select one of your accounts</option>
-          {% for account in selected_user.accounts.all %}
-          <option value="{{ account.id }}" {% if account == selected_user.primary_account %}selected{% endif %}>{{ account }}</option>
+          <option value="" disabled {% if not selected_profile.primary_account %}selected{% endif %}>Select one of your accounts</option>
+          {% for account in selected_profile.accounts.all %}
+          <option value="{{ account.id }}" {% if account == selected_profile.primary_account %}selected{% endif %}>{{ account }}</option>
           {% endfor %}
         </select>
       </div>
-      {% if selected_user_is_person %}
+      {% if selected_profile_is_person %}
       <div>
         <label for="streetname">Address</label>
-        <input type="text" name="streetname" placeholder="Streetname" value="{{ selected_user.person.streetname }}">
-        <input type="text" name="streetnumber" placeholder="Streetnumber" value="{{ selected_user.person.streetnumber }}">
-        <input type="text" name="zipcode" placeholder="Zipcode" value="{{ selected_user.person.zipcode }}">
-        <input type="text" name="town" placeholder="Town" value="{{ selected_user.person.town }}">
-        <input type="text" name="country" placeholder="Country" value="{{ selected_user.person.country }}">
-        <input type="text" name="address_notice" placeholder="Address notice" value="{{ selected_user.person.address_notice }}">
+        <input type="text" name="streetname" placeholder="Streetname" value="{{ selected_profile.person.streetname }}">
+        <input type="text" name="streetnumber" placeholder="Streetnumber" value="{{ selected_profile.person.streetnumber }}">
+        <input type="text" name="zipcode" placeholder="Zipcode" value="{{ selected_profile.person.zipcode }}">
+        <input type="text" name="town" placeholder="Town" value="{{ selected_profile.person.town }}">
+        <input type="text" name="country" placeholder="Country" value="{{ selected_profile.person.country }}">
+        <input type="text" name="address_notice" placeholder="Address notice" value="{{ selected_profile.person.address_notice }}">
       </div>
       <div>
         <label for="email">Contact</label>
-        <input type="email" name="email" placeholder="Email" value="{{ selected_user.person.email }}">
-        <input type="text" name="website" placeholder="Website" value="{{ selected_user.person.website }}">
-        <input type="text" name="telephone1" placeholder="Telephone 1" value="{{ selected_user.person.telephone1 }}">
-        <input type="text" name="telephone2" placeholder="Telephone 2" value="{{ selected_user.person.telephone2 }}">
+        <input type="email" name="email" placeholder="Email" value="{{ selected_profile.person.email }}">
+        <input type="text" name="website" placeholder="Website" value="{{ selected_profile.person.website }}">
+        <input type="text" name="telephone1" placeholder="Telephone 1" value="{{ selected_profile.person.telephone1 }}">
+        <input type="text" name="telephone2" placeholder="Telephone 2" value="{{ selected_profile.person.telephone2 }}">
       </div>
       {% endif %}
       <div>
         <label for="notice">Notice/comment</label>
-        <input type="text" name="notice" value="{{ selected_user.notice }}">
+        <input type="text" name="notice" value="{{ selected_profile.notice }}">
       </div>
       <div>
         <label for="active">Active</label>
-        <input type="checkbox" {% if selected_user.active == True %} checked {% endif %} name="active" value="yes"> <!--  -->
+        <input type="checkbox" {% if selected_profile.active == True %} checked {% endif %} name="active" value="yes"> <!--  -->
       </div>
 
       <div>

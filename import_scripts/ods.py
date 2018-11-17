@@ -106,7 +106,7 @@ def import_suppliers():
                 s = models.Supplier(name=name, min_interval=min_interval)
                 s.save()
 
-def import_accounts(create_users=True):
+def import_accounts(create_profiles=True):
     with open('import_scripts/accounts.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
         for index,row in enumerate(reader):
@@ -152,9 +152,9 @@ def import_accounts(create_users=True):
                     ap.save()
                 elif not row[5] == '':
                     a.comment = "Eintritt am "+str(row[5])+", nicht zahlend; "+comment
-                if create_users == True:
+                if create_profiles == True:
                     if original_id == 1 or original_id == 52: # specifically for our database with Spontankäufer and Spendenkonto
-                        u = models.VirtualUser(name=name, active=active, comment=comment)
+                        u = models.VirtualProfile(name=name, active=active, comment=comment)
                         u.save()
                     else:
                         u = models.Person(name=name, active=active, comment=comment)
@@ -165,7 +165,7 @@ def import_accounts(create_users=True):
                             u.last_name = n.group(2)
                     u.accounts.add(a)
                     u.save()
-                    a.users.add(u)
+                    a.profiles.add(u)
                 a.save()
 
 def import_batches(owner_id=None):
@@ -206,7 +206,7 @@ def import_batches(owner_id=None):
                 b = models.Batch(no=no, name=name, comment=comment, consumable=product, supplier=supplier, unit=unit, price=price, production_date=production_date, date_of_expiry=date_of_expiry, special_density=special_density, original_no=original_no)
                 b.save()
 
-def import_transactions(user_id, currency1_id=1, money_box_id=1):
+def import_transactions(profile_id, currency1_id=1, money_box_id=1):
     with open('import_scripts/transactions.csv', newline='', encoding='utf-8', errors='ignore') as csvfile:
         reader = csv.reader(csvfile, delimiter='\t')
         for index,row in enumerate(reader):
@@ -216,7 +216,7 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                 original_ttype = int(row[10])
             if not row[7] == '' and original_ttype >= 1 and original_ttype <= 10 and not original_ttype == 9:
                 originator_account = models.Account.objects.get(original_id=int(row[7]))
-                user = models.User.objects.get(pk=user_id)
+                profile = models.Profile.objects.get(pk=profile_id)
                 date = datetime.datetime.strptime(row[9], '%d.%m.%y')
                 amount = abs(float(row[4].replace(',', '.')))
                 comment = row[6]
@@ -255,38 +255,38 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                 if ttype == 1 or ttype == 60: # Taking resp. payout of deposit as goods
                     batch = models.Batch.objects.get(original_no=original_batch)
                     if ttype == 60: # payout of deposit as goods
-                        t2 = models.TranscriptionToBalance(originator_account=originator_account, entered_by_user=user, date=date, amount=amount*batch.price, comment="Payout of deposit by taking")
+                        t2 = models.TranscriptionToBalance(originator_account=originator_account, entered_by_profile=profile, date=date, amount=amount*batch.price, comment="Payout of deposit by taking")
                         t2.save()
                         t2.perform()
-                    t = models.Taking(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, batch=batch)
+                    t = models.Taking(originator_account=originator_account, entered_by_profile=profile, date=date, amount=amount, comment=comment, batch=batch)
                     t.save()
                     t.perform()
 
                 if ttype == 2: # Restitution (currently not in use)
                     batch = models.Batch.objects.get(original_no=original_batch)
-                    t = models.Restitution(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, batch=batch)
+                    t = models.Restitution(originator_account=originator_account, entered_by_profile=profile, date=date, amount=amount, comment=comment, batch=batch)
                     t.save()
                     t.perform()
 
                 if ttype == 3 or ttype == 4: # Inpayment resp. inpayment as depositation
                     currency = models.Currency.objects.get(pk=currency1_id)
                     money_box = models.MoneyBox.objects.get(pk=money_box_id)
-                    t = models.Inpayment(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box, confirmed_by=user, confirmation_comment="imported automatically")
+                    t = models.Inpayment(originator_account=originator_account, entered_by_profile=profile, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box, confirmed_by=profile, confirmation_comment="imported automatically")
                     t.save()
                     t.perform()
                     if ttype == 4: # depositation by inpayment
-                        t2 = models.Depositation(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment)
+                        t2 = models.Depositation(originator_account=originator_account, entered_by_profile=profile, date=date, amount=amount, comment=comment)
                         t2.save()
                         t2.perform()
 
                 if ttype == 5 or ttype == 6: # Payout from balance resp. payout from deposit
                     if ttype == 6:
-                        t2 = models.TranscriptionToBalance(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment)
+                        t2 = models.TranscriptionToBalance(originator_account=originator_account, entered_by_profile=profile, date=date, amount=amount, comment=comment)
                         t2.save()
                         t2.perform()
                     currency = models.Currency.objects.get(pk=currency1_id)
                     money_box = models.MoneyBox.objects.get(pk=money_box_id)
-                    t = models.Payout(originator_account=originator_account, entered_by_user=user, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box)
+                    t = models.Payout(originator_account=originator_account, entered_by_profile=profile, date=date, amount=amount, comment=comment, currency=currency, money_box=money_box)
                     t.save()
                     t.perform()
 
@@ -301,7 +301,7 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
 
                 if ttype == 7: # Transfer
                     recipient_account = models.Account.objects.get(original_id=int(row[5]))
-                    t = models.Transfer(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, recipient_account=recipient_account)
+                    t = models.Transfer(originator_account=originator_account, entered_by_profile=profile, date=date, amount=value, comment=comment, recipient_account=recipient_account)
                     t.save()
                     t.perform()
 
@@ -314,22 +314,22 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                     participating_accounts = [account for account in all_accounts if account not in excepted_accounts]
 
                 if ttype == 8: # CostSharing
-                    t = models.CostSharing(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
+                    t = models.CostSharing(originator_account=originator_account, entered_by_profile=profile, date=date, amount=value, comment=comment, approved_by=profile, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_no=8, participating_accounts=participating_accounts)
 
                 if ttype == 9: # ProceedsSharing
-                    t = models.ProceedsSharing(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
+                    t = models.ProceedsSharing(originator_account=originator_account, entered_by_profile=profile, date=date, amount=value, comment=comment, approved_by=profile, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_no=9, participating_accounts=participating_accounts)
 
                 if ttype == 10: # Recovery
-                    t = models.Recovery(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
+                    t = models.Recovery(originator_account=originator_account, entered_by_profile=profile, date=date, amount=value, comment=comment, approved_by=profile, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_no=10, participating_accounts=participating_accounts)
 
                 if ttype == 11: # Donation
-                    t = models.Donation(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, approved_by=user, approval_comment="imported automatically")
+                    t = models.Donation(originator_account=originator_account, entered_by_profile=profile, date=date, amount=value, comment=comment, approved_by=profile, approval_comment="imported automatically")
                     t.save()
                     t.perform(transaction_type_no=11, participating_accounts=participating_accounts)
 
@@ -345,12 +345,12 @@ def import_transactions(user_id, currency1_id=1, money_box_id=1):
                     else:
                         p = models.Purchase(date=date)
                         p.save()
-                        t = models.Credit(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment=comment, purchase=p)
+                        t = models.Credit(originator_account=originator_account, entered_by_profile=profile, date=date, amount=value, comment=comment, purchase=p)
                         t.save()
                         t.perform()
                     sp = models.SpecificPurchase(purchase=t.purchase, batch=batch, amount=amount, total_cost=value, comment=comment)
                     sp.save()
                     if ttype == 40:
-                        t2 = models.Depositation(originator_account=originator_account, entered_by_user=user, date=date, amount=value, comment="Depositation of value from purchase")
+                        t2 = models.Depositation(originator_account=originator_account, entered_by_profile=profile, date=date, amount=value, comment="Depositation of value from purchase")
                         t2.save()
                         t2.perform()

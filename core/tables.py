@@ -111,7 +111,7 @@ class AccountTable:
         self.end_date = end_date
         self.short_date_format = short_date_format
         self.enterer = enterer
-        self.occuring_users = []
+        self.occuring_profiles = []
         self.rows = list()
         self.generate()
 
@@ -160,7 +160,7 @@ class AccountTable:
                     end_condition = False
             if self.enterer == None:
                 enterer_condition = True
-            elif self.enterer == tr.entered_by_user:
+            elif self.enterer == tr.entered_by_profile:
                 enterer_condition = True
             else:
                 enterer_condition = False
@@ -169,8 +169,8 @@ class AccountTable:
         detailed_types = TransactionType.objects.filter(no__gte=8, no__lte=13)
         for i in range(0, len(transactions)):
             transaction = transactions[i]
-            if not transaction.entered_by_user in self.occuring_users:
-                self.occuring_users.append(transaction.entered_by_user)
+            if not transaction.entered_by_profile in self.occuring_profiles:
+                self.occuring_profiles.append(transaction.entered_by_profile)
             row = list()
             row.append(transaction.row_color(account=self.account_id)) # 0
             matter, details1, details2 = transaction.matter_str(account=self.account_id)
@@ -739,7 +739,7 @@ class PurchaseListTable:
                     end_condition = False
             if self.enterers == None:
                 enterer_condition = True
-            elif p.entered_by_user in self.enterers:
+            elif p.entered_by_profile in self.enterers:
                 enterer_condition = True
             else:
                 enterer_condition = False
@@ -752,7 +752,7 @@ class PurchaseListTable:
             row.append(p.batches_str()) # row.2
             row.append(p.suppliers_str()) # row.3
             row.append(p.status_str()) # row.4
-            row.append(p.entered_by_user.name) # row.5
+            row.append(p.entered_by_profile.name) # row.5
             row.append(p.credited_accounts) # row.6
             self.rows.append(row)
 

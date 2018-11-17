@@ -19,17 +19,17 @@
         <input type="text" name="name" value="{{ account.name }}" required="true">
       </div>
       <div>
-        <label for="users">Associated users</label>
-        <select multiple="multiple" name="users" class="selectpicker" data-actions-box="true" data-live-search="true">
-          <option value="" disabled>Select users</option>
-          {% for user in users %}
-          <option value="{{ user.id }}" {% if user in account.users.all %}selected{% endif %}>{{ user }}</option>
+        <label for="profiles">Associated profiles</label>
+        <select multiple="multiple" name="profiles" class="selectpicker" data-actions-box="true" data-live-search="true">
+          <option value="" disabled>Select profiles</option>
+          {% for profile in profiles %}
+          <option value="{{ profile.id }}" {% if profile in account.profiles.all %}selected{% endif %}>{{ profile }}</option>
           {% endfor %}
         </select>
       </div>
       <div>
-        <label for="new_user">Create new users for this account</label>
-        <input type="text" name="new_user" placeholder="Name of new user">
+        <label for="new_profile">Create new profiles for this account</label>
+        <input type="text" name="new_profile" placeholder="Name of new profile">
         <input type="checkbox" name="is_non_real"> is non-real
       </div>
       <div>

@@ -1,4 +1,8 @@
-﻿- new classes Invoice & Payment (date -> prepaid expense?)
+﻿Current problem:
+see issue #22 in GitHub
+
+
+- new classes Invoice & Payment (date -> prepaid expense?)
 - Commodity is a Consumable is a Product; Decive is a Durable is a Product
 - Batch/Material/IntangibleAsset/TangibleAsset is an Asset
 - Specific Purchase n...1 Asset

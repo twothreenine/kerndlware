@@ -218,14 +218,14 @@
       <div>
         <label for="enterer">Enterer</label>
         <select name="enterer" class="selectpicker" data-live-search="true">
-          <option value=0>All users</option>
-          <option value="" disabled>Users of this account</option>
-          {% for user in table_users_of_selected_account %}
-          <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+          <option value=0>All profiles</option>
+          <option value="" disabled>Profiles of this account</option>
+          {% for profile in table_profiles_of_selected_account %}
+          <option value={{ profile.id }} {% if profile == enterer_in_account_transactions %}selected{% endif %}>{{ profile }}</option>
           {% endfor %}
-          <option value="" disabled><i>Other users</i></option>
-          {% for user in other_table_users %}
-          <option value={{ user.id }} {% if user == enterer_in_account_transactions %}selected{% endif %}>{{ user }}</option>
+          <option value="" disabled><i>Other profiles</i></option>
+          {% for profile in other_table_profiles %}
+          <option value={{ profile.id }} {% if profile == enterer_in_account_transactions %}selected{% endif %}>{{ profile }}</option>
           {% endfor %}
         </select>
       </div>

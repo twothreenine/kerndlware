@@ -7,7 +7,7 @@
 {% block content %}
 
 <div class="panel panel-default">
-  <form id="register_form" action="/register_user" method="POST">
+  <form id="register_form" action="/register_profile" method="POST">
     {% csrf_token %}
     <div class="panel-heading"></div>
     <div class="panel-body">
@@ -16,7 +16,7 @@
         <input type="checkbox" id="is_non_real" onchange="hide_person_fields()"> is not a real person
       </div>
       <div>
-        <label for="users">Select associated accounts if they already exist</label>
+        <label for="profiles">Select associated accounts if they already exist</label>
         <select multiple="multiple" name="accounts" class="selectpicker" data-actions-box="true" data-live-search="true">
           <option value="" disabled>Select accounts</option>
           {% for account in accounts %}

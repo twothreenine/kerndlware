@@ -93,8 +93,8 @@
         <div>
           <label for="enterers">Enterer</label>
           <select multiple="multiple" name="enterers" class="selectpicker" data-live-search="true" data-actions-box="true">
-            {% for user in purchase_enterers %}
-            <option value={{ user.id }} {% if user in selected_enterers %}selected{% endif %}>{{ user }}</option>
+            {% for profile in purchase_enterers %}
+            <option value={{ profile.id }} {% if profile in selected_enterers %}selected{% endif %}>{{ profile }}</option>
             {% endfor %}
           </select>
         </div>

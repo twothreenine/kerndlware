@@ -118,7 +118,7 @@ class Role(models.Model):
     description = models.TextField(blank=True)
     comment = models.TextField(blank=True)
 
-class User(models.Model):
+class Profile(models.Model):
     name = models.CharField(max_length=50)
     active = models.BooleanField(default=True)
     notice = models.TextField(blank=True)
@@ -130,7 +130,7 @@ class User(models.Model):
     def __str__(self):
         return "{} - {}".format(str(self.id), self.name)
 
-class Person(User):
+class Person(Profile):
     last_name = models.CharField(max_length=50, blank=True)
     first_name = models.CharField(max_length=50, blank=True)
     streetname = models.CharField(max_length=100, blank=True)
@@ -148,7 +148,7 @@ class Person(User):
     def is_person(self):
         return True
     
-class VirtualUser(User):
+class VirtualProfile(Profile):
     description = models.TextField(blank=True)
 
     @property
@@ -157,7 +157,7 @@ class VirtualUser(User):
 
 class Account(models.Model):
     name = models.CharField(max_length=50, default="")
-    users = models.ManyToManyField('User', blank=True)
+    profiles = models.ManyToManyField('Profile', blank=True)
     active = models.BooleanField(default=True)
     deposit = models.FloatField(default=0) #MoneyField; 
     balance = models.FloatField(default=0) #MoneyField; 
@@ -199,18 +199,18 @@ class Account(models.Model):
             print("Error: Couldn't find any time period matching to general setting, nor a month with filter(is_month=True).")
 
     @property
-    def users_str(self):
-        return str(list_str(my_list=list(self.users.all()), elements=3))
+    def profiles_str(self):
+        return str(list_str(my_list=list(self.profiles.all()), elements=3))
 
     # @property
-    # def users_str(self):
-    #     users = list(self.users.all())
-    #     if users:
-    #         usernames = users[0].name
-    #         users.pop(0)
-    #         for user in users:
-    #             usernames += ", " + user.name
-    #         return usernames
+    # def profiles_str(self):
+    #     profiles = list(self.profiles.all())
+    #     if profiles:
+    #         profilenames = profiles[0].name
+    #         profiles.pop(0)
+    #         for profile in profiles:
+    #             profilenames += ", " + profile.name
+    #         return profilenames
     #     else:
     #         return ""
 
@@ -327,13 +327,13 @@ class GeneralMembershipFee(models.Model):
         while self.next_performance < to_datetime:
             self.perform(self.next_performance)
 
-    def perform(self, performance_datetime=datetime.datetime.now(), user=None):
-        if user == None:
+    def perform(self, performance_datetime=datetime.datetime.now(), profile=None):
+        if profile == None:
             try:
-                user = VirtualUser.objects.filter(name="Bot", active=False)[0]
+                profile = VirtualProfile.objects.filter(name="Bot", active=False)[0]
             except DoesNotExist:
-                user = VirtualUser(name="Bot", active=False)
-                user.save()
+                profile = VirtualProfile(name="Bot", active=False)
+                profile.save()
         relevant_phases = GeneralMembershipFeePhase.objects.filter(fee=self, active=True, rate__gt=0).filter(Q(start=None)|Q(start__lte=performance_datetime.date)).filter(Q(end=None)|Q(end__gte=performance_datetime.date))
         if self.total == True:
             sum_of_rates = 0
@@ -353,7 +353,7 @@ class GeneralMembershipFee(models.Model):
                     existing_transfers[0].save()
                     existing_transfers[0].perform()
                 else:
-                    t = Transfer(originator_account=self.account, entered_by_user=user, date=performance_datetime.date, amount=amount, comment=self.description, recipient_account=self.recipient_account)
+                    t = Transfer(originator_account=self.account, entered_by_profile=profile, date=performance_datetime.date, amount=amount, comment=self.description, recipient_account=self.recipient_account)
                     t.save()
                     t.perform()
             else:
@@ -363,7 +363,7 @@ class GeneralMembershipFee(models.Model):
                     existing_credits[0].save()
                     existing_credits[0].perform()
                 else:
-                    c = Credit(originator_account=phase.account, entered_by_user=user, date=performance_datetime.date, amount=amount*(-1), comment=self.description, fee_phase=phase)
+                    c = Credit(originator_account=phase.account, entered_by_profile=profile, date=performance_datetime.date, amount=amount*(-1), comment=self.description, fee_phase=phase)
                     c.save()
                     c.perform()
         self.previous_performance = performance_datetime
@@ -378,7 +378,7 @@ class MembershipPhase(models.Model): # actual phase of an account
     active = models.BooleanField(default=True)
     comment = models.TextField(blank=True)
     last_edited_on = models.DateField(auto_now=True)
-    last_edited_by = models.ForeignKey('User', blank=True, null=True)
+    last_edited_by = models.ForeignKey('Profile', blank=True, null=True)
 
     # def __str__(self):
     #     if self.start == None:
@@ -444,20 +444,20 @@ class CustomMembershipFeePhase(MembershipPhase):
         while self.next_performance < to_datetime:
             self.perform(self.next_performance)
 
-    def perform(self, performance_datetime=datetime.datetime.now(), user=None):
-        if user == None:
+    def perform(self, performance_datetime=datetime.datetime.now(), profile=None):
+        if profile == None:
             try:
-                user = VirtualUser.objects.filter(name="Bot", active=False)[0]
+                profile = VirtualProfile.objects.filter(name="Bot", active=False)[0]
             except DoesNotExist:
-                user = VirtualUser(name="Bot", active=False)
-                user.save()
+                profile = VirtualProfile(name="Bot", active=False)
+                profile.save()
         if self.active == True and self.rate >= 0 and (self.start == None or self.start <= performance_datetime) and (self.end == None or self.end >= performance_datetime):
             if self.recipient_account:
-                t = Transfer(originator_account=self.account, entered_by_user=user, date=performance_datetime.date, amount=self.rate, comment=self.comment, recipient_account=self.recipient_account)
+                t = Transfer(originator_account=self.account, entered_by_profile=profile, date=performance_datetime.date, amount=self.rate, comment=self.comment, recipient_account=self.recipient_account)
                 t.save()
                 t.perform()
             else:
-                c = Credit(originator_account=self.account, entered_by_user=user, date=performance_datetime.date, amount=self.rate*(-1), comment=self.comment, fee_phase=self)
+                c = Credit(originator_account=self.account, entered_by_profile=profile, date=performance_datetime.date, amount=self.rate*(-1), comment=self.comment, fee_phase=self)
                 c.save()
                 c.perform()
         self.previous_performance = performance_datetime
@@ -642,11 +642,11 @@ class Supplier(models.Model):
     def contact_persons_str(self):
         contact_persons = list(self.contact_persons.all())
         if contact_persons:
-            usernames = contact_persons[0].name
+            profilenames = contact_persons[0].name
             contact_persons.pop(0)
-            for user in contact_persons:
-                usernames += ", " + user.name
-            return usernames
+            for profile in contact_persons:
+                profilenames += ", " + profile.name
+            return profilenames
         else:
             return ""
 
@@ -658,7 +658,7 @@ class VAT(models.Model):
         return "{} ({})".format(self.percentage, self.name)
 
 class ProductAvail(models.Model):
-# Levels of availability, from none to surplus, in the storage and in general. Shows to all users vaguely in which amounts they can take the products from the storage.
+# Levels of availability, from none to surplus, in the storage and in general. Shows to all profiles vaguely in which amounts they can take the products from the storage.
 # If a product has an almost empty stock but is easy to re-order, don't change ffthe availability to "scarce". Only do this if, for example, the suppliers don't have it until the next harvest, 
 # or it is so hard to deliver that you want to reduce the amount in that it is taken, e.g. make it exclusive for core participants.
     name = models.CharField(max_length=30)
@@ -1294,7 +1294,7 @@ class TransactionType(models.Model):
 class Transaction(models.Model):
     originator_account = models.ForeignKey('Account', related_name="originator_account")
     # involved_accounts = models.ManyToManyField('Account', related_name="involved_accounts", blank=True)
-    entered_by_user = models.ForeignKey('User') # Person who typed in the transaction
+    entered_by_profile = models.ForeignKey('Profile') # Person who typed in the transaction
     date = models.DateField()
     entry_date = models.DateField(auto_now_add=True) # Date when transaction is entered into the system
     last_modified = models.DateField(auto_now=True)
@@ -1307,7 +1307,7 @@ class Transaction(models.Model):
     transaction_type = models.ForeignKey('TransactionType', blank=True, null=True)
 
     def __str__(self):
-        return "Tr {}: {} by {} on {} (entered by {})".format(self.id, self.transaction_type.name, self.originator_account.name, self.date, self.entered_by_user.name)
+        return "Tr {}: {} by {} on {} (entered by {})".format(self.id, self.transaction_type.name, self.originator_account.name, self.date, self.entered_by_profile.name)
 
     def unperform(self):
         """
@@ -1330,7 +1330,7 @@ class Transaction(models.Model):
             return "'{}'".format(self.comment)
 
     def entry_details_str(self, short_date_format):
-        return "entered on {} by {}".format(self.entry_date.strftime(short_date_format), self.entered_by_user.name)
+        return "entered on {} by {}".format(self.entry_date.strftime(short_date_format), self.entered_by_profile.name)
     
     def value_str(self, account=0):
         # Returns the value of a transaction affecting the selected account, in the anchor currency, as a string.
@@ -1390,7 +1390,7 @@ class Taking(BatchTransaction): # taking of goods from balance
     type_name = "Taking" # for s in Transaction.__subclasses__(): print (s.__qualname__)
 
     def __str__(self):
-        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit.abbr, self.entered_by_user.name)
+        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit.abbr, self.entered_by_profile.name)
 
     @property
     def type(self):
@@ -1458,11 +1458,11 @@ class Taking(BatchTransaction): # taking of goods from balance
 
 class Restitution(BatchTransaction): # return goods to the storage
     original_taking = models.ForeignKey('Taking', blank=True, null=True)
-    approved_by = models.ForeignKey('User', blank=True, null=True)
+    approved_by = models.ForeignKey('Profile', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
     def __str__(self):
-        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit.abbr, self.entered_by_user.name)
+        return "Tr{} {} on {}: {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.batch, self.amount, self.batch.unit.abbr, self.entered_by_profile.name)
 
     @property
     def type(self):
@@ -1510,11 +1510,11 @@ class Restitution(BatchTransaction): # return goods to the storage
 class Inpayment(Transaction): # insertion of money to balance
     currency = models.ForeignKey('Currency') # , default=Currency.objects.get(pk=1)
     money_box = models.ForeignKey('MoneyBox')
-    confirmed_by = models.ForeignKey('User', blank=True, null=True)
+    confirmed_by = models.ForeignKey('Profile', blank=True, null=True)
     confirmation_comment = models.TextField(blank=True)
 
     def __str__(self):
-        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency.symbol_str, self.entered_by_user.name)
+        return "Tr{} {} on {}: {} {} (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.currency.symbol_str, self.entered_by_profile.name)
 
     @property
     def type(self):
@@ -1599,7 +1599,7 @@ class Depositation(Transaction): # transcription from balance to deposit
     pass
 
     def __str__(self):
-        return "Tr{} {} on {}: {} € (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.entered_by_user.name)
+        return "Tr{} {} on {}: {} € (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.entered_by_profile.name)
 
     @property
     def type(self):
@@ -1648,7 +1648,7 @@ class TranscriptionToBalance(Transaction): # transcription from deposit to balan
     pass
 
     def __str__(self):
-        return "Tr{} {} on {}: {} € (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.entered_by_user.name)
+        return "Tr{} {} on {}: {} € (submitted by {})".format(str(self.id), self.originator_account.name, self.date, self.amount, self.entered_by_profile.name)
 
     @property
     def type(self):
@@ -1729,7 +1729,7 @@ class ShareTransaction(Transaction):
     participating_accounts = models.ManyToManyField('Account')
     shares = models.ManyToManyField('Charge', blank=True, related_name="shares")
     originator_share = models.ForeignKey('Charge', blank=True, null=True, related_name="originator_share")
-    approved_by = models.ForeignKey('User', blank=True, null=True)
+    approved_by = models.ForeignKey('Profile', blank=True, null=True)
     approval_comment = models.TextField(blank=True)
 
     def perform(self, transaction_type_no, participating_accounts):
@@ -1903,7 +1903,7 @@ class Purchase(models.Model):
     description = models.TextField(blank=True)
     date = models.DateField()
     entry_date = models.DateField(auto_now_add=True) # Date when purchase is entered into the system
-    entered_by_user = models.ForeignKey('User') # Person who typed in the purchase
+    entered_by_profile = models.ForeignKey('Profile') # Person who typed in the purchase
     # To make it possible for multiple accounts to be credited, there is no field like credited_account. Use Credit.objects.filter(purchase=x) to get the information which amounts were credited to which accounts for purchase x.
 
     def __str__(self):
@@ -1995,7 +1995,7 @@ class SpecificPurchase(models.Model):
         return "{} were inserted{}, credited to {}".format(self.batch.unit.display(self.amount, show_contents), batch, credited_to), "", ""
 
     def entry_details_str(self, short_date_format):
-        return "entered on {} by {}".format(self.purchase.entry_date.strftime(short_date_format), self.purchase.entered_by_user.name)
+        return "entered on {} by {}".format(self.purchase.entry_date.strftime(short_date_format), self.purchase.entered_by_profile.name)
 
     @property
     def comment_str(self):
@@ -2010,7 +2010,7 @@ class SpecificPurchase(models.Model):
 class Inventory(models.Model): # A group of one or multiple stock corrections & a group of one or multiple stocktakings
     date = models.DateField()
     entry_date = models.DateField(auto_now_add=True) # Date when entered into the system
-    entered_by_user = models.ForeignKey('User') # Person who typed in the inventory
+    entered_by_profile = models.ForeignKey('Profile') # Person who typed in the inventory
     comment = models.TextField(blank=True)
 
 class Stocktaking(models.Model): # A single measurement of an inventory. There can be multiple stocktakings for the same batch.

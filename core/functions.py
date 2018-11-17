@@ -98,19 +98,19 @@ def calc_next_date(obj):
     else:
         return obj.next_performance + datetime.timedelta(days=obj.time_period.days*obj.time_period_multiplicator)
 
-def date_format(user=None, style='short'):
+def date_format(profile=None, style='short'):
     if style == 'short':
-        if user:
-            if user.short_date_format:
-                return user.short_date_format
+        if profile:
+            if profile.short_date_format:
+                return profile.short_date_format
             else:
                 return get_config("short_date_format")
         else:
             return get_config("short_date_format")
     elif style == 'long':
-        if user:
-            if user.long_date_format:
-                return user.long_date_format
+        if profile:
+            if profile.long_date_format:
+                return profile.long_date_format
             else:
                 return get_config("long_date_format")
         else:
